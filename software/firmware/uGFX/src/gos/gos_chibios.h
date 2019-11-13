@@ -40,7 +40,7 @@
 #endif
 typedef systime_t	gTicks;
 typedef cnt_t		gSemcount;
-typedef msg_t		gThreadreturn;
+typedef void		gThreadreturn;
 typedef tprio_t		gThreadpriority;
 
 #define gSemMaxCount			((gSemcount)(((unsigned long)((gSemcount)(-1))) >> 1))
