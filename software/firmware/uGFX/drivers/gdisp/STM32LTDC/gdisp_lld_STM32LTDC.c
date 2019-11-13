@@ -428,6 +428,15 @@ LLDSPEC	gColor gdisp_lld_get_pixel_color(GDisplay* g) {
 		// Enable DMA2D clock
 		RCC->AHB1ENR |= RCC_AHB1ENR_DMA2DEN;
 
+		/*
+		 * Note: forcing a read of the register here ensures
+		 * that we wait for the DMA2D clock to actually start,
+		 * because it _must_ be running before we can touch
+	 	 * any of the device registers.
+		 */
+
+		(void)RCC->AHB1ENR;
+
 		// Output color format
 		#if GDISP_LLD_PIXELFORMAT == GDISP_PIXELFORMAT_RGB565
 			DMA2D->OPFCCR = OPFCCR_RGB565;
@@ -480,6 +489,7 @@ LLDSPEC	gColor gdisp_lld_get_pixel_color(GDisplay* g) {
 			shape = (g->p.cx << 16) | (g->p.cy);
 		#endif
 
+#ifdef notdef
 		#if LTDC_DMA_CACHE_FLUSH
 		{
 			// This is slightly less than optimal as we flush the whole line in the source and destination image
@@ -500,7 +510,7 @@ LLDSPEC	gColor gdisp_lld_get_pixel_color(GDisplay* g) {
 			__ugfxDSB();
 		}
 		#endif
-
+#endif
 		// Wait until DMA2D is ready
 		while(DMA2D->CR & DMA2D_CR_START);
 
@@ -558,14 +568,14 @@ LLDSPEC	gColor gdisp_lld_get_pixel_color(GDisplay* g) {
 				e = srcstart + (g->p.cy > 1 ? ((gU32)g->p.x2*g->p.cy) : (gU32)g->p.cx)*LTDC_PIXELBYTES;
 				for(f=(srcstart & ~31); f < e; f += 32)
 				    SCB->DCCIMVAC = f;
-
+#ifdef notdef
 				// Flush then invalidate the destination area
 				e = dststart + (g->p.cy > 1 ? ((gU32)((ltdcLayerConfig *)g->priv)->pitch*g->p.cy) : ((gU32)g->p.cx*LTDC_PIXELBYTES));
 				for(f=(dststart & ~31); f < e; f += 32) {
 				    SCB->DCCIMVAC = f;
 				    SCB->DCIMVAC = f;
 				}
-
+#endif
 				// Data memory barrier
 				__ugfxDSB();
 			}

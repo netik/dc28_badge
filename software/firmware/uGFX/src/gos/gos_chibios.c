@@ -11,7 +11,7 @@
 
 #include <string.h>
 
-#if CH_KERNEL_MAJOR < 2 || CH_KERNEL_MAJOR > 5
+#if CH_KERNEL_MAJOR < 2 || CH_KERNEL_MAJOR > 6
 	#error "GOS: Unsupported version of ChibiOS"
 #endif
 
@@ -177,6 +177,7 @@ void gfxSemSignalI(gSem *psem)
 
 gThread gfxThreadCreate(void *stackarea, gMemSize stacksz, gThreadpriority prio, GFX_THREAD_FUNCTION((*fn),p), void *param)
 {
+#if CH_CFG_USE_HEAP == TRUE
 	if (!stackarea) {
 		if (!stacksz) stacksz = 256;
 		#if CH_KERNEL_MAJOR <= 3
@@ -185,6 +186,9 @@ gThread gfxThreadCreate(void *stackarea, gMemSize stacksz, gThreadpriority prio,
 			return chThdCreateFromHeap(0, stacksz, "ugfx", prio, (tfunc_t)fn, param);
 		#endif
 	}
+#else
+        (void) stackarea;
+#endif
 
 	if (!stacksz)
 		return 0;

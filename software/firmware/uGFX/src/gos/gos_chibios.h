@@ -21,6 +21,11 @@
 #include "ch.h"
 #include "hal.h"
 
+#if CH_CFG_USE_HEAP == FALSE
+#include <stdlib.h>
+#include <malloc.h>
+#endif
+
 /*===========================================================================*/
 /* Type definitions                                                          */
 /*===========================================================================*/
@@ -94,8 +99,13 @@ typedef tprio_t		gThreadpriority;
 	#define gfxMillisecondsToTicks(ms)	TIME_MS2I(ms)
 #endif
 
+#if CH_CFG_USE_HEAP == TRUE
 #define gfxAlloc(sz)				chHeapAlloc(0, sz)
 #define gfxFree(ptr)				chHeapFree(ptr)
+#else
+#define gfxAlloc(sz)                           malloc(sz)
+#define gfxFree(ptr)                           free(ptr)
+#endif
 #define gfxYield()					chThdYield()
 #define gfxSystemLock()				chSysLock()
 #define gfxSystemUnlock()			chSysUnlock()
