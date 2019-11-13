@@ -1,0 +1,45 @@
+
+Parts we'd probably like to have include the following (assumption is qty 500):
+
+CPU:
+
+ST Micro STM32F746 MCU
+This part is available in several BGA and LQFN packages. Flash size is
+either 512KB or 1MB.
+
+Availability may be an issue. It's easier to get the WLCSP143 part,
+and it's cheaper, but it only has 144 pins. This creates a problem:
+there's an unresolvable conflict between the pin for LCD_B4 and the
+FMC_D9 memory controller pin. This means it's not possible to use
+more than 8 data pins with the FMC with this part, which limits the
+possible RAM configuration to 4MB instead of 8MB. This is still
+pretty good, but I'd rather have 8.
+
+At qty 500, the STM32F746ZGY6TR price is $7.89
+
+SDRAM:
+
+ISSI IS42S16400J-6TL
+
+8MB SDRAM chip
+At qty 500, the IS42S16400J-6TL price is $1.23
+
+Screen:
+
+East Rising/BuyDisplay ER-TFT028-4 with optional touch screen
+This is just the display, without the module
+At qty 500, price is ~$6.13 + $1.06 with resistive touch panel
+
+Resistive touch controller:
+
+Optional. Might be able to use the ADCs in the CPU for this.
+
+Audio codec:
+
+CS4344 (I think this would work)
+
+Radio:
+
+???
+
+I would rather not deal with bluetooth again.
