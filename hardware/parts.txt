@@ -24,6 +24,11 @@ ISSI IS42S16400J-6TL
 8MB SDRAM chip
 At qty 500, the IS42S16400J-6TL price is $1.23
 
+Alliance Memory AS4C8M16SA-7TCN
+
+16MB SDRAM chip
+At qty 500, price is $1.76
+
 Screen:
 
 East Rising/BuyDisplay ER-TFT028-4 with optional touch screen
