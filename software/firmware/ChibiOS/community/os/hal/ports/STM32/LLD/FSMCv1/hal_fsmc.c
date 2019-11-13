@@ -127,7 +127,7 @@ void fsmc_start(FSMCDriver *fsmcp) {
 #ifdef rccResetFSMC
       rccResetFSMC();
 #endif
-      rccEnableFSMC(FALSE);
+      rccEnableFSMC(TRUE);
 #if HAL_USE_NAND
       nvicEnableVector(STM32_FSMC_NUMBER, STM32_FSMC_FSMC1_IRQ_PRIORITY);
 #endif
