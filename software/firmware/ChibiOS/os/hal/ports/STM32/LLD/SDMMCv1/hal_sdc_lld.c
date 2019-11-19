@@ -134,6 +134,8 @@ static bool sdc_lld_prepare_read_bytes(SDCDriver *sdcp,
   if (_sdc_wait_for_transfer_state(sdcp))
     return HAL_FAILED;
 
+  cacheBufferFlush (buf, bytes);
+
   /* Prepares the DMA channel for writing.*/
   dmaStreamSetMemory0(sdcp->dma, buf);
   dmaStreamSetTransactionSize(sdcp->dma, bytes / sizeof (uint32_t));
@@ -770,6 +772,8 @@ bool sdc_lld_read_special(SDCDriver *sdcp, uint8_t *buf, size_t bytes,
   if (sdc_lld_wait_transaction_end(sdcp, 1, resp))
     goto error;
 
+  cacheBufferInvalidate (buf, bytes);
+
   return HAL_SUCCESS;
 
 error:
@@ -803,6 +807,8 @@ bool sdc_lld_read_aligned(SDCDriver *sdcp, uint32_t startblk,
   if (_sdc_wait_for_transfer_state(sdcp))
     return HAL_FAILED;
 
+  cacheBufferFlush (buf, blocks * MMCSD_BLOCK_SIZE);
+
   /* Prepares the DMA channel for writing.*/
   dmaStreamSetMemory0(sdcp->dma, buf);
   dmaStreamSetTransactionSize(sdcp->dma,
@@ -830,6 +836,8 @@ bool sdc_lld_read_aligned(SDCDriver *sdcp, uint32_t startblk,
 
   if (sdc_lld_wait_transaction_end(sdcp, blocks, resp) == true)
     goto error;
+
+  cacheBufferInvalidate (buf, blocks * MMCSD_BLOCK_SIZE);
 
   return HAL_SUCCESS;
 
@@ -863,6 +871,8 @@ bool sdc_lld_write_aligned(SDCDriver *sdcp, uint32_t startblk,
   /* Checks for errors and waits for the card to be ready for writing.*/
   if (_sdc_wait_for_transfer_state(sdcp))
     return HAL_FAILED;
+
+  cacheBufferFlush (buf, blocks * MMCSD_BLOCK_SIZE);
 
   /* Prepares the DMA channel for writing.*/
   dmaStreamSetMemory0(sdcp->dma, buf);
