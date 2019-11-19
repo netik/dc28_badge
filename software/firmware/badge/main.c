@@ -224,8 +224,38 @@ THD_FUNCTION(shellUsbThreadStub, p)
 
 	chRegSetThreadName ("UsbShell");
 
+	/*
+	 * We launch the USB shell thread right away,
+	 * but we want to pause it until the USB serial
+	 * port is actually connected. If we don't, the
+	 * thread will just exit right away because
+	 * calling streamRead() on the USB serial device
+	 * before it's actually connected will just return
+	 * error, which will cause the thread to exit and
+	 * be respawned over and over again (until the
+	 * cable is actually plugged in.
+	 */
+
 	if (SDU1.config->usbp->state != USB_ACTIVE) {
 		osalThreadSuspendS (&shell_ref_usb);
+
+		/*
+		 * This works around what looks like a bug
+		 * in the FreeBSD USB CDC driver. If we print out
+	 	 * data immediately upon USB connection, it will
+		 * fill the RX buffer on the host side with some
+	 	 * data. But there won't be any program running
+	 	 * to consume the data yet. Once we do finally
+		 * connect a terminal program (kermit, tip, etc...),
+		 * the RX and TX paths will appear out of sync.
+		 * In most cases, a USB modem stays idle when
+		 * first connected (instead of printing anything
+	 	 * right away, it waits for the host to send an
+		 * AT command.) To emulate this, we wait here for
+		 * the other side to send a character before we
+		 * send anything ourselves.
+		 */
+
 		if (streamRead ((BaseSequentialStream *)&SDU1, &c, 1) == 0) {
 			shellExit (MSG_OK);
 			return;
