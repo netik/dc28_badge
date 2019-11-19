@@ -345,6 +345,26 @@ main (void)
 	fsmcSdramInit ();
 	fsmcSdramStart (&SDRAMD, &sdram_cfg);
 
+	/*
+	 * By default, the SDRAM region won't be cached. We want
+	 * it to be because this improves performance.
+	 */
+
+ 	mpuConfigureRegion (MPU_REGION_4, FSMC_Bank5_MAP_BASE,
+	    MPU_RASR_ATTR_AP_RW_RW | MPU_RASR_ATTR_CACHEABLE_WB_WA |
+            MPU_RASR_SIZE_8M | MPU_RASR_ENABLE);
+
+	/*
+	 * The portion of the SDRAM that's used for the
+	 * graphics frame buffer should be uncached. (Per the
+	 * Cortex-M7 manual, when two MPU regions overlap, the
+	 * one with the highest number takes precedence.)
+	 */
+
+ 	mpuConfigureRegion (MPU_REGION_5, FB_BASE,
+	    MPU_RASR_ATTR_AP_RW_RW | MPU_RASR_ATTR_SHARED_DEVICE |
+            MPU_RASR_SIZE_256K | MPU_RASR_ENABLE);
+
 	/* Initialize newlib (libc) facilities. */
 
 	newlibStart ();
@@ -364,7 +384,7 @@ main (void)
 
 	gptStart (&GPTD5, &gptcfg);
 
-	printf ("Timer TMI5 enabled\n");
+	printf ("Timer TIM5 enabled\n");
 
 	/* Enable SPI */
 
@@ -466,20 +486,6 @@ main (void)
 	chEvtRegister (&shell_terminated, &shell_el, 0);
 
 {
-  gdispImage myImage;
-    if (gdispImageOpenFile (&myImage,
-                            "test2.gif") == GDISP_IMAGE_ERR_OK) {
-      gdispImageDraw (&myImage,
-                      0, 0,
-                      myImage.width,
-                      myImage.height, 0, 0);
-
-      gdispImageClose (&myImage);
-    }
-
-}
-
-{
 	uint16_t tx;
 	uint16_t rx;
 	msg_t r;
@@ -514,6 +520,7 @@ __DSB();
 __ISB();
 	printf ("T1: %lu T2: %lu\n", t1, t2);
 }
+
 	/*
 	 * Normal main() thread activity. Start and monitor
 	 * shell threads.
