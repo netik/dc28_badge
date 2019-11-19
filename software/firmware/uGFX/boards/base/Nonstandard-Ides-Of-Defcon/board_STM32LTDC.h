@@ -10,7 +10,7 @@
 
 #include "badge.h"
 
-#define SDRAM_DEVICE_ADDR FSMC_Bank5_MAP_BASE
+#define SDRAM_DEVICE_ADDR FB_BASE
 
 #ifndef GFX_LTDC_USE_DIRECTIO
 	#define GFX_LTDC_USE_DIRECTIO	GFXON
