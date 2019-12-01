@@ -32,6 +32,23 @@
 #define rccEnableRNG(lp) rccEnableAHB2(RCC_AHB2ENR_RNGEN, lp)
 #define rccDisableRNG() rccDisableAHB2(RCC_AHB2ENR_RNGEN)
 
+#define STM32_SAI1_A_DMA_STREAM           STM32_DMA_STREAM_ID(2, 3)
+#define STM32_SAI1_B_DMA_STREAM           STM32_DMA_STREAM_ID(2, 5)
+#define STM32_SAI1_A_DMA_CHANNEL          0
+#define STM32_SAI1_B_DMA_CHANNEL          0
+#define STM32_SAI1_DMA_PRIORITY	          3
+#define STM32_SAI1_DMA_IRQ_PRIORITY	  11
+#define STM32_SAI1_IRQ_PRIORITY	          9
+
+#define STM32_SAI2_A_DMA_STREAM           STM32_DMA_STREAM_ID(2, 4)
+#define STM32_SAI2_B_DMA_STREAM           STM32_DMA_STREAM_ID(2, 7)
+#define STM32_SAI2_A_DMA_CHANNEL          3
+#define STM32_SAI2_B_DMA_CHANNEL          0
+#define STM32_SAI2_DMA_PRIORITY	          3
+#define STM32_SAI2_DMA_IRQ_PRIORITY	  11
+#define STM32_SAI2_IRQ_PRIORITY	          9
+
+
 #define NEWLIB_HEAP_SDRAM
 
 /*
@@ -80,9 +97,9 @@
 #define STM32_MCO2SEL                       STM32_MCO2SEL_SYSCLK
 #define STM32_MCO2PRE                       STM32_MCO2PRE_DIV4
 #define STM32_I2SSRC                        STM32_I2SSRC_OFF
-#define STM32_PLLI2SN_VALUE                 192
+#define STM32_PLLI2SN_VALUE                 256
 #define STM32_PLLI2SP_VALUE                 4
-#define STM32_PLLI2SQ_VALUE                 4
+#define STM32_PLLI2SQ_VALUE                 8
 #define STM32_PLLI2SR_VALUE                 4
 #define STM32_PLLI2SDIVQ_VALUE              2
 #define STM32_PLLSAIN_VALUE                 192
@@ -92,7 +109,7 @@
 #define STM32_PLLSAIDIVQ_VALUE              2
 #define STM32_PLLSAIDIVR_VALUE              2
 #define STM32_SAI1SEL                       STM32_SAI1SEL_OFF
-#define STM32_SAI2SEL                       STM32_SAI2SEL_OFF
+#define STM32_SAI2SEL                       STM32_SAI2SEL_I2SPLL
 #define STM32_LCDTFT_REQUIRED               FALSE
 #define STM32_USART1SEL                     STM32_USART1SEL_PCLK2
 #define STM32_USART2SEL                     STM32_USART2SEL_PCLK1
