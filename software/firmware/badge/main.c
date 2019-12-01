@@ -28,6 +28,10 @@
 #include "hal_fsmc_sdram.h"
 #include "fsmc_sdram.h"
 
+#include "async_io_lld.h"
+#include "stm32sai_lld.h"
+#include "wm8994.h"
+
 #include "gfx.h"
 
 BaseSequentialStream * console;
@@ -421,6 +425,13 @@ main (void)
 
 	printf ("I2C bus 3 enabled\n");
 
+	/* Initialize audio subsystem */
+
+	wm8994Init ();
+	saiStart (&SAID1);
+
+	printf ("SAI2 block A enabled\n");
+
 	/* Enable random number generator */
 
 	trngStart (&TRNGD1, NULL);
@@ -461,6 +472,10 @@ main (void)
 		sdcConnect (&SDCD1);
 		printf("Capacity: %ldMB\r\n", SDCD1.capacity / 2048);
 	}
+
+	/* Initialize async I/O module */
+
+	asyncIoStart ();
 
 	/* Initialize uGFX subsystem */
 

@@ -62,7 +62,8 @@ enum wm8994_type {
  *
  * @returns -1 for error  and 0  Success.
  */
-int wm8994_init(const void *blob, enum en_audio_interface aif_id,
+extern int wm8994_init(const void *blob, enum en_audio_interface aif_id,
 			int sampling_rate, int mclk_freq,
 			int bits_per_sample, unsigned int channels);
+extern void wm8994Init (void);
 #endif /*__WM8994_H__ */

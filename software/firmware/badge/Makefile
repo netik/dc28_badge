@@ -124,6 +124,14 @@ include $(GFXLIB)/drivers/gdisp/STM32LTDC/driver.mk
 FATFS = $(CHIBIOS)/../FatFs
 include $(FATFS)/build.mk
 
+# JPEG library
+TJPGD = $(CHIBIOS)/../TJPGD
+include $(TJPGD)/build.mk
+
+# WM8994 Codec driver
+WM8994 = $(CHIBIOS)/../wm8994
+include $(WM8994)/build.mk
+
 # STM SDK files
 # STM = $(CHIBIOS)/../stm
 # include $(STM)/build.mk
@@ -137,14 +145,20 @@ CSRC = $(ALLCSRC) \
        $(FATFSSRC) \
        $(GFXSRC) \
        $(STMSRC) \
+       $(TJPGDSRC) \
+       $(WM8994SRC) \
        main.c \
        usbcfg.c \
        cmd-cpu.c \
        cmd-mem.c \
        cmd-reset.c \
+       cmd-video.c \
        newlib_syscall.c \
        nullprot_lld.c \
-       badge_vectors.c
+       badge_vectors.c \
+       async_io_lld.c \
+       video_lld.c \
+       stm32sai_lld.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
@@ -158,7 +172,7 @@ ASMXSRC = $(ALLXASMSRC) badge_fault.S
 
 # Inclusion directories.
 INCDIR = $(CONFDIR) $(ALLINC) $(CHIBIOS_CONTRIB)/os/various $(FATFSINC)
-INCDIR += $(GFXINC) $(STMINC)
+INCDIR += $(GFXINC) $(STMINC) $(TJPGDINC) $(WM8994INC)
 
 # Define C warning options here.
 CWARN = -Wall -Wextra -Wundef -Wstrict-prototypes
