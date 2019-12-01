@@ -1,0 +1,7 @@
+TJPGDSRC+=			\
+	$(TJPGD)/src/tjpgd.c
+
+TJPGDINC+= $(TJPGD)/src
+
+TJPGDDEFS+=
+USE_COPT+= $(TJPGDDEFS)
