@@ -51,17 +51,15 @@
 # input clock. The SAI input clock is in turn from the PLL subsystem.
 #
 # The default PLL setup takes the external crystal value of 25MHz and
-# feeds it to a VCO with a configurable multiplier for its output. The
-# default VCO multipler value for the SAI is set to 192, meaning the
-# VCO output is 192MHz. This in turn is set sent to another divider
-# stage with a ratio of 4, yielding an SAI input clock of 48MHz.
-# The SAI block allows you to apply a divisor or 0 to 15 to this
-# frequency.
+# divides it down to 1MHz before feeding it a number of PLL VCOs with
+# configurable multipliers for their outputs. We use the I2S PLL,
+# which is configured for 256MHz and then divided down to 16MHz. This
+# is the SAI input clock.
 #
 # This allows us some flexibility but does not quite allow us to choose
 # any arbitrary values. As with the DC27 design, we'd like a sample rate
-# of 16KHz, With a 48MHz input clock, the closest you can get is
-# 15.625KHz. (48 / 12 = 4MHz, 4MHz / 256 = 15.625KHz.)
+# of 16KHz, With a 16MHz input clock, the closest you can get is
+# 15.625KHz. (16 / 4 = 4MHz, 4MHz / 256 = 15.625KHz.)
 #
 # We have enough bandwidth for about 16 frames per second, but at that
 # frame rate, you can't quite get a whole number of samples per scanline.
