@@ -58,6 +58,7 @@ typedef struct chunk_header {
 	uint64_t		next_chunk_size;
 	uint64_t		cur_vid_size;
 	uint64_t		cur_aud_size;
+	uint64_t		pad; /* pad to 32 byte multiple */
 } CHUNK_HEADER;
 
 static void
