@@ -142,11 +142,12 @@ videoPlay (char * path)
 	UINT br;
 	size_t max;
 
-
 	if (f_open(&f, path, FA_READ) != FR_OK) {
 		printf ("opening [%s] failed\n", path);
 		return (-1);
 	}
+
+	i2sPlay (NULL);
 
 	ch = &_ch;
 
@@ -173,7 +174,7 @@ videoPlay (char * path)
 			break;
 		asyncIoRead (&f, p2, sz, &br);
 		s = p1 + ch->cur_vid_size + sizeof(CHUNK_HEADER);
-		saiSend (&SAID1, s, 3840);
+		i2sSamplesPlay (s, 3840);
 		videoFrameDecompress (&jd, p1, workbuf);
 		if (br == 0)
 			break;
@@ -189,6 +190,11 @@ videoPlay (char * path)
 		asyncIoWait ();
 		saiWait ();
 	}
+
+	/* Drain any pending I/O */
+
+	i2sSamplesWait ();
+	i2sSamplesStop ();
 
 	f_close (&f);
 

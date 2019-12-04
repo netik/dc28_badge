@@ -41,6 +41,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <fcntl.h>
 
 /*
  * Enabling the SAI module is tricky. There are four things you need
@@ -70,7 +71,20 @@
  * do out of the box since the Makefiles must be generated using a GUI.
  */
 
-SAIDriver SAID1;
+SAIDriver SAID2;
+
+__attribute__((aligned(CACHE_LINE_SIZE)))
+static uint16_t i2sBuf[I2S_SAMPLES * 2];
+
+uint8_t i2sEnabled = TRUE;
+ 
+static char * fname;
+static thread_t * pThread = NULL;
+static volatile uint8_t play;
+static uint8_t i2sloop;
+
+static THD_WORKING_AREA(waI2sThread, 1024);
+static void i2sThread(void *);
 
 static thread_reference_t i2sThreadReference;
 static int i2sState;
@@ -100,6 +114,7 @@ saiSend (SAIDriver * saip, void * buf, uint32_t size)
 {
 	dmaStreamSetMemory0 (saip->dma, buf);
 	dmaStreamSetTransactionSize (saip->dma, size / sizeof (uint16_t));
+	dmaStreamSetMode (saip->dma, saip->dmamode);
 	dmaStreamEnable (saip->dma);
 
 	cacheBufferFlush (buf, size);
@@ -108,7 +123,22 @@ saiSend (SAIDriver * saip, void * buf, uint32_t size)
 	i2sState = I2S_STATE_BUSY;
 	saip->saiblock->CR2 &= ~SAI_xCR2_MUTE;
 	saip->saiblock->CR1 |= SAI_xCR1_DMAEN;
+	osalThreadResumeI (&i2sThreadReference, MSG_OK);
 	osalSysUnlock ();
+
+	return;
+}
+
+void
+saiStop (SAIDriver * saip)
+{
+	osalSysLock ();
+	i2sState = I2S_STATE_IDLE;
+	saip->saiblock->CR2 &= ~SAI_xCR2_MUTE;
+	saip->saiblock->CR1 &= ~SAI_xCR1_DMAEN;
+	osalSysUnlock ();
+
+	dmaStreamDisable (saip->dma);
 
 	return;
 }
@@ -172,7 +202,6 @@ saiStart (SAIDriver * saip)
 	saip->dma = dmaStreamAlloc (STM32_SAI2_A_DMA_STREAM,
 	    STM32_SAI2_DMA_IRQ_PRIORITY, saiDmaInt, saip);
 	dmaStreamSetPeripheral (saip->dma, &saip->saiblock->DR);
-	dmaStreamSetMode (saip->dma, saip->dmamode);
 
 	/* Configure SAI2 sublock A for I2S mode */
 
@@ -215,5 +244,234 @@ saiStart (SAIDriver * saip)
 
 	chThdSleepMilliseconds (200);
 
+        /* Launch the player thread. */
+
+	pThread = chThdCreateStatic (waI2sThread, sizeof(waI2sThread),
+	    I2S_THREAD_PRIO, i2sThread, NULL);
+
 	return;
+}
+
+static
+THD_FUNCTION(i2sThread, arg)
+{
+        int f;
+        int br;
+        uint16_t * p;
+        thread_t * th;
+        char * file = NULL;
+
+	(void)arg;
+
+	chRegSetThreadName ("I2S");
+
+	while (1) {
+		if (play == 0) {
+			th = chMsgWait ();
+			file = fname;
+			play = 1;
+			chMsgRelease (th, MSG_OK);
+		}
+
+		if (i2sEnabled == FALSE) {
+			play = 0;
+			file = NULL;
+			continue;
+		}
+
+		f = open (file, O_RDONLY, 0);
+		if (f == -1) {
+			play = 0;
+			continue;
+		}
+
+		/* Load the first block of samples. */
+
+		p = i2sBuf;
+		br = read (f, p, I2S_BYTES);
+		if (br == 0) {
+			close (f);
+			play = 0;
+			continue;
+		}
+
+		while (1) {
+
+			/* Start the samples playing */
+
+			i2sSamplesPlay (p, I2S_BYTES);
+
+			/* Swap buffers and load the next block of samples */
+
+			if (p == i2sBuf)
+        			p += I2S_SAMPLES;
+			else
+        			p = i2sBuf;
+
+			br = read (f, p, I2S_BYTES);
+			if (br == 0)
+        			break;
+			/*
+			 * Wait until the current block of samples
+			 * finishes playing before playing the next
+			 * block.
+			 */
+
+			i2sSamplesWait ();
+
+			/* If we read 0 bytes, we reached end of file. */
+
+			if (br == 0)
+				break;
+
+			/* If told to stop, exit the loop. */
+
+			if (play == 0)
+        			break;
+		}
+
+		/* We're done, close the file. */
+
+		i2sSamplesStop ();
+		if (br == 0 && i2sloop == I2S_PLAY_ONCE) {
+			file = NULL;
+			play = 0;
+		}
+
+		close (f);
+	}
+
+	/* NOTREACHED */
+	return;
+}
+
+/******************************************************************************
+*
+* i2sSamplesPlay - play specific sample buffer
+*
+* This function can be used to play an arbitrary buffer of samples provided
+* by the caller via the pointer argument <p>. The <cnt> argument indicates
+* the number of samples (which should be equal to the total number of bytes
+* in the buffer divided by 2, since samples are stored as 16-bit quantities).
+*
+* This function is used primarily by the video player module.
+*
+* RETURNS: N/A
+*/
+
+void
+i2sSamplesPlay (void * buf, int cnt)
+{
+	saiSend (&SAID2, buf, cnt);
+	return;
+}
+
+/******************************************************************************
+*
+* i2sSamplesWait - wait for audio sample buffer to finish playing
+*
+* This function can be used to test when the current block of samples has
+* finished playing. It is used primarily by callers of i2sSamplesPlay() to
+* keep pace with the audio playback. The function sleeps until an interrupt
+* occurs indicating that the current batch of samples has been sent to
+* the codec chip.
+*
+* RETURNS: N/A
+*/
+
+void
+i2sSamplesWait (void)
+{
+	saiWait ();
+	return;
+}
+
+/******************************************************************************
+*
+* i2sSamplesStop - stop sample playback
+*
+* This function must be called after samples are sent to the codec using
+* i2sSamplesPlay() and there are no more samples left to send. The nature
+* of the CS4344 codec is such that we can't just stop the I2S controller
+* because that cuts off the clock signals to it, and it will take time for
+* it to re-synchronize when the clocks are started again. Instead we gate
+* the SCK signal which stops it from trying to decode any audio data.
+*
+* RETURNS: N/A
+*/
+
+void
+i2sSamplesStop (void)
+{
+	saiStop (&SAID2);
+	return;
+}
+
+/******************************************************************************
+*
+* i2sWait - wait for current audio file to finish playing
+*
+* This function can be used to test when the current audio sample file has
+* finished playing. It can be used to pause the current thread until a
+* sound effect finishes playing.
+*
+* RETURNS: The number of ticks we had to wait until the playback finished.
+*/
+
+int
+i2sWait (void)
+{
+        int waits = 0;
+
+        while (play != 0) {
+                chThdSleep (1);
+                waits++;
+        }
+
+        return (waits);
+}
+
+/******************************************************************************
+*
+* i2sPlay - play an audio file
+*
+* This is a shortcut version of i2sLoopPlay() that always plays a file just
+* once. As with i2sLoopPlay(), playback can be halted by calling i2sPlay()
+* with <file> set to NULL.
+*
+* RETURNS: N/A
+*/
+
+void
+i2sPlay (char * file)
+{
+        i2sLoopPlay (file, I2S_PLAY_ONCE);
+        return;
+}
+
+/******************************************************************************
+*
+* i2sLoopPlay - play an audio file
+*
+* This function cues up an audio file to be played by the background I2S
+* thread. The file name is specified by <file>. If <loop> is I2S_PLAY_ONCE,
+* the sample file is played once and then the player thread will go idle
+* again. If <loop> is I2S_PLAY_LOOP, the same file will be played over and
+* over again.
+*
+* Playback of any sample file (including one that is looping) can be halted
+* at any time by calling i2sLoopPlay() with <file> set to NULL.
+*
+* RETURNS: N/A
+*/
+
+void
+i2sLoopPlay (char * file, uint8_t loop)
+{
+        play = 0;
+        i2sloop = loop;
+        fname = file;
+        chMsgSend (pThread, MSG_OK);
+
+        return;
 }

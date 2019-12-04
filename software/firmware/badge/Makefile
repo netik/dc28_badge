@@ -149,6 +149,7 @@ CSRC = $(ALLCSRC) \
        $(WM8994SRC) \
        main.c \
        usbcfg.c \
+       cmd-audio.c \
        cmd-cpu.c \
        cmd-mem.c \
        cmd-reset.c \

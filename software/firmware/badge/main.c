@@ -428,7 +428,7 @@ main (void)
 	/* Initialize audio subsystem */
 
 	wm8994Init ();
-	saiStart (&SAID1);
+	saiStart (&SAID2);
 
 	printf ("SAI2 block A enabled\n");
 

@@ -40,13 +40,33 @@ typedef struct _SAIDriver {
 	SAI_Block_TypeDef *		saiblock;
 } SAIDriver;
 
+#define I2S_THREAD_PRIO		(NORMALPRIO + 1)
+#define I2S_SAMPLES		1024
+#define I2S_BYTES		(I2S_SAMPLES * sizeof(uint16_t))
+
+#define I2S_PLAY_ONCE		0
+#define I2S_PLAY_LOOP		1
+
 #define I2S_STATE_IDLE		0
 #define I2S_STATE_BUSY		1
 
-extern SAIDriver SAID1;
+extern SAIDriver SAID2;
 
 extern void saiStart (SAIDriver * saip);
 extern void saiSend (SAIDriver * saip, void * buf, uint32_t size);
+extern void saiStop (SAIDriver * saip);
 extern void saiWait (void);
+
+extern void i2sSamplesPlay (void * buf, int cnt);
+extern void i2sSamplesWait (void);
+extern void i2sSamplesStop (void);
+
+extern int i2sWait (void);
+extern void i2sPlay (char *);
+extern void i2sLoopPlay (char *, uint8_t);
+#ifdef notdef
+extern uint16_t * i2sBuf;
+#endif
+extern uint8_t i2sEnabled;
 
 #endif /* _STM32SAI_LLDH_ */
