@@ -56,6 +56,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#define        roundup(x, y)   ((((x)+((y)-1))/(y))*(y))
+
 #define COALESCE
 
 #ifdef COALESCE
@@ -132,6 +134,7 @@ videoPlay (char * path)
 {
 	CHUNK_HEADER _ch;
 	CHUNK_HEADER * ch;
+	uint8_t * buf_orig;
 	uint8_t * buf;
 	uint8_t * p1;
 	uint8_t * p2;
@@ -155,7 +158,10 @@ videoPlay (char * path)
 
 	max = (ch->cur_vid_size + ch->cur_aud_size) + sizeof(CHUNK_HEADER);
 
-	buf = malloc (max * 2);
+	buf_orig = malloc ((max * 2) + CACHE_LINE_SIZE);
+
+	buf = (uint8_t *)roundup((uint32_t)buf_orig, CACHE_LINE_SIZE);
+
 #ifdef COALESCE
 	vp = malloc (320 * 240 * 2);
 #endif
@@ -198,7 +204,7 @@ videoPlay (char * path)
 
 	f_close (&f);
 
-	free (buf);
+	free (buf_orig);
 #ifdef COALESCE
 	free (vp);
 #endif
