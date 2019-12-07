@@ -37,17 +37,12 @@
 #include "src/gdisp/gdisp_driver.h"
 
 #include "ff.h"
-#include "ffconf.h"
-#include "diskio.h"
-
-#include "hal_fsmc_sdram.h"
-#include "fsmc_sdram.h"
 
 #include "video_lld.h"
-#include "badge.h"
-
 #include "async_io_lld.h"
 #include "stm32sai_lld.h"
+
+#include "badge.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -56,94 +51,25 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#define        roundup(x, y)   ((((x)+((y)-1))/(y))*(y))
+#include "jpeglib.h"
 
-#define COALESCE
-
-#ifdef COALESCE
-static uint16_t * vp;
-#endif
-static uint8_t * fp;
-
-#include "tjpgd.h"
-
-static uint16_t 
-tjd_input (JDEC * jd, uint8_t * b, uint16_t nd)
-{
-	(void)jd;
-
-	if (b)
-		memcpy (b, fp, nd);
-
-	fp += nd;
-	return (nd);
-}
-
-static uint16_t
-tdj_output (JDEC * jd, void * b, JRECT * r)
-{
-	gPixel h, w;
-#ifdef COALESCE
-	gPixel x, y;
-	uint32_t i, j, cnt;
-	uint32_t * s;
-	uint32_t * d;
-#endif
-
-	(void)jd;
-
-	w = r->right - r->left + 1;
-	h = r->bottom - r->top + 1;
-
-#ifdef COALESCE
-	y = r->top;
-	x = r->left;
-
-	s = b;
-	cnt = 0;
-	for (i = 0; i < h; i++) {
-		d = (uint32_t *)&vp[(320 * (i + y)) + x];
-		for (j = 0; j < (w / 2); j++) {
-			d[j] = s[cnt];
-			cnt++;
-		}
-	}
-#else
-	gdispBlitArea (80 + r->left, 16 + r->top, w, h, b);
-#endif
-
-	return (1);
-}
-
-static void
-videoFrameDecompress (JDEC * jd, uint8_t * buf, uint8_t * work)
-{
-	fp = buf + sizeof(CHUNK_HEADER);
-
-	jd_prepare (jd, tjd_input, work, VID_JPG_WORKBUF_SIZE, NULL);
-	jd_decomp (jd, tdj_output, 0);
-#ifdef COALESCE
-	gdispBlitArea (80, 16, 320, 240, vp);
-#endif
-
-	return;
-}
+static struct jpeg_decompress_struct cinfo;
+static struct jpeg_error_mgr jerr;
 
 int
 videoPlay (char * path)
 {
 	CHUNK_HEADER _ch;
 	CHUNK_HEADER * ch;
-	uint8_t * buf_orig;
+	uint16_t * frame;
 	uint8_t * buf;
 	uint8_t * p1;
 	uint8_t * p2;
-	uint8_t * workbuf;
 	uint8_t * s;
-	JDEC jd;
 	FIL f;
 	UINT br;
 	size_t max;
+	unsigned char * buffer_array[2];
 
 	if (f_open(&f, path, FA_READ) != FR_OK) {
 		printf ("opening [%s] failed\n", path);
@@ -158,17 +84,16 @@ videoPlay (char * path)
 
 	max = (ch->cur_vid_size + ch->cur_aud_size) + sizeof(CHUNK_HEADER);
 
-	buf_orig = malloc ((max * 2) + CACHE_LINE_SIZE);
-
-	buf = (uint8_t *)roundup((uint32_t)buf_orig, CACHE_LINE_SIZE);
-
-#ifdef COALESCE
-	vp = malloc (320 * 240 * 2);
-#endif
-	workbuf = malloc (VID_JPG_WORKBUF_SIZE);
+	buf = malloc (max * 2);
+	frame = malloc (320 * 240 * 2);
 
 	p1 = buf;
 	p2 = buf + max;
+
+	/* Create a jpeg decompression context and read the first frame */
+
+	cinfo.err = jpeg_std_error (&jerr); 
+	jpeg_create_decompress (&cinfo);
 
 	f_read (&f, p1, (UINT)ch->next_chunk_size, &br);
 
@@ -180,8 +105,57 @@ videoPlay (char * path)
 			break;
 		asyncIoRead (&f, p2, sz, &br);
 		s = p1 + ch->cur_vid_size + sizeof(CHUNK_HEADER);
-		i2sSamplesPlay (s, 3840);
-		videoFrameDecompress (&jd, p1, workbuf);
+
+		/*
+		 * Start the audio samples for this frame playing.
+		 * The audio playback is done via DMA, so it will occur
+		 * at the same time that the CPU is decompressing and
+		 * displaying the video for this frame.
+		 */
+
+		i2sSamplesPlay (s, (int)ch->cur_aud_size);
+
+		/*
+		 * Set the jpeg input sources to the current video
+		 * buffer and start decompressing.
+		 */
+
+		s = p1 + sizeof(CHUNK_HEADER);
+
+		jpeg_mem_src (&cinfo, s, (unsigned long)ch->cur_vid_size);
+		jpeg_read_header (&cinfo, TRUE);
+ 		cinfo.out_color_space = JCS_RGB565;
+		jpeg_start_decompress (&cinfo);
+
+		/* Process scanlines */
+
+		while (cinfo.output_scanline < cinfo.output_height) {
+
+			/*
+			 * We can actually get the jpeg library to
+			 * reliably process up to 2 scan lines at once,
+			 * so we do that here to cut down how many calls
+			 * we make to jpeg_read_scalines().
+			 */
+
+			buffer_array[0] = (unsigned char *)frame;
+			buffer_array[0] += cinfo.output_scanline *
+			    cinfo.output_width * 2;
+			buffer_array[1] = buffer_array[0];
+			buffer_array[1] += cinfo.output_width * 2;
+			jpeg_read_scanlines (&cinfo, buffer_array, 2);
+                }
+
+		jpeg_finish_decompress (&cinfo);
+
+		/*
+		 * Now blit the frame to the screen. Interally the
+		 * uGFX library will use the DMA2D engine for this,
+		 * so it should be super fast.
+		 */
+
+		gdispBlitArea (80, 16, 320, 240, frame);
+
 		if (br == 0)
 			break;
 
@@ -194,8 +168,19 @@ videoPlay (char * path)
 		}
 
 		asyncIoWait ();
-		saiWait ();
+
+		/*
+		 * Wait for samples to finish playing. Ideally it should
+		 * take us a little less time to decompress and display a
+		 * frame than it does for us to play the samples. Waiting
+		 * for the audio to complete keeps us in sync and keeps
+		 * the playback running at the correct rate.
+		 */
+
+		i2sSamplesWait ();
 	}
+
+	jpeg_destroy_decompress (&cinfo);
 
 	/* Drain any pending I/O */
 
@@ -204,11 +189,10 @@ videoPlay (char * path)
 
 	f_close (&f);
 
-	free (buf_orig);
-#ifdef COALESCE
-	free (vp);
-#endif
-	free (workbuf);
+	/* Free memory */
+
+	free (buf);
+	free (frame);
 
 	return (0);
 }

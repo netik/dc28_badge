@@ -42,7 +42,7 @@ orchard_command_end();
 
 /* Resources for UART shell */
 
-static THD_WORKING_AREA(shell_wa_sd, 2048);
+static THD_WORKING_AREA(shell_wa_sd, 3072);
 static ShellConfig shell_cfg_sd =
 {
 	(BaseSequentialStream *)&SD1,
@@ -52,7 +52,7 @@ static thread_t * shell_tp_sd = NULL;
 
 /* Resources for USB shell */
 
-static THD_WORKING_AREA(shell_wa_usb, 2048);
+static THD_WORKING_AREA(shell_wa_usb, 3072);
 static ShellConfig shell_cfg_usb =
 {
 	(BaseSequentialStream *)&SDU1,

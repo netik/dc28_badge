@@ -362,6 +362,8 @@ THD_FUNCTION(i2sThread, arg)
 void
 i2sSamplesPlay (void * buf, int cnt)
 {
+	if (cnt == 0)
+		return;
 	saiSend (&SAID2, buf, cnt);
 	return;
 }

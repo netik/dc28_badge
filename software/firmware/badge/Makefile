@@ -132,6 +132,10 @@ include $(TJPGD)/build.mk
 WM8994 = $(CHIBIOS)/../wm8994
 include $(WM8994)/build.mk
 
+# libjpeg library
+LIBJPEG = $(CHIBIOS)/../libjpeg-turbo-2.0.3
+include $(LIBJPEG)/build.mk
+
 # STM SDK files
 # STM = $(CHIBIOS)/../stm
 # include $(STM)/build.mk
@@ -147,12 +151,14 @@ CSRC = $(ALLCSRC) \
        $(STMSRC) \
        $(TJPGDSRC) \
        $(WM8994SRC) \
+       $(LIBJPEGSRC) \
        main.c \
        usbcfg.c \
        cmd-audio.c \
        cmd-cpu.c \
        cmd-mem.c \
        cmd-reset.c \
+       cmd-video.c \
        newlib_syscall.c \
        nullprot_lld.c \
        badge_vectors.c \
@@ -172,7 +178,7 @@ ASMXSRC = $(ALLXASMSRC) badge_fault.S
 
 # Inclusion directories.
 INCDIR = $(CONFDIR) $(ALLINC) $(CHIBIOS_CONTRIB)/os/various $(FATFSINC)
-INCDIR += $(GFXINC) $(STMINC) $(TJPGDINC) $(WM8994INC)
+INCDIR += $(GFXINC) $(STMINC) $(TJPGDINC) $(WM8994INC) $(LIBJPEGINC)
 
 # Define C warning options here.
 CWARN = -Wall -Wextra -Wundef -Wstrict-prototypes
