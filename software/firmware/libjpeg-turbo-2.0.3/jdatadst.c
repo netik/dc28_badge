@@ -84,6 +84,7 @@ METHODDEF(void)
 init_mem_destination(j_compress_ptr cinfo)
 {
   /* no work necessary here */
+  (void)cinfo;
 }
 #endif
 

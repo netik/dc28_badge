@@ -258,6 +258,9 @@ merged_2v_upsample(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
   JSAMPROW work_ptrs[2];
   JDIMENSION num_rows;          /* number of rows returned to caller */
 
+  (void)in_row_groups_avail;
+  (void)out_rows_avail;
+
   if (upsample->spare_full) {
     /* If we have a spare row saved from a previous cycle, just return it. */
     JDIMENSION size = upsample->out_row_width;
@@ -306,6 +309,9 @@ merged_1v_upsample(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
 /* 1:1 vertical sampling case: much easier, never need a spare row. */
 {
   my_upsample_ptr upsample = (my_upsample_ptr)cinfo->upsample;
+
+  (void)in_row_groups_avail;
+  (void)out_rows_avail;
 
   /* Just do the upsampling. */
   (*upsample->upmethod) (cinfo, input_buf, *in_row_group_ctr,

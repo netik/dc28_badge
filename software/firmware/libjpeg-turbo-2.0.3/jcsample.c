@@ -82,6 +82,7 @@ METHODDEF(void)
 start_pass_downsample(j_compress_ptr cinfo)
 {
   /* no work for now */
+  (void)cinfo;
 }
 
 
