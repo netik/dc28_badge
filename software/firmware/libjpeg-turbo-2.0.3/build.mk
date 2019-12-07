@@ -1,0 +1,58 @@
+LIBJPEGSRC+=				\
+	$(LIBJPEG)/jaricom.c		\
+	$(LIBJPEG)/jcapimin.c		\
+	$(LIBJPEG)/jcapistd.c		\
+	$(LIBJPEG)/jcarith.c		\
+	$(LIBJPEG)/jccoefct.c		\
+	$(LIBJPEG)/jccolor.c		\
+	$(LIBJPEG)/jcdctmgr.c		\
+	$(LIBJPEG)/jchuff.c		\
+	$(LIBJPEG)/jcicc.c		\
+	$(LIBJPEG)/jcinit.c		\
+	$(LIBJPEG)/jcmainct.c		\
+	$(LIBJPEG)/jcmarker.c		\
+	$(LIBJPEG)/jcmaster.c		\
+	$(LIBJPEG)/jcomapi.c		\
+	$(LIBJPEG)/jcparam.c		\
+	$(LIBJPEG)/jcphuff.c		\
+	$(LIBJPEG)/jcprepct.c		\
+	$(LIBJPEG)/jcsample.c		\
+	$(LIBJPEG)/jctrans.c		\
+	$(LIBJPEG)/jdapimin.c		\
+	$(LIBJPEG)/jdapistd.c		\
+	$(LIBJPEG)/jdarith.c		\
+	$(LIBJPEG)/jdatadst.c		\
+	$(LIBJPEG)/jdatasrc.c		\
+	$(LIBJPEG)/jdcoefct.c		\
+	$(LIBJPEG)/jdcolor.c		\
+	$(LIBJPEG)/jddctmgr.c		\
+	$(LIBJPEG)/jdhuff.c		\
+	$(LIBJPEG)/jdicc.c		\
+	$(LIBJPEG)/jdinput.c		\
+	$(LIBJPEG)/jdmainct.c		\
+	$(LIBJPEG)/jdmarker.c		\
+	$(LIBJPEG)/jdmaster.c		\
+	$(LIBJPEG)/jdmerge.c		\
+	$(LIBJPEG)/jdphuff.c		\
+	$(LIBJPEG)/jdpostct.c		\
+	$(LIBJPEG)/jdsample.c		\
+	$(LIBJPEG)/jdtrans.c		\
+	$(LIBJPEG)/jerror.c		\
+	$(LIBJPEG)/jfdctflt.c		\
+	$(LIBJPEG)/jfdctfst.c		\
+	$(LIBJPEG)/jfdctint.c		\
+	$(LIBJPEG)/jidctflt.c		\
+	$(LIBJPEG)/jidctfst.c		\
+	$(LIBJPEG)/jidctint.c		\
+	$(LIBJPEG)/jidctred.c		\
+	$(LIBJPEG)/jmemmgr.c		\
+	$(LIBJPEG)/jmemnobs.c		\
+	$(LIBJPEG)/jquant1.c		\
+	$(LIBJPEG)/jquant2.c		\
+	$(LIBJPEG)/jutils.c		\
+	$(LIBJPEG)/jsimd_none.c
+
+LIBJPEGINC+= $(LIBJPEG)
+
+LIBJPEGDEFS+=
+USE_COPT+= $(LIBJPEGDEFS)
