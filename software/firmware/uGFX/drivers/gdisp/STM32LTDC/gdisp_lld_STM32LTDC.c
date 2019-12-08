@@ -593,8 +593,8 @@ LLDSPEC	gColor gdisp_lld_get_pixel_color(GDisplay* g) {
 			DMA2D->OOR = g->g.Width - g->p.cx;
 			DMA2D->NLR = (g->p.cx << 16) | (g->p.cy);
 
-			// Set MODE to M2M and Start the process
-			DMA2D->CR = DMA2D_CR_MODE_M2M | DMA2D_CR_START;
+			// Set MODE to M2M with PFC and Start the process
+			DMA2D->CR = DMA2D_CR_MODE_M2MPFC | DMA2D_CR_START;
 		}
 	#endif
 
