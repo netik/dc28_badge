@@ -119,7 +119,6 @@ include $(CHIBIOS)/os/various/shell/shell.mk
 GFXLIB = $(CHIBIOS)/../uGFX
 include $(GFXLIB)/gfx.mk
 include $(GFXLIB)/boards/base/Nonstandard-Ides-Of-Defcon/board.mk
-include $(GFXLIB)/drivers/gdisp/STM32LTDC/driver.mk
 
 # FatFS library
 FATFS = $(CHIBIOS)/../FatFs

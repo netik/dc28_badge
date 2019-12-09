@@ -290,9 +290,9 @@
 ///////////////////////////////////////////////////////////////////////////
 // GINPUT                                                                //
 ///////////////////////////////////////////////////////////////////////////
-//#define GFX_USE_GINPUT                               GFXOFF
+#define GFX_USE_GINPUT                               GFXOFF
 
-//#define GINPUT_NEED_MOUSE                            GFXOFF
+#define GINPUT_NEED_MOUSE                            GFXOFF
 //    #define GINPUT_TOUCH_STARTRAW                    GFXOFF
 //    #define GINPUT_TOUCH_NOTOUCH                     GFXOFF
 //    #define GINPUT_TOUCH_NOCALIBRATE                 GFXOFF
