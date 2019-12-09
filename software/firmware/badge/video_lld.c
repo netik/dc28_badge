@@ -35,6 +35,7 @@
 
 #include "gfx.h"
 #include "src/gdisp/gdisp_driver.h"
+#include "drivers/gdisp/STM32LTDC/stm32_dma2d.h"
 
 #include "ff.h"
 
@@ -52,6 +53,8 @@
 #include <unistd.h>
 
 #include "jpeglib.h"
+
+#define VID_PIXEL_SIZE 3
 
 static struct jpeg_decompress_struct cinfo;
 static struct jpeg_error_mgr jerr;
@@ -78,6 +81,20 @@ videoPlay (char * path)
 
 	i2sPlay (NULL);
 
+	/*
+	 * Override the input pixel format used by the DMA2D
+	 * engine. It turns out that the libjpeg-turbo library
+	 * performs faster when we tell it to generate RGB pixels
+	 * instead of RGB565 pixels. We can use the DMA2D to
+	 * translate the pixel format in hardware and it'll be
+	 * faster than doing the RGB565 conversion in software
+	 * (at the cost of using a little more memory).
+	 */
+
+#if (VID_PIXEL_SIZE > 2)
+	DMA2D->FGPFCCR = FGPFCCR_CM_RGB888;
+#endif
+
 	ch = &_ch;
 
 	f_read (&f, ch, sizeof(CHUNK_HEADER), &br);
@@ -85,7 +102,7 @@ videoPlay (char * path)
 	max = (ch->cur_vid_size + ch->cur_aud_size) + sizeof(CHUNK_HEADER);
 
 	buf = malloc (max * 2);
-	frame = malloc (320 * 240 * 2);
+	frame = malloc (320 * 240 * VID_PIXEL_SIZE);
 
 	p1 = buf;
 	p2 = buf + max;
@@ -124,7 +141,7 @@ videoPlay (char * path)
 
 		jpeg_mem_src (&cinfo, s, (unsigned long)ch->cur_vid_size);
 		jpeg_read_header (&cinfo, TRUE);
- 		cinfo.out_color_space = JCS_RGB565;
+ 		cinfo.out_color_space = JCS_EXT_RGB;
 		jpeg_start_decompress (&cinfo);
 
 		/* Process scanlines */
@@ -140,9 +157,9 @@ videoPlay (char * path)
 
 			buffer_array[0] = (unsigned char *)frame;
 			buffer_array[0] += cinfo.output_scanline *
-			    cinfo.output_width * 2;
+			    cinfo.output_width * VID_PIXEL_SIZE;
 			buffer_array[1] = buffer_array[0];
-			buffer_array[1] += cinfo.output_width * 2;
+			buffer_array[1] += cinfo.output_width * VID_PIXEL_SIZE;
 			jpeg_read_scanlines (&cinfo, buffer_array, 2);
                 }
 
@@ -152,8 +169,20 @@ videoPlay (char * path)
 		 * Now blit the frame to the screen. Interally the
 		 * uGFX library will use the DMA2D engine for this,
 		 * so it should be super fast.
+		 *
+		 * Note: When we use RGB888 mode, our pixels are
+		 * 3 bytes in size, but the uGFX display driver still
+		 * thinks we're using RGB565 where pixels are only
+		 * 2 bytes in size. Because of this, its cache flush
+		 * code doesn't flush the entire frame buffer. We need
+		 * to compensate for this here, otherwise the last few
+		 * lines in the frame may appear corrupted.
 		 */
 
+#if (VID_PIXEL_SIZE > 2)
+		cacheBufferFlush (frame + (320 * 240),
+		    (320 * 80 * VID_PIXEL_SIZE));
+#endif
 		gdispBlitArea (80, 16, 320, 240, frame);
 
 		if (br == 0)
@@ -193,6 +222,13 @@ videoPlay (char * path)
 
 	free (buf);
 	free (frame);
+
+	/* Restore the DMA2D input pixel format. */
+
+#if (VID_PIXEL_SIZE > 2)
+	DMA2D->FGPFCCR = FGPFCCR_CM_RGB565;
+#endif
+
 
 	return (0);
 }

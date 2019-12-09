@@ -5,28 +5,28 @@
 #include <sys/stat.h>
 
 /*
-# 16.25 x 240 = 3900 scanlines/second
-# 15625 / 3900 = 4.00641025641025641025 samples/scanline
+# 21.675 x 240 = 5202 scanlines/second
+# 15625 / 5202 = 3.00365244136870434448 samples/scanline
 # 
 # Again, we're stuck with the LRCLK frequency of 15.625KHz. Our only
 # remaining recourse is to cheat a little, and encode our audio tracks
-# at a rate of 15.6KHz:
+# at a rate of 15.606KHz:
 # 
-# 15600 / 3900 = 4.00
+# 15606 / 5202 = 3.00
  */
 
-#define VID_FRAMES_PER_SEC		16.25
+#define VID_FRAMES_PER_SEC		21.675
 
 #define VID_PIXELS_PER_LINE		320
 #define VID_LINES_PER_FRAME		240
 
 #define VID_CHUNK_LINES			240
 
-#define VID_AUDIO_SAMPLES_PER_SCANLINE	4
+#define VID_AUDIO_SAMPLES_PER_SCANLINE	3
 
 #define VID_AUDIO_CHANNELS		2
 
-#define VID_AUDIO_SAMPLE_RATE		15600 /* 15625 */
+#define VID_AUDIO_SAMPLE_RATE		15606 /* 15625 */
 
 #define VID_AUDIO_SAMPLES_PER_CHUNK		\
 	(VID_LINES_PER_FRAME *			\

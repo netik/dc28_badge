@@ -23,11 +23,11 @@
 # The destination directory must already exist
 #
 # The video will have an absolute resolution of 320x240 pixels and
-# a frame rate of 16.25 frames per second. These values have been
+# a frame rate of 21.675 frames per second. These values have been
 # chosen to coincide with the audio sample rate of 15625Hz. The video
 # and audio will be synchronized during playback.
 #
-# You may be wondering why we chose a video rate of 16.25 frames/second
+# You may be wondering why we chose a video rate of 21.675 frames/second
 # and an audio sample rate of 15.6KHz here. (Or maybe not. But I'm going
 # to tell you anyway.)
 #
@@ -69,17 +69,17 @@
 # rates are a perfectly acceptable thing and ffmpeg supports them just
 # fine. (The NTSC frame rate is 29.97 fps after all.)
 #
-# The problem though is that even with 16.25 frames/second, we get
+# The problem though is that even with 21.675 frames/second, we get
 # close to a whole number ratio, but not quite:
 #
-# 16.25 x 240 = 3900 scanlines/second
-# 15625 / 3900 = 4.00641025641025641025 samples/scanline
+# 21.675 x 240 = 5202 scanlines/second
+# 15625 / 5202 = 3.00365244136870434448 samples/scanline
 #
 # Again, we're stuck with the LRCLK frequency of 15.625KHz. Our only
 # remaining recourse is to cheat a little, and encode our audio tracks
-# at a rate of 15.6KHz:
+# at a rate of 15.606KHz:
 #
-# 15600 / 3900 = 4.00
+# 15606 / 5202 = 3.00
 #
 # This is slightly slower than the rate expected by the SAI controller,
 # and it effectively results in the audio playback being slowed down
@@ -89,21 +89,22 @@
 #
 
 MYDIR=`dirname "$0"`
-
+FPS=21.675
+ASAMPLERATE=15606
 filename=`basename "$1"`
 newfilename=${filename%.*}.vid
 
 rm -f $2/video.bin
 
-# Convert video to raw rgb565 pixel frames at 16.25 frames/sec
+# Convert video to raw rgb565 pixel frames at $FPS frames/sec
 mkdir $2/vidtmp
-ffmpeg -i "$1" -r 16.25 -s 320x240 -q:v 5 $2/vidtmp/vidout%04d.jpg
+ffmpeg -i "$1" -r $FPS -s 320x240 -q:v 7 $2/vidtmp/vidout%04d.jpg
 
 # Extract audio in stereo
-ffmpeg -i "$1" -ac 2 -ar 15600 $2/sample.wav
+ffmpeg -i "$1" -ac 2 -ar $ASAMPLERATE $2/sample.wav
 
 # Convert WAV to 2's complement signed 16 bit samples
-sox $2/sample.wav $2/sample.s16 channels 2 rate 15600 loudness 12
+sox $2/sample.wav $2/sample.s16 channels 2 rate $ASAMPLERATE loudness 12
 
 # Now merge the video and audio into a single file
 ${MYDIR}/../bin/videomerge $2/vidtmp $2/sample.s16 $2/${newfilename}
