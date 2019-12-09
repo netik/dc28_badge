@@ -275,7 +275,7 @@ typedef int boolean;
 
 #define DCT_ISLOW_SUPPORTED     /* slow but accurate integer algorithm */
 #define DCT_IFAST_SUPPORTED     /* faster, less accurate integer method */
-#define DCT_FLOAT_SUPPORTED     /* floating-point: accurate, fast on fast HW */
+#undef DCT_FLOAT_SUPPORTED     /* floating-point: accurate, fast on fast HW */
 
 /* Encoder capability options: */
 
@@ -335,9 +335,9 @@ typedef int boolean;
 
 #define JPEG_NUMCS  17
 
-#define EXT_RGB_RED         0
+#define EXT_RGB_BLUE        0
 #define EXT_RGB_GREEN       1
-#define EXT_RGB_BLUE        2
+#define EXT_RGB_RED         2
 #define EXT_RGB_PIXELSIZE   3
 
 #define EXT_RGBX_RED        0

@@ -1,23 +1,6 @@
 LIBJPEGSRC+=				\
-	$(LIBJPEG)/jaricom.c		\
-	$(LIBJPEG)/jcapimin.c		\
-	$(LIBJPEG)/jcapistd.c		\
-	$(LIBJPEG)/jcarith.c		\
-	$(LIBJPEG)/jccoefct.c		\
-	$(LIBJPEG)/jccolor.c		\
-	$(LIBJPEG)/jcdctmgr.c		\
-	$(LIBJPEG)/jchuff.c		\
-	$(LIBJPEG)/jcicc.c		\
-	$(LIBJPEG)/jcinit.c		\
-	$(LIBJPEG)/jcmainct.c		\
-	$(LIBJPEG)/jcmarker.c		\
-	$(LIBJPEG)/jcmaster.c		\
 	$(LIBJPEG)/jcomapi.c		\
-	$(LIBJPEG)/jcparam.c		\
-	$(LIBJPEG)/jcphuff.c		\
-	$(LIBJPEG)/jcprepct.c		\
-	$(LIBJPEG)/jcsample.c		\
-	$(LIBJPEG)/jctrans.c		\
+	$(LIBJPEG)/jaricom.c		\
 	$(LIBJPEG)/jdapimin.c		\
 	$(LIBJPEG)/jdapistd.c		\
 	$(LIBJPEG)/jdarith.c		\
