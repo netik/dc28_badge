@@ -36,12 +36,14 @@
 #include "stm32_ltdc.h"
 
 #if LTDC_USE_DMA2D
- 	#include "stm32_dma2d.h"
+#include "stm32_dma2d.h"
 
-	#if defined(STM32F7) || defined(STM32F746xx)
-		#undef 	LTDC_DMA_CACHE_FLUSH
-		#define	LTDC_DMA_CACHE_FLUSH	GFXON
-	#endif
+static void dma2d_init (void);
+
+#if defined(STM32F7) || defined(STM32F746xx)
+#undef 	LTDC_DMA_CACHE_FLUSH
+#define	LTDC_DMA_CACHE_FLUSH	GFXON
+#endif
 #endif
 
 

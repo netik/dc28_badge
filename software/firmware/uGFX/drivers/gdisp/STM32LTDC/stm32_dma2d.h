@@ -19,6 +19,4 @@
 #define DMA2D_CR_MODE_M2MPFC	((gU32)0x00010000)	/* Register-to-memory with pixel format conversion mode */
 #define DMA2D_CR_MODE_M2M	((gU32)0x00000000)	/* Register-to-memory mode */
 
-static void dma2d_init(void);
-
 #endif /* _STM32_DMA2D_H */
