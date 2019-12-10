@@ -59,6 +59,43 @@
 static struct jpeg_decompress_struct cinfo;
 static struct jpeg_error_mgr jerr;
 
+static void
+videoFrameDecompress (uint8_t * in, uint16_t * out, size_t len)
+{
+	unsigned char * buffer_array[2];
+
+	jpeg_mem_src (&cinfo, in, len);
+	jpeg_read_header (&cinfo, TRUE);
+#if (VID_PIXEL_SIZE > 2)
+ 	cinfo.out_color_space = JCS_RGB;
+#else
+ 	cinfo.out_color_space = JCS_RGB565;
+#endif
+
+	jpeg_start_decompress (&cinfo);
+
+	while (cinfo.output_scanline < cinfo.output_height) {
+
+		/*
+		 * We can actually get the jpeg library to
+		 * reliably process up to 2 scan lines at once,
+		 * so we do that here to cut down how many calls
+		 * we make to jpeg_read_scalines().
+		 */
+
+		buffer_array[0] = (unsigned char *)out;
+		buffer_array[0] += cinfo.output_scanline *
+		    cinfo.output_width * VID_PIXEL_SIZE;
+		buffer_array[1] = buffer_array[0];
+		buffer_array[1] += cinfo.output_width * VID_PIXEL_SIZE;
+		jpeg_read_scanlines (&cinfo, buffer_array, 2);
+	}
+
+	jpeg_finish_decompress (&cinfo);
+
+	return;
+}
+
 int
 videoPlay (char * path)
 {
@@ -70,9 +107,9 @@ videoPlay (char * path)
 	uint8_t * p2;
 	uint8_t * s;
 	FIL f;
+	UINT sz;
 	UINT br;
 	size_t max;
-	unsigned char * buffer_array[2];
 
 	if (f_open(&f, path, FA_READ) != FR_OK) {
 		printf ("opening [%s] failed\n", path);
@@ -101,13 +138,16 @@ videoPlay (char * path)
 
 	max = (ch->cur_vid_size + ch->cur_aud_size) + sizeof(CHUNK_HEADER);
 
-	buf = malloc (max * 2);
-	frame = malloc (320 * 240 * VID_PIXEL_SIZE);
+	buf = malloc ((max * 2) + CACHE_LINE_SIZE);
+	frame = malloc ((320 * 240 * VID_PIXEL_SIZE) + CACHE_LINE_SIZE);
 
 	p1 = buf;
 	p2 = buf + max;
 
-	/* Create a jpeg decompression context and read the first frame */
+	/*
+	 * Create a jpeg decompression context and read
+	 * the first frame from the SD card.
+	 */
 
 	cinfo.err = jpeg_std_error (&jerr); 
 	jpeg_create_decompress (&cinfo);
@@ -115,13 +155,14 @@ videoPlay (char * path)
 	f_read (&f, p1, (UINT)ch->next_chunk_size, &br);
 
 	while (1) {
-		UINT sz;
 		ch = (CHUNK_HEADER *)p1;
 		sz = ch->next_chunk_size;
 		if (sz == 0)
 			break;
 		asyncIoRead (&f, p2, sz, &br);
-		s = p1 + ch->cur_vid_size + sizeof(CHUNK_HEADER);
+
+		sz = ch->cur_vid_size;
+		s = p1 + sz + sizeof(CHUNK_HEADER);
 
 		/*
 		 * Start the audio samples for this frame playing.
@@ -132,38 +173,11 @@ videoPlay (char * path)
 
 		i2sSamplesPlay (s, (int)ch->cur_aud_size);
 
-		/*
-		 * Set the jpeg input sources to the current video
-		 * buffer and start decompressing.
-		 */
+		/* Now decompress the frame */
 
 		s = p1 + sizeof(CHUNK_HEADER);
 
-		jpeg_mem_src (&cinfo, s, (unsigned long)ch->cur_vid_size);
-		jpeg_read_header (&cinfo, TRUE);
- 		cinfo.out_color_space = JCS_EXT_RGB;
-		jpeg_start_decompress (&cinfo);
-
-		/* Process scanlines */
-
-		while (cinfo.output_scanline < cinfo.output_height) {
-
-			/*
-			 * We can actually get the jpeg library to
-			 * reliably process up to 2 scan lines at once,
-			 * so we do that here to cut down how many calls
-			 * we make to jpeg_read_scalines().
-			 */
-
-			buffer_array[0] = (unsigned char *)frame;
-			buffer_array[0] += cinfo.output_scanline *
-			    cinfo.output_width * VID_PIXEL_SIZE;
-			buffer_array[1] = buffer_array[0];
-			buffer_array[1] += cinfo.output_width * VID_PIXEL_SIZE;
-			jpeg_read_scanlines (&cinfo, buffer_array, 2);
-                }
-
-		jpeg_finish_decompress (&cinfo);
+		videoFrameDecompress (s, frame, sz);
 
 		/*
 		 * Now blit the frame to the screen. Interally the
