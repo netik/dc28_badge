@@ -125,15 +125,15 @@ FATFS = $(CHIBIOS)/../FatFs
 include $(FATFS)/build.mk
 
 # JPEG library
-TJPGD = $(CHIBIOS)/../TJPGD
-include $(TJPGD)/build.mk
+# TJPGD = $(CHIBIOS)/../TJPGD
+# include $(TJPGD)/build.mk
 
 # WM8994 Codec driver
 WM8994 = $(CHIBIOS)/../wm8994
 include $(WM8994)/build.mk
 
 # libjpeg library
-LIBJPEG = $(CHIBIOS)/../libjpeg-turbo-2.0.3
+LIBJPEG = $(CHIBIOS)/../jpeg-9c
 include $(LIBJPEG)/build.mk
 
 # STM SDK files
