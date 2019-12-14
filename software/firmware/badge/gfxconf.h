@@ -261,7 +261,7 @@
 ///////////////////////////////////////////////////////////////////////////
 // GEVENT                                                                //
 ///////////////////////////////////////////////////////////////////////////
-//#define GFX_USE_GEVENT                               GFXOFF
+#define GFX_USE_GEVENT                               GFXON
 
 //#define GEVENT_ASSERT_NO_RESOURCE                    GFXOFF
 //#define GEVENT_MAXIMUM_SIZE                          32
@@ -271,7 +271,7 @@
 ///////////////////////////////////////////////////////////////////////////
 // GTIMER                                                                //
 ///////////////////////////////////////////////////////////////////////////
-//#define GFX_USE_GTIMER                               GFXOFF
+#define GFX_USE_GTIMER                               GFXON
 
 //#define GTIMER_THREAD_PRIORITY                       gThreadpriorityHigh
 //#define GTIMER_THREAD_WORKAREA_SIZE                  2048
@@ -290,9 +290,9 @@
 ///////////////////////////////////////////////////////////////////////////
 // GINPUT                                                                //
 ///////////////////////////////////////////////////////////////////////////
-#define GFX_USE_GINPUT                               GFXOFF
+#define GFX_USE_GINPUT                               GFXON
 
-#define GINPUT_NEED_MOUSE                            GFXOFF
+#define GINPUT_NEED_MOUSE                            GFXON
 //    #define GINPUT_TOUCH_STARTRAW                    GFXOFF
 //    #define GINPUT_TOUCH_NOTOUCH                     GFXOFF
 //    #define GINPUT_TOUCH_NOCALIBRATE                 GFXOFF
