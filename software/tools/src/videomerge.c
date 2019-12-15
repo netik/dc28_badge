@@ -180,7 +180,7 @@ main (int argc, char * argv[])
 	vidcnt = 1;
 
 	while (1) {
-		sprintf (vidpath, "%s/vidout%04d.jpg", argv[1], vidcnt);
+		sprintf (vidpath, "%s/vidout%08d.jpg", argv[1], vidcnt);
 		if (stat (vidpath, &st) != 0)
 			break;
 		vidcnt++;

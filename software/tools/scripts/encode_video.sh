@@ -98,7 +98,7 @@ rm -f $2/video.bin
 
 # Convert video to raw rgb565 pixel frames at $FPS frames/sec
 mkdir $2/vidtmp
-ffmpeg -i "$1" -r $FPS -s 320x240 -q:v 7 $2/vidtmp/vidout%04d.jpg
+ffmpeg -i "$1" -r $FPS -s 320x240 -q:v 7 $2/vidtmp/vidout%08d.jpg
 
 # Extract audio in stereo
 ffmpeg -i "$1" -ac 2 -ar $ASAMPLERATE $2/sample.wav
@@ -107,6 +107,6 @@ ffmpeg -i "$1" -ac 2 -ar $ASAMPLERATE $2/sample.wav
 sox $2/sample.wav $2/sample.s16 channels 2 rate $ASAMPLERATE loudness 12
 
 # Now merge the video and audio into a single file
-${MYDIR}/../bin/videomerge $2/vidtmp $2/sample.s16 $2/${newfilename}
+${MYDIR}/../bin/videomerge $2/vidtmp $2/sample.s16 $2/"${newfilename}"
 
 rm -fr $2/vidtmp $2/sample.wav $2/sample.s16
