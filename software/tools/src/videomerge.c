@@ -93,15 +93,12 @@ static void
 add_header (size_t vidlen, size_t audiolen, FILE * out)
 {
 	CHUNK_HEADER ch;
-	fpos_t p;
 
 	ch.next_chunk_size = 0;
 	ch.cur_vid_size = vidlen;
 	ch.cur_aud_size = audiolen;
 
 	fwrite (&ch, sizeof(ch), 1, out);
-
-	fgetpos (out, &p);
 
 	return;
 }
@@ -115,17 +112,13 @@ update_prev_header (fpos_t prevpos, size_t nextsize, FILE * out)
 	memset (&ch, 0, sizeof(ch));
 
 	fgetpos (out, &curpos);
-
 	fsetpos (out, &prevpos);
-
 	fread (&ch, sizeof(ch), 1, out);
 
 	ch.next_chunk_size = nextsize;
 
 	fsetpos (out, &prevpos);
-
 	fwrite (&ch, sizeof(ch), 1, out);
-
 	fsetpos (out, &curpos);
 
 	return;
