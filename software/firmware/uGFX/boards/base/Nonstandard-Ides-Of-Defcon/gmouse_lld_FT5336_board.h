@@ -24,7 +24,6 @@
 //			It requires the orientation of the touch panel to match the display.
 //			It requires the active area of the touch panel to exactly match the display size.
 #define GMOUSE_FT5336_SELF_CALIBRATE			GFXOFF
-#include <stdio.h>
 
 #define FT5336_ADDR (0x70 >> 1)
 
