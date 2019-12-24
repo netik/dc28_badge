@@ -67,7 +67,7 @@
 	((VID_PIXELS_PER_LINE * VID_CHUNK_LINES) +	\
 	VID_AUDIO_SAMPLES_PER_CHUNK)
 
-#define VID_JPG_WORKBUF_SIZE	16384
+#define VID_PIXEL_SIZE		3
 
 typedef struct chunk_header {
 	uint64_t		next_chunk_size;
@@ -76,13 +76,6 @@ typedef struct chunk_header {
 	uint64_t		pad; /* pad to 32 byte multiple */
 } CHUNK_HEADER;
 
-#define VID_TIMER_RESOLUTION	NRF5_GPT_FREQ_16MHZ
-
-#define VID_TIMER_INTERVAL				\
-	((NRF5_GPT_FREQ_16MHZ * VID_CHUNK_LINES) /	\
-	(VID_LINES_PER_FRAME * VID_FRAMES_PER_SEC))
-
-extern int videoWinPlay (char *, int, int);
 extern int videoPlay (char *);
 
 #endif /* _VIDEO_LLD_H_ */
