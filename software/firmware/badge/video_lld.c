@@ -37,8 +37,6 @@
 #include "src/gdisp/gdisp_driver.h"
 #include "drivers/gdisp/STM32LTDC/stm32_dma2d.h"
 
-#include "ff.h"
-
 #include "video_lld.h"
 #include "async_io_lld.h"
 #include "stm32sai_lld.h"
@@ -54,8 +52,6 @@
 
 #include "jpeglib.h"
 
-#define VID_PIXEL_SIZE 3
-
 static struct jpeg_decompress_struct cinfo;
 static struct jpeg_error_mgr jerr;
 
@@ -66,11 +62,7 @@ videoFrameDecompress (uint8_t * in, uint16_t * out, size_t len)
 
 	jpeg_mem_src (&cinfo, in, len);
 	jpeg_read_header (&cinfo, TRUE);
-#if (VID_PIXEL_SIZE > 2)
  	cinfo.out_color_space = JCS_RGB;
-#else
- 	cinfo.out_color_space = JCS_RGB565;
-#endif
 
 	jpeg_start_decompress (&cinfo);
 
@@ -106,12 +98,14 @@ videoPlay (char * path)
 	uint8_t * p1;
 	uint8_t * p2;
 	uint8_t * s;
-	FIL f;
-	UINT sz;
-	UINT br;
+	int f;
+	size_t sz;
+	int br;
 	size_t max;
 
-	if (f_open(&f, path, FA_READ) != FR_OK) {
+	f = open (path, O_RDONLY, 0);
+
+	if (f == -1) {
 		printf ("opening [%s] failed\n", path);
 		return (-1);
 	}
@@ -128,13 +122,11 @@ videoPlay (char * path)
 	 * (at the cost of using a little more memory).
 	 */
 
-#if (VID_PIXEL_SIZE > 2)
 	DMA2D->FGPFCCR = FGPFCCR_CM_RGB888;
-#endif
 
 	ch = &_ch;
 
-	f_read (&f, ch, sizeof(CHUNK_HEADER), &br);
+	br = read (f, ch, sizeof(CHUNK_HEADER));
 
 	max = (ch->cur_vid_size + ch->cur_aud_size) + sizeof(CHUNK_HEADER);
 
@@ -152,14 +144,14 @@ videoPlay (char * path)
 	cinfo.err = jpeg_std_error (&jerr); 
 	jpeg_create_decompress (&cinfo);
 
-	f_read (&f, p1, (UINT)ch->next_chunk_size, &br);
+	br = read (f, p1, (size_t)ch->next_chunk_size);
 
 	while (1) {
 		ch = (CHUNK_HEADER *)p1;
 		sz = ch->next_chunk_size;
 		if (sz == 0)
 			break;
-		asyncIoRead (&f, p2, sz, &br);
+		asyncIoRead (f, p2, sz, &br);
 
 		sz = ch->cur_vid_size;
 		s = p1 + sz + sizeof(CHUNK_HEADER);
@@ -193,10 +185,8 @@ videoPlay (char * path)
 		 * lines in the frame may appear corrupted.
 		 */
 
-#if (VID_PIXEL_SIZE > 2)
 		cacheBufferFlush (frame + (320 * 240),
 		    (320 * 80 * VID_PIXEL_SIZE));
-#endif
 		gdispBlitArea (80, 16, 320, 240, frame);
 
 		if (br == 0)
@@ -230,7 +220,7 @@ videoPlay (char * path)
 	i2sSamplesWait ();
 	i2sSamplesStop ();
 
-	f_close (&f);
+	close (f);
 
 	/* Free memory */
 
@@ -239,10 +229,7 @@ videoPlay (char * path)
 
 	/* Restore the DMA2D input pixel format. */
 
-#if (VID_PIXEL_SIZE > 2)
 	DMA2D->FGPFCCR = FGPFCCR_CM_RGB565;
-#endif
-
 
 	return (0);
 }

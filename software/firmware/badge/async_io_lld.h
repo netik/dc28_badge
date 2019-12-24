@@ -41,7 +41,7 @@
 
 void asyncIoStart (void);
 
-void asyncIoRead (FIL *, void *, UINT, UINT * br);
+void asyncIoRead (int, void *, size_t, int * br);
 void asyncIoWait (void);
 
 #endif /* _ASYNC_IO_LLD_H */

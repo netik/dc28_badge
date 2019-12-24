@@ -31,24 +31,24 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <fcntl.h>
 
 #include "ch.h"
 #include "hal.h"
-
-#include "ff.h"
-#include "ffconf.h"
-#include "diskio.h"
 
 #include "async_io_lld.h"
 
 static thread_t * pThread;
 
 static void * async_buf;
-static FIL * async_f;
-static UINT async_btr;
-static volatile UINT async_br = ASYNC_THD_READY;
+static int async_f;
+static int async_btr;
+static volatile int async_br = (int)ASYNC_THD_READY;
 
-static UINT * saved_br;
+static int * saved_br;
 
 static thread_reference_t fsReference;
 static thread_reference_t wakeReference;
@@ -56,7 +56,7 @@ static thread_reference_t wakeReference;
 static THD_WORKING_AREA(waAsyncIoThread, 256);
 static THD_FUNCTION(asyncIoThread, arg)
 {
-	UINT br = ASYNC_THD_READY;
+	int br = (int)ASYNC_THD_READY;
 
 	(void) arg;
 
@@ -68,9 +68,9 @@ static THD_FUNCTION(asyncIoThread, arg)
 		osalThreadResumeS (&wakeReference, MSG_OK);
 		osalThreadSuspendS (&fsReference);
 		osalSysUnlock ();
-		if (async_br == ASYNC_THD_EXIT)
+		if (async_br == (int)ASYNC_THD_EXIT)
 			break;
-		f_read (async_f, async_buf, async_btr, &br);
+		br = read (async_f, async_buf, async_btr);
 	}
 
 	chThdExitS (MSG_OK);
@@ -79,9 +79,9 @@ static THD_FUNCTION(asyncIoThread, arg)
 }
 
 void
-asyncIoRead (FIL * f, void * buf, UINT btr, UINT * br)
+asyncIoRead (int f, void * buf, size_t btr, int * br)
 {
-	if (async_br != ASYNC_THD_READY)
+	if (async_br != (int)ASYNC_THD_READY)
 		return;
 
 	async_f = f;
@@ -91,7 +91,7 @@ asyncIoRead (FIL * f, void * buf, UINT btr, UINT * br)
 	saved_br = br;
 
 	osalSysLock ();
-	async_br = ASYNC_THD_READ;
+	async_br = (int)ASYNC_THD_READ;
 	osalThreadResumeS (&fsReference, MSG_OK);
 	osalSysUnlock ();
 
@@ -102,13 +102,13 @@ void
 asyncIoWait (void)
 {
 	osalSysLock ();
-	while (async_br == ASYNC_THD_READ ||
-	       async_br == ASYNC_THD_READY)
+	while (async_br == (int)ASYNC_THD_READ ||
+	       async_br == (int)ASYNC_THD_READY)
 		osalThreadSuspendS (&wakeReference);
 	osalSysUnlock ();
 
 	*saved_br = async_br;
-	async_br = ASYNC_THD_READY;
+	async_br = (int)ASYNC_THD_READY;
 
 	return;
 }
@@ -119,7 +119,7 @@ asyncIoStart (void)
 	pThread = chThdCreateStatic (waAsyncIoThread, sizeof(waAsyncIoThread),
 	    NORMALPRIO + 5, asyncIoThread, NULL);
 
-	async_br = ASYNC_THD_READY;
+	async_br = (int)ASYNC_THD_READY;
 
 	return;
 }
@@ -128,7 +128,7 @@ void
 asyncIoStop (void)
 {
 	osalSysLock ();
-	async_br = ASYNC_THD_EXIT;
+	async_br = (int)ASYNC_THD_EXIT;
 	osalThreadResumeS (&fsReference, MSG_OK);
 	osalSysUnlock ();
 
