@@ -164,7 +164,8 @@ CSRC = $(ALLCSRC) \
        badge_vectors.c \
        async_io_lld.c \
        video_lld.c \
-       stm32sai_lld.c
+       stm32sai_lld.c \
+       touch_lld.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.

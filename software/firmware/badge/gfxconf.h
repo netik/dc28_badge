@@ -28,7 +28,8 @@
 #define GOS_NEED_X_HEAP                                GFXOFF
 #define GFX_USE_DIRECTIO                               GFXOFF
 #define GDISP_LTDC_USE_RGB565                          GFXON
-/*#define GDISP_PIXELFORMAT                    GDISP_PIXELFORMAT_RGB565*/
+
+#define GINPUT_MOUSE_POLL_PERIOD                       TIME_INFINITE
 
 ///////////////////////////////////////////////////////////////////////////
 // GFX - Compatibility options                                           //
@@ -85,8 +86,8 @@
 
 //#define GDISP_NEED_AUTOFLUSH                         GFXOFF
 //#define GDISP_NEED_TIMERFLUSH                        GFXOFF
-//#define GDISP_NEED_VALIDATION                        GFXON
-//#define GDISP_NEED_CLIP                              GFXON
+#define GDISP_NEED_VALIDATION                        GFXON
+#define GDISP_NEED_CLIP                              GFXON
 //#define GDISP_NEED_CIRCLE                            GFXOFF
 //#define GDISP_NEED_DUALCIRCLE                        GFXOFF
 //#define GDISP_NEED_ELLIPSE                           GFXOFF
@@ -99,7 +100,7 @@
 //#define GDISP_NEED_QUERY                             GFXOFF
 #define GDISP_NEED_MULTITHREAD                       GFXON
 //#define GDISP_NEED_STREAMING                         GFXOFF
-//#define GDISP_NEED_TEXT                              GFXOFF
+#define GDISP_NEED_TEXT                              GFXON
 //    #define GDISP_NEED_TEXT_WORDWRAP                 GFXOFF
 //    #define GDISP_NEED_TEXT_BOXPADLR                 1
 //    #define GDISP_NEED_TEXT_BOXPADTB                 1
@@ -107,7 +108,7 @@
 //    #define GDISP_NEED_UTF8                          GFXOFF
 //    #define GDISP_NEED_TEXT_KERNING                  GFXOFF
 //    #define GDISP_INCLUDE_FONT_UI1                   GFXOFF
-//    #define GDISP_INCLUDE_FONT_UI2                   GFXOFF		// The smallest preferred font.
+#define GDISP_INCLUDE_FONT_UI2                   GFXON		// The smallest preferred font.
 //    #define GDISP_INCLUDE_FONT_LARGENUMBERS          GFXOFF
 //    #define GDISP_INCLUDE_FONT_DEJAVUSANS10          GFXOFF
 //    #define GDISP_INCLUDE_FONT_DEJAVUSANS12          GFXOFF
@@ -202,7 +203,7 @@
 ///////////////////////////////////////////////////////////////////////////
 // GWIN                                                                  //
 ///////////////////////////////////////////////////////////////////////////
-//#define GFX_USE_GWIN                                 GFXOFF
+#define GFX_USE_GWIN                                 GFXON
 
 //#define GWIN_NEED_WINDOWMANAGER                      GFXOFF
 //    #define GWIN_REDRAW_IMMEDIATE                    GFXOFF
@@ -210,7 +211,7 @@
 //    #define GWIN_NEED_FLASHING                       GFXOFF
 //        #define GWIN_FLASHING_PERIOD                 250
 
-//#define GWIN_NEED_CONSOLE                            GFXOFF
+#define GWIN_NEED_CONSOLE                            GFXON
 //    #define GWIN_CONSOLE_USE_HISTORY                 GFXOFF
 //        #define GWIN_CONSOLE_HISTORY_AVERAGING       GFXOFF
 //        #define GWIN_CONSOLE_HISTORY_ATCREATE        GFXOFF
@@ -273,7 +274,7 @@
 ///////////////////////////////////////////////////////////////////////////
 #define GFX_USE_GTIMER                               GFXON
 
-//#define GTIMER_THREAD_PRIORITY                       gThreadpriorityHigh
+#define GTIMER_THREAD_PRIORITY                       (gThreadpriorityNormal)
 //#define GTIMER_THREAD_WORKAREA_SIZE                  2048
 
 

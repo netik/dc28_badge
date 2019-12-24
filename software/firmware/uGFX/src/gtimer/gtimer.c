@@ -38,6 +38,8 @@ static GFX_THREAD_FUNCTION(GTimerThreadHandler, arg) {
 	void			*param;
 	(void)			arg;
 
+	chRegSetThreadName ("GTimer");
+
 	nxtTimeout = gDelayForever;
 	lastTime = 0;
 	while(1) {

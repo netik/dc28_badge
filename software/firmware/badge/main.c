@@ -30,6 +30,7 @@
 
 #include "async_io_lld.h"
 #include "stm32sai_lld.h"
+#include "touch_lld.h"
 #include "wm8994.h"
 
 #include "gfx.h"
@@ -483,6 +484,12 @@ main (void)
 
 	printf ("Main screen turn on\n");
 
+	/* Initialize touch controller event thread */
+
+	touchStart ();
+
+	printf ("LCD touch panel enabled\n");
+
 	if (gfileMount ('F', "0:") == FALSE)
 		printf ("Mounting filesystem failed.\n");
 	else
@@ -500,45 +507,12 @@ main (void)
 	shellInit ();
 	chEvtRegister (&shell_terminated, &shell_el, 0);
 
-{
-	uint16_t tx;
-	uint16_t rx;
-	msg_t r;
-
-	tx = __builtin_bswap16(0x0002);
-	rx = 0x0000;
-
-	r = i2cMasterTransmitTimeout (&I2CD3, 0x34 >> 1,
-	    (uint8_t *)&tx, 2, (uint8_t *)&rx, 2, 100);
-
-	rx = __builtin_bswap16(rx);
-
-	printf ("R: %ld ", r);
-	printf ("REG: %x\n", rx);
-}
-
-{
-	uint32_t t1;
-	uint32_t t2;
-
-        gptStartContinuous (&GPTD5, 0x7FFFFFFF);
-__DSB();
-__ISB();
-	t1 = gptGetCounterX (&GPTD5);
-__DSB();
-__ISB();
-	chThdSleepMilliseconds (10);
-__DSB();
-__ISB();
-	t2 = gptGetCounterX (&GPTD5);
-__DSB();
-__ISB();
-	printf ("T1: %lu T2: %lu\n", t1, t2);
-}
-
 	/*
 	 * Normal main() thread activity. Start and monitor
-	 * shell threads.
+	 * shell threads. The USB shell thread will only wake
+	 * up and run when a USB cable is connected. At that
+	 * point, the USB shell becomes the "console" device
+	 * until it's unplugged again.
 	 */
 
 	while (true) {
