@@ -44,6 +44,18 @@ extern char   __heap_end__; /* Set by linker */
 #define HEAP_END ((char *)(FSMC_Bank5_MAP_BASE + 0x7BFFFF))
 #endif
 
+/*
+ * Structure defining the STM32 96-bit manufacturer
+ * info in ROM. This can be used as a unique chip ID.
+ */
+
+typedef struct stm32_id {
+	uint16_t	stm32_wafer_x;
+	uint16_t	stm32_wafer_y;
+	uint8_t		stm32_wafernum;
+	uint8_t		stm32_lotnum[7];
+} STM32_ID;
+
 extern void badge_sleep_enable (void);
 extern void badge_sleep_disable (void);
 

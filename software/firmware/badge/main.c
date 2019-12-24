@@ -41,8 +41,9 @@ BaseSequentialStream * console;
 orchard_command_start();
 orchard_command_end();
 
-/* Resources for UART shell */
+extern ShellCommand _orchard_cmd_list_cmd_cpu;
 
+/* Resources for UART shell */
 static THD_WORKING_AREA(shell_wa_sd, 3072);
 static ShellConfig shell_cfg_sd =
 {
@@ -278,6 +279,7 @@ THD_FUNCTION(shellUsbThreadStub, p)
 int
 main (void)
 {
+	STM32_ID * pId;
 
 	/*
 	 * System initializations.
@@ -377,6 +379,23 @@ main (void)
 	/* Safe to use printf() from here on. */
 
 	printf ("\n\nUntitled Ides of DEF CON 28 Badge Game\n\n");
+
+	pId = (STM32_ID *)UID_BASE;
+	printf ("Device ID: ");
+	printf ("Wafer X/Y: %d/%d ", pId->stm32_wafer_x, pId->stm32_wafer_y);
+	printf ("Wafer num: %d ", pId->stm32_wafernum);
+	printf ("Lot number: %c%c%c%c%c%c%c\n",
+	    pId->stm32_lotnum[0], pId->stm32_lotnum[1], pId->stm32_lotnum[2],
+	    pId->stm32_lotnum[3], pId->stm32_lotnum[4], pId->stm32_lotnum[5],
+	    pId->stm32_lotnum[6]);
+
+	printf ("Flash size: %d KB\n", *(uint16_t *)FLASHSIZE_BASE);
+
+	printf ("Debugger: %s\n",
+	    CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk ?
+	    "connected" : "disconnected");
+
+	_orchard_cmd_list_cmd_cpu.sc_function (NULL, 0, NULL);
 
 	/*
 	 * ARD_D13 is programmed as output (board LED).
