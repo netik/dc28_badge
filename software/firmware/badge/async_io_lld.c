@@ -71,11 +71,21 @@ static THD_FUNCTION(asyncIoThread, arg)
 		if (async_br == (int)ASYNC_THD_EXIT)
 			break;
 		br = read (async_f, async_buf, async_btr);
+		if (br == -1) {
+			br = 0;
+		}
 	}
 
 	chThdExitS (MSG_OK);
 
         return;
+}
+
+void
+asyncIoInit (void)
+{
+	async_br = (int)ASYNC_THD_READY;
+	return;
 }
 
 void

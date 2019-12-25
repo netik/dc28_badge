@@ -242,10 +242,12 @@ static gBool fatfsMount(const char* drive)
 
 static gBool fatfsUnmount(const char* drive)
 {
-	(void)drive;
+	FRESULT ferr;
 
 	if (fatfs_mounted) {
-		// FatFS does not provide an unmount routine.
+		ferr = f_unmount(drive);
+		if (ferr !=  FR_OK)
+			return gFalse;
 		fatfs_mounted = gFalse;
 		return gTrue;
 	}

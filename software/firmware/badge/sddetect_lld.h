@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2017
+ * Copyright (c) 2019
  *      Bill Paul <wpaul@windriver.com>.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,19 +30,9 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _ASYNC_IO_LLD_H
-#define _ASYNC_IO_LLD_H
+#ifndef _SDDETECT_LLDH_
+#define _SDDETECT_LLDH_
 
-#include "ff.h"
+extern void sdDetectStart (void);
 
-#define ASYNC_THD_READ		0xFFFFFFFF
-#define ASYNC_THD_EXIT		0xFFFFFFFE
-#define ASYNC_THD_READY		0xFFFFFFFD
-
-void asyncIoStart (void);
-
-void asyncIoInit (void);
-void asyncIoRead (int, void *, size_t, int * br);
-void asyncIoWait (void);
-
-#endif /* _ASYNC_IO_LLD_H */
+#endif /* _SDDETECT_LLDH_ */

@@ -56,6 +56,13 @@ static struct jpeg_decompress_struct cinfo;
 static struct jpeg_error_mgr jerr;
 
 static void
+videoErrorExit (j_common_ptr cinfo)
+{
+	(void)cinfo;
+	return;
+}
+
+static void
 videoFrameDecompress (uint8_t * in, uint16_t * out, size_t len)
 {
 	unsigned char * buffer_array[2];
@@ -136,12 +143,15 @@ videoPlay (char * path)
 	p1 = buf;
 	p2 = buf + max;
 
+	asyncIoInit ();
+
 	/*
 	 * Create a jpeg decompression context and read
 	 * the first frame from the SD card.
 	 */
 
-	cinfo.err = jpeg_std_error (&jerr); 
+	cinfo.err = jpeg_std_error (&jerr);
+	jerr.error_exit = videoErrorExit;
 	jpeg_create_decompress (&cinfo);
 
 	br = read (f, p1, (size_t)ch->next_chunk_size);

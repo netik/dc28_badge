@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2017
+ * Copyright (c) 2019
  *      Bill Paul <wpaul@windriver.com>.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,19 +30,80 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _ASYNC_IO_LLD_H
-#define _ASYNC_IO_LLD_H
+#include "ch.h"
+#include "hal.h"
+#include "osal.h"
 
-#include "ff.h"
+#include "gfx.h"
 
-#define ASYNC_THD_READ		0xFFFFFFFF
-#define ASYNC_THD_EXIT		0xFFFFFFFE
-#define ASYNC_THD_READY		0xFFFFFFFD
+#include "sddetect_lld.h"
 
-void asyncIoStart (void);
+static THD_WORKING_AREA(waSdDetectThread, 256);
+static thread_reference_t sdDetectThreadReference;
+static volatile uint8_t sdDetectService = 0;
 
-void asyncIoInit (void);
-void asyncIoRead (int, void *, size_t, int * br);
-void asyncIoWait (void);
+static void
+sdDetectInt (void * arg)
+{
+	(void)arg;
 
-#endif /* _ASYNC_IO_LLD_H */
+	osalSysLockFromISR ();
+	sdDetectService = 1;
+	osalThreadResumeI (&sdDetectThreadReference, MSG_OK);
+	osalSysUnlockFromISR ();
+
+	return;
+}
+
+static THD_FUNCTION(sdDetectThread, arg)
+{
+	(void)arg;
+
+	chRegSetThreadName ("SdDetect");
+
+	while (1) {
+		osalSysLock ();
+		if (sdDetectService == 0)
+			osalThreadSuspendS (&sdDetectThreadReference);
+		sdDetectService = 0;
+		osalSysUnlock ();
+
+		chThdSleepMilliseconds (1);
+
+		if (palReadLine (LINE_SD_DETECT)) {
+			gfileUnmount ('F', "0:");
+			sdcDisconnect (&SDCD1);
+		} else {
+			sdcConnect (&SDCD1);
+			gfileMount ('F', "0:");
+		}
+	}
+
+	/* NOTREACHED */
+
+	return;
+}
+
+void
+sdDetectStart (void)
+{
+	/*
+	 * Set the SD detect pin as an input and turn on the
+	 * internal pullup resistor, then enable interrupt events
+	 * for it. We want both rising and falling edges so we can
+	 * detect both insert and eject events.
+	 */
+
+	palSetPadMode (GPIOC, GPIOC_SD_DETECT, PAL_STM32_PUPDR_PULLUP | 
+	    PAL_STM32_MODE_INPUT);
+
+	palSetLineCallback (LINE_SD_DETECT, sdDetectInt, NULL);
+	palEnableLineEvent (LINE_SD_DETECT, PAL_EVENT_MODE_BOTH_EDGES);
+
+	/* Launch the event handler thread. */
+
+	chThdCreateStatic (waSdDetectThread, sizeof(waSdDetectThread),
+	    NORMALPRIO - 1, sdDetectThread, NULL);
+
+	return;
+}

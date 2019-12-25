@@ -30,6 +30,7 @@
 
 #include "async_io_lld.h"
 #include "stm32sai_lld.h"
+#include "sddetect_lld.h"
 #include "touch_lld.h"
 #include "wm8994.h"
 
@@ -509,10 +510,11 @@ main (void)
 
 	printf ("LCD touch panel enabled\n");
 
-	if (gfileMount ('F', "0:") == FALSE)
-		printf ("Mounting filesystem failed.\n");
-	else
-		printf ("Filesystem mounted OK.\n");
+	/* Initialize SD card sensor */
+
+	sdDetectStart ();
+
+	printf ("SD card detect enabled\n");
 
 	/*
 	 * Create blinker thread.

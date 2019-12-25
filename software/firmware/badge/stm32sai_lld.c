@@ -289,7 +289,7 @@ THD_FUNCTION(i2sThread, arg)
 
 		p = i2sBuf;
 		br = read (f, p, I2S_BYTES);
-		if (br == 0) {
+		if (br == 0 || br == -1) {
 			close (f);
 			play = 0;
 			continue;
@@ -309,8 +309,7 @@ THD_FUNCTION(i2sThread, arg)
         			p = i2sBuf;
 
 			br = read (f, p, I2S_BYTES);
-			if (br == 0)
-        			break;
+
 			/*
 			 * Wait until the current block of samples
 			 * finishes playing before playing the next
@@ -321,7 +320,7 @@ THD_FUNCTION(i2sThread, arg)
 
 			/* If we read 0 bytes, we reached end of file. */
 
-			if (br == 0)
+			if (br == 0 || br == -1)
 				break;
 
 			/* If told to stop, exit the loop. */
