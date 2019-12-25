@@ -109,6 +109,9 @@ videoPlay (char * path)
 	size_t sz;
 	int br;
 	size_t max;
+	GDisplay * g0;
+	GDisplay * g1;
+	uint8_t toggle = 0;
 
 	f = open (path, O_RDONLY, 0);
 
@@ -130,6 +133,12 @@ videoPlay (char * path)
 	 */
 
 	DMA2D->FGPFCCR = FGPFCCR_CM_RGB888;
+	LTDC_Layer1->CR = 0;
+	LTDC_Layer2->CR = LTDC_LxCR_LEN;
+	LTDC->SRCR = LTDC_SRCR_VBR;
+
+	g0 = (GDisplay *)gdriverGetInstance (GDRIVER_TYPE_DISPLAY, 0);
+	g1 = (GDisplay *)gdriverGetInstance (GDRIVER_TYPE_DISPLAY, 1);
 
 	ch = &_ch;
 
@@ -186,6 +195,12 @@ videoPlay (char * path)
 		 * uGFX library will use the DMA2D engine for this,
 		 * so it should be super fast.
 		 *
+	 	 * In order to avoid any flickering artifacts, we
+		 * take advantage of the fact that the display controller
+		 * has two layers. One layer is set to be visible while
+		 * the other is hidden. We always draw the latest frame
+		 * to the invisible layer, and then swap them.
+		 *
 		 * Note: When we use RGB888 mode, our pixels are
 		 * 3 bytes in size, but the uGFX display driver still
 		 * thinks we're using RGB565 where pixels are only
@@ -197,7 +212,25 @@ videoPlay (char * path)
 
 		cacheBufferFlush (frame + (320 * 240),
 		    (320 * 80 * VID_PIXEL_SIZE));
-		gdispBlitArea (80, 16, 320, 240, frame);
+
+		if (toggle) {
+			gdispGBlitArea (g1, 80, 16, 320, 240,
+			    0, 0, 320, frame);
+			LTDC_Layer1->CR = 0;
+			LTDC_Layer2->CR = LTDC_LxCR_LEN;
+		} else {
+			gdispGBlitArea (g0, 80, 16, 320, 240,
+			    0, 0, 320, frame);
+			LTDC_Layer1->CR = LTDC_LxCR_LEN;
+			LTDC_Layer2->CR = 0;
+		}
+
+		while((DMA2D->ISR & DMA2D_ISR_TCIF) == 0) {
+			/* Wait for DMA to complete */
+		}
+
+		LTDC->SRCR = LTDC_SRCR_VBR;
+		toggle = ~toggle;
 
 		if (br == 0)
 			break;
@@ -240,6 +273,9 @@ videoPlay (char * path)
 	/* Restore the DMA2D input pixel format. */
 
 	DMA2D->FGPFCCR = FGPFCCR_CM_RGB565;
+	LTDC_Layer1->CR = LTDC_LxCR_LEN;
+	LTDC_Layer2->CR = LTDC_LxCR_LEN;
+	LTDC->SRCR = LTDC_SRCR_VBR;
 
 	return (0);
 }

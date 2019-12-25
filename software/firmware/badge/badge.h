@@ -38,10 +38,10 @@ extern char   __heap_end__; /* Set by linker */
  * from to 256KB to make it easier to mark the frame buffer
  * as uncached with the MPU.
  */
-#define FB_SIZE 0x40000
-#define FB_BASE 0xC07C0000
+#define FB_SIZE 0x80000
+#define FB_BASE 0xC0780000
 #define HEAP_BASE ((char *)FSMC_Bank5_MAP_BASE)
-#define HEAP_END ((char *)(FSMC_Bank5_MAP_BASE + 0x7BFFFF))
+#define HEAP_END ((char *)(FSMC_Bank5_MAP_BASE + 0x77FFFF))
 #endif
 
 /*
