@@ -55,6 +55,9 @@
 static struct jpeg_decompress_struct cinfo;
 static struct jpeg_error_mgr jerr;
 
+__attribute__((aligned(CACHE_LINE_SIZE)))
+static uint8_t frame[320 * 2 * VID_PIXEL_SIZE];
+
 static void
 videoErrorExit (j_common_ptr cinfo)
 {
@@ -63,10 +66,9 @@ videoErrorExit (j_common_ptr cinfo)
 }
 
 static void
-videoFrameDecompress (uint8_t * in, uint16_t * out, size_t len)
+videoFrameDecompress (uint8_t * in, size_t len, GDisplay * g)
 {
 	unsigned char * buffer_array[2];
-
 	jpeg_mem_src (&cinfo, in, len);
 	jpeg_read_header (&cinfo, TRUE);
  	cinfo.out_color_space = JCS_RGB;
@@ -82,12 +84,30 @@ videoFrameDecompress (uint8_t * in, uint16_t * out, size_t len)
 		 * we make to jpeg_read_scalines().
 		 */
 
-		buffer_array[0] = (unsigned char *)out;
-		buffer_array[0] += cinfo.output_scanline *
-		    cinfo.output_width * VID_PIXEL_SIZE;
-		buffer_array[1] = buffer_array[0];
-		buffer_array[1] += cinfo.output_width * VID_PIXEL_SIZE;
+		buffer_array[0] = frame;
+		buffer_array[1] = frame;
+		buffer_array[1] += 320 * VID_PIXEL_SIZE;
 		jpeg_read_scanlines (&cinfo, buffer_array, 2);
+
+		/*
+		 * Note: When we use RGB888 mode, our pixels are
+		 * 3 bytes in size, but the uGFX display driver still
+		 * thinks we're using RGB565 where pixels are only
+		 * 2 bytes in size. Because of this, its cache flush
+		 * code doesn't flush the entire frame buffer. We need
+		 * to compensate for this here, otherwise the last few
+		 * lines in the frame may appear corrupted.
+		 */
+
+		cacheBufferFlush (frame + (320 * 2),
+		    (320 * VID_PIXEL_SIZE) - (320 * 2));
+
+		gdispGBlitArea (g, 80, 16 + (cinfo.output_scanline - 2),
+		    320, 2, 0, 0, 320, (gPixel *)frame);
+
+		while((DMA2D->CR & DMA2D_CR_START)) {
+			/* Wait for DMA to complete */
+		}
 	}
 
 	jpeg_finish_decompress (&cinfo);
@@ -100,7 +120,6 @@ videoPlay (char * path)
 {
 	CHUNK_HEADER _ch;
 	CHUNK_HEADER * ch;
-	uint16_t * frame;
 	uint8_t * buf;
 	uint8_t * p1;
 	uint8_t * p2;
@@ -133,8 +152,8 @@ videoPlay (char * path)
 	 */
 
 	DMA2D->FGPFCCR = FGPFCCR_CM_RGB888;
-	LTDC_Layer1->CR = 0;
-	LTDC_Layer2->CR = LTDC_LxCR_LEN;
+	LTDC_Layer2->CR = 0;
+	LTDC_Layer1->CR = LTDC_LxCR_LEN;
 	LTDC->SRCR = LTDC_SRCR_VBR;
 
 	g0 = (GDisplay *)gdriverGetInstance (GDRIVER_TYPE_DISPLAY, 0);
@@ -147,7 +166,6 @@ videoPlay (char * path)
 	max = (ch->cur_vid_size + ch->cur_aud_size) + sizeof(CHUNK_HEADER);
 
 	buf = malloc ((max * 2) + CACHE_LINE_SIZE);
-	frame = malloc ((320 * 240 * VID_PIXEL_SIZE) + CACHE_LINE_SIZE);
 
 	p1 = buf;
 	p2 = buf + max;
@@ -188,52 +206,32 @@ videoPlay (char * path)
 
 		s = p1 + sizeof(CHUNK_HEADER);
 
-		videoFrameDecompress (s, frame, sz);
-
 		/*
-		 * Now blit the frame to the screen. Interally the
-		 * uGFX library will use the DMA2D engine for this,
-		 * so it should be super fast.
+		 * Now decompress and blit the frame to the screen.
+		 * Internally the uGFX library will use the DMA2D engine
+		 * for this so it should be super fast.
 		 *
 	 	 * In order to avoid any flickering artifacts, we
 		 * take advantage of the fact that the display controller
 		 * has two layers. One layer is set to be visible while
 		 * the other is hidden. We always draw the latest frame
 		 * to the invisible layer, and then swap them.
-		 *
-		 * Note: When we use RGB888 mode, our pixels are
-		 * 3 bytes in size, but the uGFX display driver still
-		 * thinks we're using RGB565 where pixels are only
-		 * 2 bytes in size. Because of this, its cache flush
-		 * code doesn't flush the entire frame buffer. We need
-		 * to compensate for this here, otherwise the last few
-		 * lines in the frame may appear corrupted.
 		 */
 
-		cacheBufferFlush (frame + (320 * 240),
-		    (320 * 80 * VID_PIXEL_SIZE));
-
 		if (toggle) {
-			gdispGBlitArea (g1, 80, 16, 320, 240,
-			    0, 0, 320, frame);
+			videoFrameDecompress (s, sz, g1);
 			LTDC_Layer1->CR = 0;
 			LTDC_Layer2->CR = LTDC_LxCR_LEN;
 		} else {
-			gdispGBlitArea (g0, 80, 16, 320, 240,
-			    0, 0, 320, frame);
+			videoFrameDecompress (s, sz, g0);
 			LTDC_Layer1->CR = LTDC_LxCR_LEN;
 			LTDC_Layer2->CR = 0;
 		}
 
-		while((DMA2D->ISR & DMA2D_ISR_TCIF) == 0) {
-			/* Wait for DMA to complete */
-		}
+		/* Flip the visible layer */
 
 		LTDC->SRCR = LTDC_SRCR_VBR;
 		toggle = ~toggle;
-
-		if (br == 0)
-			break;
 
 		if (p1 == buf) {
 			p1 += max;
@@ -244,6 +242,9 @@ videoPlay (char * path)
 		}
 
 		asyncIoWait ();
+
+		if (br == 0)
+			break;
 
 		/*
 		 * Wait for samples to finish playing. Ideally it should
@@ -268,13 +269,12 @@ videoPlay (char * path)
 	/* Free memory */
 
 	free (buf);
-	free (frame);
 
 	/* Restore the DMA2D input pixel format. */
 
 	DMA2D->FGPFCCR = FGPFCCR_CM_RGB565;
 	LTDC_Layer1->CR = LTDC_LxCR_LEN;
-	LTDC_Layer2->CR = LTDC_LxCR_LEN;
+	LTDC_Layer2->CR = 0;
 	LTDC->SRCR = LTDC_SRCR_VBR;
 
 	return (0);
