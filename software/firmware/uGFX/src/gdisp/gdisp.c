@@ -574,7 +574,7 @@ void _gdispInit(void)
 	#elif GDISP_TOTAL_DISPLAYS > 1
 		{
 			unsigned	i;
-			extern const GDISPVMT const		GDISPVMT_OnlyOne[1];
+			extern const GDISPVMT 		GDISPVMT_OnlyOne[1];
 
 			if (!(GDISPVMT_OnlyOne->d.flags & GDISP_VFLG_DYNAMICONLY)) {
 				for(i = 0; i < GDISP_TOTAL_DISPLAYS; i++)

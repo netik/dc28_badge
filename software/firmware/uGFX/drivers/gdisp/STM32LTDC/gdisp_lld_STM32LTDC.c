@@ -110,7 +110,7 @@ typedef struct ltdcConfig {
 /* Driver local routines.                                                    */
 /*===========================================================================*/
 
-#define PIXIL_POS(g, x, y)		((y) * ((ltdcLayerConfig *)g->priv)->pitch + (x) * LTDC_PIXELBYTES)
+#define PIXEL_POS(g, x, y)		((y) * ((ltdcLayerConfig *)g->priv)->pitch + (x) * LTDC_PIXELBYTES)
 #define PIXEL_ADDR(g, pos)		((LLDCOLOR_TYPE *)((gU8 *)((ltdcLayerConfig *)g->priv)->frame+pos))
 
 /*===========================================================================*/
@@ -304,20 +304,20 @@ LLDSPEC void gdisp_lld_draw_pixel(GDisplay* g) {
 		switch(g->g.Orientation) {
 		case gOrientation0:
 		default:
-			pos = PIXIL_POS(g, g->p.x, g->p.y);
+			pos = PIXEL_POS(g, g->p.x, g->p.y);
 			break;
 		case gOrientation90:
-			pos = PIXIL_POS(g, g->p.y, g->g.Width-g->p.x-1);
+			pos = PIXEL_POS(g, g->p.y, g->g.Width-g->p.x-1);
 			break;
 		case gOrientation180:
-			pos = PIXIL_POS(g, g->g.Width-g->p.x-1, g->g.Height-g->p.y-1);
+			pos = PIXEL_POS(g, g->g.Width-g->p.x-1, g->g.Height-g->p.y-1);
 			break;
 		case gOrientation270:
-			pos = PIXIL_POS(g, g->g.Height-g->p.y-1, g->p.x);
+			pos = PIXEL_POS(g, g->g.Height-g->p.y-1, g->p.x);
 			break;
 		}
 	#else
-		pos = PIXIL_POS(g, g->p.x, g->p.y);
+		pos = PIXEL_POS(g, g->p.x, g->p.y);
 	#endif
 
 	#if LTDC_USE_DMA2D
@@ -342,20 +342,20 @@ LLDSPEC	gColor gdisp_lld_get_pixel_color(GDisplay* g) {
 		switch(g->g.Orientation) {
 		case gOrientation0:
 		default:
-			pos = PIXIL_POS(g, g->p.x, g->p.y);
+			pos = PIXEL_POS(g, g->p.x, g->p.y);
 			break;
 		case gOrientation90:
-			pos = PIXIL_POS(g, g->p.y, g->g.Width-g->p.x-1);
+			pos = PIXEL_POS(g, g->p.y, g->g.Width-g->p.x-1);
 			break;
 		case gOrientation180:
-			pos = PIXIL_POS(g, g->g.Width-g->p.x-1, g->g.Height-g->p.y-1);
+			pos = PIXEL_POS(g, g->g.Width-g->p.x-1, g->g.Height-g->p.y-1);
 			break;
 		case gOrientation270:
-			pos = PIXIL_POS(g, g->g.Height-g->p.y-1, g->p.x);
+			pos = PIXEL_POS(g, g->g.Height-g->p.y-1, g->p.x);
 			break;
 		}
 	#else
-		pos = PIXIL_POS(g, g->p.x, g->p.y);
+		pos = PIXEL_POS(g, g->p.x, g->p.y);
 	#endif
 
 	#if LTDC_USE_DMA2D
@@ -465,28 +465,28 @@ LLDSPEC	gColor gdisp_lld_get_pixel_color(GDisplay* g) {
 			switch(g->g.Orientation) {
 			case gOrientation0:
 			default:
-				pos = PIXIL_POS(g, g->p.x, g->p.y);
+				pos = PIXEL_POS(g, g->p.x, g->p.y);
 				lineadd = g->g.Width - g->p.cx;
 				shape = (g->p.cx << 16) | (g->p.cy);
 				break;
 			case gOrientation90:
-				pos = PIXIL_POS(g, g->p.y, g->g.Width-g->p.x-g->p.cx);
+				pos = PIXEL_POS(g, g->p.y, g->g.Width-g->p.x-g->p.cx);
 				lineadd = g->g.Height - g->p.cy;
 				shape = (g->p.cy << 16) | (g->p.cx);
 				break;
 			case gOrientation180:
-				pos = PIXIL_POS(g, g->g.Width-g->p.x-g->p.cx, g->g.Height-g->p.y-g->p.cy);
+				pos = PIXEL_POS(g, g->g.Width-g->p.x-g->p.cx, g->g.Height-g->p.y-g->p.cy);
 				lineadd = g->g.Width - g->p.cx;
 				shape = (g->p.cx << 16) | (g->p.cy);
 				break;
 			case gOrientation270:
-				pos = PIXIL_POS(g, g->g.Height-g->p.y-g->p.cy, g->p.x);
+				pos = PIXEL_POS(g, g->g.Height-g->p.y-g->p.cy, g->p.x);
 				lineadd = g->g.Height - g->p.cy;
 				shape = (g->p.cy << 16) | (g->p.cx);
 				break;
 			}
 		#else
-			pos = PIXIL_POS(g, g->p.x, g->p.y);
+			pos = PIXEL_POS(g, g->p.x, g->p.y);
 			lineadd = g->g.Width - g->p.cx;
 			shape = (g->p.cx << 16) | (g->p.cy);
 		#endif
@@ -555,7 +555,7 @@ LLDSPEC	gColor gdisp_lld_get_pixel_color(GDisplay* g) {
 			gU32	srcstart, dststart;
 
 			srcstart = LTDC_PIXELBYTES * ((gU32)g->p.x2 * g->p.y1 * + g->p.x1) + (gU32)g->p.ptr;
-			dststart = (gU32)PIXEL_ADDR(g, PIXIL_POS(g, g->p.x, g->p.y));
+			dststart = (gU32)PIXEL_ADDR(g, PIXEL_POS(g, g->p.x, g->p.y));
 
 			#if LTDC_DMA_CACHE_FLUSH
 			{
