@@ -132,7 +132,26 @@ static const SDRAMConfig sdram_cfg =
 
 /*
  * Maximum speed SPI configuration (27MHz, CPHA=0, CPOL=0, MSb first).
+ * The SPI controller uses the APB2 clock, which is 108MHz, to drive
+ * its baud rate generator. The BR divisor bits in the CR1 register
+ * control the baud rate (SCK) output. The 8 divisor values are available,
+ * from 2 (BR == 0) to 256 (BR == 7). We default BR to 1, which yields
+ * a divisor of 4, for an output SCK of 27MHz.
+ *
+ * The complete list of SCK values is:
+ *
+ * BR    freq
+ * --    ----
+ * 000   54MHz
+ * 001   27MHz
+ * 010   13.5MHz
+ * 011   6.75MHz
+ * 100   3.375MHz
+ * 101   1.6875MHz
+ * 110   843.75KHz
+ * 111   421.875KHz
  */
+
 static const SPIConfig hs_spicfg =
 {
 	false,
@@ -167,7 +186,7 @@ static const SPIConfig hs_spicfg =
  * tSCLDEL	1250nS		1250nS		500nS		187.5nS
  *
  * We also have a prescaler we can use to divide the 54MHz clock down
- * to something more managable. We use a prescaler value of 6, which yields
+ * to something more managable. We use a prescaler value of 1, which yields
  * a clock of 27MHz. The period is 37.037 nanoseconds. When programming
  * the values, we have to subtract 1 (these are all divisors, so a value
  * of 0 represents 'divide by 1').
@@ -191,6 +210,9 @@ static const I2CConfig i2cconfig =
 
 /*
  * Timer configuration
+ * The STM32F746 supports two high precision (32-bit) timers. One is
+ * used as the system clock. We use the other (TIM5) as a general
+ * purpose timer. (There are several low precision (16-bit) timers too.)
  */
 
 static const GPTConfig gptcfg =
@@ -277,6 +299,7 @@ THD_FUNCTION(shellUsbThreadStub, p)
 /*
  * Application entry point.
  */
+
 int
 main (void)
 {
@@ -342,7 +365,7 @@ main (void)
 
 	/*
 	 * Activates the serial driver 1 using the driver default
-	 * configuration.
+	 * configuration (115200 8N1).
 	 */
 
 	sdStart (&SD1, NULL);
@@ -381,6 +404,18 @@ main (void)
 
 	printf ("\n\nUntitled Ides of DEF CON 28 Badge Game\n\n");
 
+	/*
+	 * The STM32F746 has a 96-bit unique device ID. It's actually
+	 * derived from three things:
+	 *
+ 	 * 1) The chip's manufacture lot number (7-byte ASCII string)
+	 * 2) The silicon wafer number in the lot (1 byte)
+	 * 3) The chip's X/Y coordinates on the wafer (2 bytes)
+	 *
+	 * The complete set of values is guaranteed to be different
+	 * for every chip.
+	 */
+	
 	pId = (STM32_ID *)UID_BASE;
 	printf ("Device ID: ");
 	printf ("Wafer X/Y: %d/%d ", pId->stm32_wafer_x, pId->stm32_wafer_y);
