@@ -55,8 +55,22 @@
 static struct jpeg_decompress_struct cinfo;
 static struct jpeg_error_mgr jerr;
 
+/*
+ * We put the video scanline buffers in the on-board SRAM
+ * to save heap space. We can get away with this since the
+ * size of this buffer won't vary.
+ */
+
 __attribute__((aligned(CACHE_LINE_SIZE)))
 static uint8_t frame[320 * 2 * VID_PIXEL_SIZE];
+
+/*
+ * This dummy error exit handler is provided so that the libjpeg
+ * library doesn't try to call exit() if it encounters an error
+ * while decoding a frame. The newlib exit() function will spin
+ * forever; we'd rather avoid that and have the video player
+ * routine just return.
+ */
 
 static void
 videoErrorExit (j_common_ptr cinfo)
@@ -95,8 +109,8 @@ videoFrameDecompress (uint8_t * in, size_t len, GDisplay * g)
 		 * thinks we're using RGB565 where pixels are only
 		 * 2 bytes in size. Because of this, its cache flush
 		 * code doesn't flush the entire frame buffer. We need
-		 * to compensate for this here, otherwise the last few
-		 * lines in the frame may appear corrupted.
+		 * to compensate for this here, otherwise portions
+		 * of the frame may appear corrupted.
 		 */
 
 		cacheBufferFlush (frame + (320 * 2),
@@ -105,8 +119,16 @@ videoFrameDecompress (uint8_t * in, size_t len, GDisplay * g)
 		gdispGBlitArea (g, 80, 16 + (cinfo.output_scanline - 2),
 		    320, 2, 0, 0, 320, (gPixel *)frame);
 
-		while((DMA2D->CR & DMA2D_CR_START)) {
-			/* Wait for DMA to complete */
+		while (DMA2D->CR & DMA2D_CR_START) {
+
+		/*
+		 * Wait for DMA to complete. This is important since
+		 * we re-use the same buffer for every two scanlines.
+		 * We need to make sure the current scanline data has
+		 * been transfered to the frame buffer before re-using
+		 * it for the next two scanlines.
+		 */
+
 		}
 	}
 
@@ -143,17 +165,20 @@ videoPlay (char * path)
 
 	/*
 	 * Override the input pixel format used by the DMA2D
-	 * engine. It turns out that the libjpeg-turbo library
-	 * performs faster when we tell it to generate RGB pixels
-	 * instead of RGB565 pixels. We can use the DMA2D to
-	 * translate the pixel format in hardware and it'll be
-	 * faster than doing the RGB565 conversion in software
+	 * engine. The standard libjpeg library doesn't support
+	 * RGB565 as an output pixel format. However we can
+	 * can use the DMA2D engine to convert from RGB888 to
+	 * RGB565 in hardware, and it'll be faster than doing
+	 * than doing the RGB565 conversion in software
 	 * (at the cost of using a little more memory).
 	 */
 
 	DMA2D->FGPFCCR = FGPFCCR_CM_RGB888;
-	LTDC_Layer2->CR = 0;
+
+	/* Make sure we start out with layer 1 visible and layer 2 hidden. */
+
 	LTDC_Layer1->CR = LTDC_LxCR_LEN;
+	LTDC_Layer2->CR = 0;
 	LTDC->SRCR = LTDC_SRCR_VBR;
 
 	g0 = (GDisplay *)gdriverGetInstance (GDRIVER_TYPE_DISPLAY, 0);
@@ -202,10 +227,6 @@ videoPlay (char * path)
 
 		i2sSamplesPlay (s, (int)ch->cur_aud_size);
 
-		/* Now decompress the frame */
-
-		s = p1 + sizeof(CHUNK_HEADER);
-
 		/*
 		 * Now decompress and blit the frame to the screen.
 		 * Internally the uGFX library will use the DMA2D engine
@@ -218,6 +239,8 @@ videoPlay (char * path)
 		 * to the invisible layer, and then swap them.
 		 */
 
+		s = p1 + sizeof(CHUNK_HEADER);
+
 		if (toggle) {
 			videoFrameDecompress (s, sz, g1);
 			LTDC_Layer1->CR = 0;
@@ -228,7 +251,13 @@ videoPlay (char * path)
 			LTDC_Layer2->CR = 0;
 		}
 
-		/* Flip the visible layer */
+		/*
+		 * Flip the visible layer. The register updates above
+		 * won't take effect until we write to the control
+		 * register here. The switch will occur during the next
+		 * veritical blanking interval. (Doing it immediately
+		 * causes flicker.)
+	 	 */
 
 		LTDC->SRCR = LTDC_SRCR_VBR;
 		toggle = ~toggle;
@@ -273,6 +302,9 @@ videoPlay (char * path)
 	/* Restore the DMA2D input pixel format. */
 
 	DMA2D->FGPFCCR = FGPFCCR_CM_RGB565;
+
+	/* Restore visible layer */
+
 	LTDC_Layer1->CR = LTDC_LxCR_LEN;
 	LTDC_Layer2->CR = 0;
 	LTDC->SRCR = LTDC_SRCR_VBR;
