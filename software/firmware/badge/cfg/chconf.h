@@ -345,7 +345,7 @@
  * @note    Mutexes are recommended.
  */
 #if !defined(CH_CFG_USE_HEAP)
-#define CH_CFG_USE_HEAP                     FALSE
+#define CH_CFG_USE_HEAP                     TRUE
 #endif
 
 /**
@@ -391,7 +391,7 @@
  * @note    Requires @p CH_CFG_USE_HEAP and/or @p CH_CFG_USE_MEMPOOLS.
  */
 #if !defined(CH_CFG_USE_DYNAMIC)
-#define CH_CFG_USE_DYNAMIC                  FALSE
+#define CH_CFG_USE_DYNAMIC                  TRUE
 #endif
 
 /** @} */

@@ -26,6 +26,21 @@ extern void free JPP((void *ptr));
 #define SEEK_SET  0		/* if not, assume 0 is correct */
 #endif
 
+#include "ch.h"
+
+static uint8_t b0[84];
+static uint8_t b1[1784];
+static uint8_t b2[16280];
+static uint8_t b3[976];
+static uint8_t b4[1296];
+static uint8_t b5[5136];
+static uint8_t b6[1296];
+static uint8_t b7[1296];
+
+static uint8_t bcnt = 0;
+static uint8_t * buffers[] = {
+	b0, b1, b2, b3, b4, b5, b6, b7
+};
 
 /*
  * Memory allocation and freeing are controlled by the regular library
@@ -35,16 +50,21 @@ extern void free JPP((void *ptr));
 GLOBAL(void *)
 jpeg_get_small (j_common_ptr cinfo, size_t sizeofobject)
 {
+  void * r;
   (void)cinfo;
-  return (void *) malloc(sizeofobject);
+  (void)sizeofobject;
+  r = buffers[bcnt];
+  bcnt++;
+  return (r);
 }
 
 GLOBAL(void)
 jpeg_free_small (j_common_ptr cinfo, void * object, size_t sizeofobject)
 {
   (void)cinfo;
+  (void)object;
   (void)sizeofobject;
-  free(object);
+  bcnt--;
 }
 
 
@@ -58,8 +78,12 @@ jpeg_free_small (j_common_ptr cinfo, void * object, size_t sizeofobject)
 GLOBAL(void FAR *)
 jpeg_get_large (j_common_ptr cinfo, size_t sizeofobject)
 {
+  void * r;
   (void)cinfo;
-  return (void FAR *) malloc(sizeofobject);
+  (void)sizeofobject;
+  r = buffers[bcnt];
+  bcnt++;
+  return (r);
 }
 
 GLOBAL(void)
@@ -67,7 +91,8 @@ jpeg_free_large (j_common_ptr cinfo, void FAR * object, size_t sizeofobject)
 {
   (void)cinfo;
   (void)sizeofobject;
-  free(object);
+  (void)object;
+  bcnt--;
 }
 
 
@@ -189,6 +214,7 @@ GLOBAL(long)
 jpeg_mem_init (j_common_ptr cinfo)
 {
   (void)cinfo;
+  bcnt = 0;
   return DEFAULT_MAX_MEM;	/* default for max_memory_to_use */
 }
 

@@ -52,6 +52,8 @@
 
 #include "jpeglib.h"
 
+#define        roundup(x, y)   ((((x)+((y)-1))/(y))*(y))
+
 static struct jpeg_decompress_struct cinfo;
 static struct jpeg_error_mgr jerr;
 
@@ -142,6 +144,7 @@ videoPlay (char * path)
 {
 	CHUNK_HEADER _ch;
 	CHUNK_HEADER * ch;
+	uint8_t * btmp;
 	uint8_t * buf;
 	uint8_t * p1;
 	uint8_t * p2;
@@ -190,7 +193,8 @@ videoPlay (char * path)
 
 	max = (ch->cur_vid_size + ch->cur_aud_size) + sizeof(CHUNK_HEADER);
 
-	buf = malloc ((max * 2) + CACHE_LINE_SIZE);
+	btmp = chHeapAlloc (NULL, (max * 2) + CACHE_LINE_SIZE);
+	buf = (uint8_t *)roundup ((uint32_t)btmp, CACHE_LINE_SIZE);
 
 	p1 = buf;
 	p2 = buf + max;
@@ -297,7 +301,7 @@ videoPlay (char * path)
 
 	/* Free memory */
 
-	free (buf);
+	chHeapFree (btmp);
 
 	/* Restore the DMA2D input pixel format. */
 

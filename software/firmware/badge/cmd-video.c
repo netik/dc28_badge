@@ -47,8 +47,10 @@ cmd_video (BaseSequentialStream *chp, int argc, char *argv[])
 {
 	(void)argv;
 	(void)chp;
-	if (argc < 1)
+	if (argc < 1) {
 		printf ("Usage: video <filename>\n");
+		return;
+	}
 
 	videoPlay (argv[0]);
 

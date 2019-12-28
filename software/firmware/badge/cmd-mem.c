@@ -82,5 +82,5 @@ cmd_memtest (BaseSequentialStream *chp, int argc, char *argv[])
 	return;
 }
 
-orchard_command("mem", cmd_mem);
-orchard_command("memtest", cmd_memtest);
+orchard_command("mem-sdram", cmd_mem);
+orchard_command("memtest-sdram", cmd_memtest);
