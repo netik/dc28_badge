@@ -132,9 +132,10 @@ static const SDRAMConfig sdram_cfg =
 
 /*
  * Maximum speed SPI configuration (27MHz, CPHA=0, CPOL=0, MSb first).
+ *
  * The SPI controller uses the APB2 clock, which is 108MHz, to drive
  * its baud rate generator. The BR divisor bits in the CR1 register
- * control the baud rate (SCK) output. The 8 divisor values are available,
+ * control the baud rate (SCK) output. There are 8 divisor values available,
  * from 2 (BR == 0) to 256 (BR == 7). We default BR to 1, which yields
  * a divisor of 4, for an output SCK of 27MHz.
  *
@@ -172,7 +173,7 @@ static const SPIConfig hs_spicfg =
  * We configre the I2C controller to use PCLK1 (AHB1) which is the
  * low speed bus clock, running at 54MHz.
  *
- * The critical values we need to shoot depend on the I2C output clock
+ * The critical values we need to choose depend on the I2C output clock
  * speed that we want. There are four choices: 10KHz, 100KHz, 400KHz
  * and 1MHz. 10KHz and 100KHz are considered standard modes. 400KHz
  * is fast mode. 1MHz is Fast Mode Plus.
@@ -192,6 +193,7 @@ static const SPIConfig hs_spicfg =
  * of 0 represents 'divide by 1').
  *
  * The values we get are:
+ *
  * Prescaler: divide by 2, minus 1 == 1
  * SCLL: 1250/37.037 == 33.75, rounded up == 34, minus 1 == 33
  * SCLH: 500/37.037 == 13.5, rounded up == 14, minus 1 == 13
@@ -218,15 +220,16 @@ static const I2CConfig i2cconfig =
 static const GPTConfig gptcfg =
 {
 	4000000,	/* 4MHz timer clock.*/
-	NULL,		/* Timer callback.*/
+	NULL,		/* Timer callback function. */
 	0,
 	0
 };
 
 /*
- * This is a periodic thread that does absolutely nothing except flashing
+ * This is a periodic thread that does absolutely nothing except flash
  * a LED.
  */
+
 static THD_WORKING_AREA(waThread1, 128);
 static THD_FUNCTION(Thread1, arg)
 {
@@ -262,7 +265,7 @@ THD_FUNCTION(shellUsbThreadStub, p)
 	 * before it's actually connected will just return
 	 * error, which will cause the thread to exit and
 	 * be respawned over and over again (until the
-	 * cable is actually plugged in.
+	 * cable is actually plugged in).
 	 */
 
 	if (SDU1.config->usbp->state != USB_ACTIVE) {
@@ -495,7 +498,7 @@ main (void)
 	printf ("Random number generator enabled\n");
 
 	/*
-	 * Initializes a serial-over-USB CDC driver.
+	 * Initialize serial-over-USB CDC driver.
 	 */
 
 	sduObjectInit (&PORTAB_SDU1);
@@ -504,7 +507,7 @@ main (void)
 	printf ("USB CDC enabled\n");
 
 	/*
-	 * Activates the USB driver and then the USB bus pull-up on D+.
+	 * Activate the USB driver and then the USB bus pull-up on D+.
 	 */
 
 	usbDisconnectBus (serusbcfg.usbp);
