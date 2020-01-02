@@ -55,6 +55,7 @@
 #include <malloc.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "ch.h"
 #include "hal.h"
@@ -65,6 +66,7 @@
 #include "badge.h"
 
 static mutex_t malloc_mutex;
+static mutex_t file_mutex;
 
 #define MAX_FILES 5
 static FIL file_handles[MAX_FILES];
@@ -74,6 +76,7 @@ void
 newlibStart (void)
 {
 	osalMutexObjectInit (&malloc_mutex);
+	osalMutexObjectInit (&file_mutex);
 }
 
 
@@ -165,6 +168,8 @@ _open (const char * file, int flags, int mode)
 
 	(void)mode;
 
+	osalMutexLock (&file_mutex);
+
 	for (i = 0; i < MAX_FILES; i++) {
 		if (file_used[i] == 0)
 			break;
@@ -172,6 +177,7 @@ _open (const char * file, int flags, int mode)
 
 	if (i == MAX_FILES) {
 		errno = ENOSPC;
+		osalMutexUnlock (&file_mutex);
 		return (-1);
 	}
 
@@ -200,6 +206,7 @@ _open (const char * file, int flags, int mode)
 			errno = EEXIST;
 		else
 			errno = EIO;
+		osalMutexUnlock (&file_mutex);
 		return (-1);
 	}
 
@@ -211,6 +218,8 @@ _open (const char * file, int flags, int mode)
 	 */
 
 	i += 3;
+
+	osalMutexUnlock (&file_mutex);
 
 	return (i);
 }
@@ -227,16 +236,24 @@ _close (int file)
 		return (-1);
 	}
 
+	osalMutexLock (&file_mutex);
+
 	i = file - 3;
 
 	if (file_used[i] == 0) {
 		errno = EINVAL;
+		osalMutexUnlock (&file_mutex);
 		return (-1);
 	}
 
 	f = &file_handles [i];
 	file_used[i] = 0;
+
 	f_close (f);
+
+	memset (&file_handles[i], 0, sizeof(FIL));
+
+	osalMutexUnlock (&file_mutex);
 
 	return (0);
 }
