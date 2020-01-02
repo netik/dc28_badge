@@ -6,7 +6,7 @@
 # Compiler options here.
 ifeq ($(USE_OPT),)
 #  USE_OPT = -Os -ggdb -fomit-frame-pointer -falign-functions=16
-  USE_OPT = -O2 -ggdb -fomit-frame-pointer
+  USE_OPT = -Os -ggdb -fomit-frame-pointer
 endif
 
 # C specific options here (added to USE_OPT).
@@ -167,7 +167,15 @@ CSRC = $(ALLCSRC) \
        video_lld.c \
        stm32sai_lld.c \
        sddetect_lld.c \
-       touch_lld.c
+       touch_lld.c \
+       orchard-app.c \
+       orchard-ui.c \
+       ides_gfx.c \
+       app-info.c \
+       app-video.c \
+       app-launcher.c \
+       ui-keyboard.c \
+       ui-list.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
@@ -234,6 +242,14 @@ include $(RULESPATH)/rules.mk
 ##############################################################################
 # Custom rules
 #
+
+.PHONY: updatebuildtime
+PRE_MAKE_ALL_RULE_HOOK: buildtime.h
+
+buildtime.h: updatebuildtime
+	echo "#define BUILDTIME \"Built: `/bin/date`\"" > $@
+	echo "#define BUILDVER `/bin/date +%s`" >> $@
+	echo "#define BUILDMAGIC 0xCAFEBABE" >> $@
 
 #
 # Custom rules

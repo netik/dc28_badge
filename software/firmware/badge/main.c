@@ -36,6 +36,9 @@
 
 #include "gfx.h"
 
+#include "orchard-ui.h"
+#include "orchard-app.h"
+
 BaseSequentialStream * console;
 
 /* linker set for command objects */
@@ -566,6 +569,12 @@ main (void)
 
 	chThdCreateStatic (waThread1, sizeof(waThread1),
 	    NORMALPRIO+1, Thread1, NULL);
+
+	/* Initialize orchard subsystem */
+
+	uiStart ();
+ 	orchardAppInit ();
+	orchardAppRestart ();
 
 	/* Initialize shell subsystem */
 

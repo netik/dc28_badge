@@ -42,6 +42,9 @@ static THD_WORKING_AREA(waSdDetectThread, 256);
 static thread_reference_t sdDetectThreadReference;
 static volatile uint8_t sdDetectService = 0;
 
+static mutex_t sdMutex;
+static volatile uint8_t sdMounted = FALSE;
+
 static void
 sdDetectInt (void * arg)
 {
@@ -51,6 +54,34 @@ sdDetectInt (void * arg)
 	sdDetectService = 1;
 	osalThreadResumeI (&sdDetectThreadReference, MSG_OK);
 	osalSysUnlockFromISR ();
+
+	return;
+}
+
+static void
+sdCheck (void)
+{
+	chThdSleepMilliseconds (1);
+
+	osalMutexLock (&sdMutex);
+
+	if (palReadLine (LINE_SD_DETECT)) {
+		if (sdMounted == FALSE)
+			goto skip;
+		gfileUnmount ('F', "0:");
+		sdcDisconnect (&SDCD1);
+		sdMounted = FALSE;
+	} else {
+		if (sdMounted == TRUE)
+			goto skip;
+		sdcConnect (&SDCD1);
+		gfileMount ('F', "0:");
+		sdMounted = TRUE;
+	}
+
+skip:
+
+	osalMutexUnlock (&sdMutex);
 
 	return;
 }
@@ -68,15 +99,7 @@ static THD_FUNCTION(sdDetectThread, arg)
 		sdDetectService = 0;
 		osalSysUnlock ();
 
-		chThdSleepMilliseconds (1);
-
-		if (palReadLine (LINE_SD_DETECT)) {
-			gfileUnmount ('F', "0:");
-			sdcDisconnect (&SDCD1);
-		} else {
-			sdcConnect (&SDCD1);
-			gfileMount ('F', "0:");
-		}
+		sdCheck ();
 	}
 
 	/* NOTREACHED */
@@ -94,16 +117,20 @@ sdDetectStart (void)
 	 * detect both insert and eject events.
 	 */
 
-	palSetPadMode (GPIOC, GPIOC_SD_DETECT, PAL_STM32_PUPDR_PULLUP | 
+	palSetLineMode (LINE_SD_DETECT, PAL_STM32_PUPDR_PULLUP | 
 	    PAL_STM32_MODE_INPUT);
 
 	palSetLineCallback (LINE_SD_DETECT, sdDetectInt, NULL);
 	palEnableLineEvent (LINE_SD_DETECT, PAL_EVENT_MODE_BOTH_EDGES);
 
+	osalMutexObjectInit (&sdMutex);
+
 	/* Launch the event handler thread. */
 
 	chThdCreateStatic (waSdDetectThread, sizeof(waSdDetectThread),
 	    NORMALPRIO - 1, sdDetectThread, NULL);
+
+	sdCheck ();
 
 	return;
 }

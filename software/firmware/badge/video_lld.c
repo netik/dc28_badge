@@ -118,7 +118,7 @@ videoFrameDecompress (uint8_t * in, size_t len, GDisplay * g)
 		cacheBufferFlush (frame + (320 * 2),
 		    (320 * VID_PIXEL_SIZE) - (320 * 2));
 
-		gdispGBlitArea (g, 80, 16 + (cinfo.output_scanline - 2),
+		gdispGBlitArea (g, 0, (cinfo.output_scanline - 2),
 		    320, 2, 0, 0, 320, (gPixel *)frame);
 
 		while (DMA2D->CR & DMA2D_CR_START) {
@@ -156,6 +156,9 @@ videoPlay (char * path)
 	GDisplay * g0;
 	GDisplay * g1;
 	uint8_t toggle = 0;
+	GListener gl;
+	GSourceHandle gs;
+	GEventMouse * me = NULL;
 
 	f = open (path, O_RDONLY, 0);
 
@@ -165,6 +168,10 @@ videoPlay (char * path)
 	}
 
 	i2sPlay (NULL);
+
+	gs = ginputGetMouse (0);
+	geventListenerInit (&gl);
+	geventAttachSource (&gl, gs, GLISTEN_MOUSEMETA);
 
 	/*
 	 * Override the input pixel format used by the DMA2D
@@ -229,7 +236,7 @@ videoPlay (char * path)
 		 * displaying the video for this frame.
 		 */
 
-		i2sSamplesPlay (s, (int)ch->cur_aud_size);
+		i2sSamplesPlay (s, (int)ch->cur_aud_size >> 1);
 
 		/*
 		 * Now decompress and blit the frame to the screen.
@@ -288,6 +295,10 @@ videoPlay (char * path)
 		 */
 
 		i2sSamplesWait ();
+
+		me = (GEventMouse *)geventEventWait (&gl, 0);
+		if (me != NULL && me->buttons & GMETA_MOUSE_DOWN)
+			break;
 	}
 
 	jpeg_destroy_decompress (&cinfo);
@@ -312,6 +323,11 @@ videoPlay (char * path)
 	LTDC_Layer1->CR = LTDC_LxCR_LEN;
 	LTDC_Layer2->CR = 0;
 	LTDC->SRCR = LTDC_SRCR_VBR;
+
+	geventDetachSource (&gl, NULL);
+
+	if (me != NULL && me->buttons & GMETA_MOUSE_DOWN)
+		return (-1);
 
 	return (0);
 }

@@ -39,7 +39,9 @@ extern char   __heap_end__; /* Set by linker */
  * as uncached with the MPU.
  */
 #define FB_SIZE 0x80000
-#define FB_BASE 0xC0780000
+#define FB_BASE0 0xC0780000
+#define FB_BASE1 0xC07FF800
+#define FB_BASE FB_BASE0
 #define HEAP_BASE ((char *)FSMC_Bank5_MAP_BASE)
 #define HEAP_END ((char *)(FSMC_Bank5_MAP_BASE + 0x77FFFF))
 #endif
@@ -55,6 +57,11 @@ typedef struct stm32_id {
 	uint8_t		stm32_wafernum;
 	uint8_t		stm32_lotnum[7];
 } STM32_ID;
+
+/* Temporary, for compatibility with DC27 orchard code */
+typedef struct _ble_evt_t {
+	uint32_t	ble_evt_dummy;
+} ble_evt_t;
 
 extern void badge_sleep_enable (void);
 extern void badge_sleep_disable (void);

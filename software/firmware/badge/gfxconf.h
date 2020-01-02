@@ -29,13 +29,32 @@
 #define GFX_USE_DIRECTIO                               GFXOFF
 #define GDISP_LTDC_USE_RGB565                          GFXON
 
+/*
+ * Setting the poll period to TIME_INFINITE disables mouse polling
+ * and allows the TouchEvent thread to trigger mouse events based
+ * on interrupts instead. However with the STM32F746 Discovery board,
+ * both the SD card detect and touch detect pins use the same pin
+ * index (port C pin 13 and port I pin 13, respectively), and the
+ * design of the EXTI interrupt triggering module is such that while
+ * it supports 16 channels, it doesn't allow you to use the same
+ * pin index for more than one port at a time.
+ *
+ * This means that on the discovery board, once the SD detect code
+ * is started, we won't be able to sense touch interrupts anymore.
+ * This can be fixed on the production board, but on the Discovery
+ * board it would require hardware rework.
+ *
+ * So as a temporart workaround, we keep the mouse polling turned
+ * on so that we can still get uGFX touch events.
+ *
 #define GINPUT_MOUSE_POLL_PERIOD                       TIME_INFINITE
+ */
 
 ///////////////////////////////////////////////////////////////////////////
 // GFX - Compatibility options                                           //
 ///////////////////////////////////////////////////////////////////////////
 #define GFX_COMPAT_V2                                GFXOFF
-//#define GFX_COMPAT_OLDCOLORS                         GFXON
+#define GFX_COMPAT_OLDCOLORS                         GFXON
 
 ///////////////////////////////////////////////////////////////////////////
 // GOS - One of these must be defined, preferably in your Makefile       //
@@ -117,16 +136,16 @@
 //    #define GDISP_INCLUDE_FONT_DEJAVUSANS24          GFXOFF
 //    #define GDISP_INCLUDE_FONT_DEJAVUSANS32          GFXOFF
 //    #define GDISP_INCLUDE_FONT_DEJAVUSANSBOLD12      GFXOFF
-//    #define GDISP_INCLUDE_FONT_FIXED_10X20           GFXOFF
-//    #define GDISP_INCLUDE_FONT_FIXED_7X14            GFXOFF
-//    #define GDISP_INCLUDE_FONT_FIXED_5X8             GFXOFF
+#define GDISP_INCLUDE_FONT_FIXED_10X20           GFXON
+#define GDISP_INCLUDE_FONT_FIXED_7X14            GFXON
+#define GDISP_INCLUDE_FONT_FIXED_5X8             GFXON
 //    #define GDISP_INCLUDE_FONT_DEJAVUSANS12_AA       GFXOFF
 //    #define GDISP_INCLUDE_FONT_DEJAVUSANS16_AA       GFXOFF
 //    #define GDISP_INCLUDE_FONT_DEJAVUSANS20_AA       GFXOFF
 //    #define GDISP_INCLUDE_FONT_DEJAVUSANS24_AA       GFXOFF
 //    #define GDISP_INCLUDE_FONT_DEJAVUSANS32_AA       GFXOFF
 //    #define GDISP_INCLUDE_FONT_DEJAVUSANSBOLD12_AA   GFXOFF
-//    #define GDISP_INCLUDE_USER_FONTS                 GFXOFF
+#define GDISP_INCLUDE_USER_FONTS                 GFXON
 
 #define GDISP_NEED_IMAGE                             GFXON
 #define GDISP_NEED_IMAGE_NATIVE                  GFXON
@@ -169,7 +188,7 @@
 
 //#define GDISP_DEFAULT_ORIENTATION                    gOrientationLandscape    // If not defined the native hardware orientation is used.
 //#define GDISP_LINEBUF_SIZE                           128
-#define GDISP_STARTUP_COLOR                          GFX_BLUE
+#define GDISP_STARTUP_COLOR                          GFX_BLACK
 #define GDISP_NEED_STARTUP_LOGO                      GFXOFF
 
 #define GDISP_TOTAL_DISPLAYS                         2
@@ -205,7 +224,7 @@
 ///////////////////////////////////////////////////////////////////////////
 #define GFX_USE_GWIN                                 GFXON
 
-//#define GWIN_NEED_WINDOWMANAGER                      GFXOFF
+#define GWIN_NEED_WINDOWMANAGER                      GFXON
 //    #define GWIN_REDRAW_IMMEDIATE                    GFXOFF
 //    #define GWIN_REDRAW_SINGLEOP                     GFXOFF
 //    #define GWIN_NEED_FLASHING                       GFXOFF
@@ -221,25 +240,25 @@
 //#define GWIN_NEED_GRAPH                              GFXOFF
 //#define GWIN_NEED_GL3D                               GFXOFF
 
-//#define GWIN_NEED_WIDGET                             GFXOFF
+#define GWIN_NEED_WIDGET                             GFXON
 //#define GWIN_FOCUS_HIGHLIGHT_WIDTH                   1
-//    #define GWIN_NEED_LABEL                          GFXOFF
-//        #define GWIN_LABEL_ATTRIBUTE                 GFXOFF
-//    #define GWIN_NEED_BUTTON                         GFXOFF
+#define GWIN_NEED_LABEL                          GFXON
+#define GWIN_LABEL_ATTRIBUTE                 GFXON
+#define GWIN_NEED_BUTTON                         GFXON
 //        #define GWIN_BUTTON_LAZY_RELEASE             GFXOFF
 //    #define GWIN_NEED_SLIDER                         GFXOFF
 //        #define GWIN_SLIDER_NOSNAP                   GFXOFF
 //        #define GWIN_SLIDER_DEAD_BAND                5
 //        #define GWIN_SLIDER_TOGGLE_INC               20
-//    #define GWIN_NEED_CHECKBOX                       GFXOFF
+#define GWIN_NEED_CHECKBOX                       GFXON
 //    #define GWIN_NEED_IMAGE                          GFXOFF
 //        #define GWIN_NEED_IMAGE_ANIMATION            GFXOFF
 //    #define GWIN_NEED_RADIO                          GFXOFF
-//    #define GWIN_NEED_LIST                           GFXOFF
+#define GWIN_NEED_LIST                           GFXON
 //        #define GWIN_NEED_LIST_IMAGES                GFXOFF
 //    #define GWIN_NEED_PROGRESSBAR                    GFXOFF
 //        #define GWIN_PROGRESSBAR_AUTO                GFXOFF
-//    #define GWIN_NEED_KEYBOARD                       GFXOFF
+#define GWIN_NEED_KEYBOARD                       GFXON
 //        #define GWIN_KEYBOARD_DEFAULT_LAYOUT         VirtualKeyboard_English1
 //        #define GWIN_NEED_KEYBOARD_ENGLISH1          GFXON
 //    #define GWIN_NEED_TEXTEDIT                       GFXOFF
@@ -281,9 +300,9 @@
 ///////////////////////////////////////////////////////////////////////////
 // GQUEUE                                                                //
 ///////////////////////////////////////////////////////////////////////////
-//#define GFX_USE_GQUEUE                               GFXOFF
+#define GFX_USE_GQUEUE                               GFXON
 
-//#define GQUEUE_NEED_ASYNC                            GFXOFF
+#define GQUEUE_NEED_ASYNC                            GFXON
 //#define GQUEUE_NEED_GSYNC                            GFXOFF
 //#define GQUEUE_NEED_FSYNC                            GFXOFF
 //#define GQUEUE_NEED_BUFFERS                          GFXOFF

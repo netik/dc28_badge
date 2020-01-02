@@ -118,7 +118,7 @@ touchStart (void)
 	 * detect both touch and release events.
 	 */
 
-	palSetPadMode (GPIOI, GPIOI_LCD_INT, PAL_STM32_PUPDR_PULLUP | 
+	palSetLineMode (LINE_LCD_INT, PAL_STM32_PUPDR_PULLUP | 
 	    PAL_STM32_MODE_INPUT);
 
 	palSetLineCallback (LINE_LCD_INT, touchInt, NULL);
