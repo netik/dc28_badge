@@ -299,7 +299,7 @@ THD_FUNCTION(i2sThread, arg)
 
 			/* Start the samples playing */
 
-			i2sSamplesPlay (p, I2S_BYTES);
+			i2sSamplesPlay (p, br >> 1);
 
 			/* Swap buffers and load the next block of samples */
 
@@ -363,7 +363,7 @@ i2sSamplesPlay (void * buf, int cnt)
 {
 	if (cnt == 0)
 		return;
-	saiSend (&SAID2, buf, cnt);
+	saiSend (&SAID2, buf, cnt * 2);
 	return;
 }
 
