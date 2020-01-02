@@ -27,9 +27,7 @@
  * to process big images.
  * Note that the max_memory_to_use option is ignored by this implementation.
  */
-#include "ff.h"
-        
-      
+
 /*
  * These defines indicate the memory allocation methods.
  */
