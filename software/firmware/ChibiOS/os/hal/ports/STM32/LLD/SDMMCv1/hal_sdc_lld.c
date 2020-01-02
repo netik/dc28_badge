@@ -92,8 +92,8 @@ SDCDriver SDCD2;
 /**
  * @brief   Buffer for temporary storage during unaligned transfers.
  */
-static union {
-  uint32_t  alignment;
+__attribute__((aligned(CACHE_LINE_SIZE)))
+static struct {
   uint8_t   buf[MMCSD_BLOCK_SIZE];
 } u;
 #endif /* STM32_SDC_SDMMC_UNALIGNED_SUPPORT */
@@ -927,7 +927,7 @@ bool sdc_lld_read(SDCDriver *sdcp, uint32_t startblk,
                   uint8_t *buf, uint32_t blocks) {
 
 #if STM32_SDC_SDMMC_UNALIGNED_SUPPORT
-  if (((unsigned)buf & 3) != 0) {
+  if (((unsigned)buf & (CACHE_LINE_SIZE - 1)) != 0) {
     uint32_t i;
     for (i = 0; i < blocks; i++) {
       if (sdc_lld_read_aligned(sdcp, startblk, u.buf, 1))
