@@ -60,15 +60,12 @@ cmd_scroll_right (BaseSequentialStream *chp, int argc, char *argv[])
 		return;
         }
 
-	/* Image is at coordinates x=80, y=16 */
+	/* Image is at coordinates x=0, y=0 */
 
 	src = (uint16_t *)FB_BASE;
-	src += 480 * 16; /* skip 16 lines */
-	src += 80; /* skip to last column */
 
 	dst = (uint16_t *)FB_BASE;
-	dst += 480 * 16; /* skip 16 lines */
-	dst += 80 + 1; /* skip to next to last column */
+	dst += 1; /* skip to first column */
 
 	DMA2D->FGOR = 480 - 319;
 	DMA2D->OOR = 480 - 319;
@@ -100,15 +97,12 @@ cmd_scroll_left (BaseSequentialStream *chp, int argc, char *argv[])
 		return;
         }
 
-	/* Image is at coordinates x=80, y=16 */
+	/* Image is at coordinates x=0, y=0 */
 
 	src = (uint16_t *)FB_BASE;
-	src += 480 * 16; /* skip 16 lines */
-	src += 80 + 1; /* skip to last column */
+	src += 1; /* skip to first column */
 
 	dst = (uint16_t *)FB_BASE;
-	dst += 480 * 16; /* skip 16 lines */
-	dst += 80; /* skip to next to last column */
 
 	DMA2D->FGOR = 480 - 319;
 	DMA2D->OOR = 480 - 319;
@@ -140,15 +134,12 @@ cmd_scroll_up (BaseSequentialStream *chp, int argc, char *argv[])
 		return;
         }
 
-	/* Image is at coordinates x=80, y=16 */
+	/* Image is at coordinates x=0, y=0 */
 
 	src = (uint16_t *)FB_BASE;
-	src += 480 * 17; /* skip 17 lines */
-	src += 80; /* skip to first */
+	src += 480; /* skip 1 line */
 
 	dst = (uint16_t *)FB_BASE;
-	dst += 480 * 16; /* skip 16 lines */
-	dst += 80; /* skip to first column */
 
 	DMA2D->FGOR = 480 - 320;
 	DMA2D->OOR = 480 - 320;
@@ -181,16 +172,14 @@ cmd_scroll_down (BaseSequentialStream *chp, int argc, char *argv[])
 		return;
         }
 
-	/* Image is at coordinates x=80, y=16 */
+	/* Image is at coordinates x=0, y=0 */
 
 	for (i = 0; i < 239; i++) {
 		src = (uint16_t *)FB_BASE;
-		src += 480 * (16 + 238); /* skip to bottom line of image */
-		src += 80; /* skip to first column */
+		src += 480 * (238); /* skip to bottom line of image */
 
 		dst = (uint16_t *)FB_BASE;
-		dst += 480 * (16 + 239); /* skip to first line of image */
-		dst += 80; /* skip to first column */
+		dst += 480 * (239); /* skip to first line of image */
 
 		DMA2D->FGOR = 480 - 320;
 		DMA2D->OOR = 480 - 320;

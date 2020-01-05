@@ -6,7 +6,7 @@
 # Compiler options here.
 ifeq ($(USE_OPT),)
 #  USE_OPT = -Os -ggdb -fomit-frame-pointer -falign-functions=16
-  USE_OPT = -Os -ggdb -fomit-frame-pointer
+  USE_OPT = -O2 -ggdb -fomit-frame-pointer
 endif
 
 # C specific options here (added to USE_OPT).
@@ -168,6 +168,7 @@ CSRC = $(ALLCSRC) \
        stm32sai_lld.c \
        sddetect_lld.c \
        touch_lld.c \
+       scroll_lld.c \
        orchard-app.c \
        orchard-ui.c \
        fix_fft.c \
@@ -176,6 +177,7 @@ CSRC = $(ALLCSRC) \
        app-video.c \
        app-music.c \
        app-launcher.c \
+       app-ledsign.c \
        ui-keyboard.c \
        ui-list.c
 
