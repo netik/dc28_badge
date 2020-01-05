@@ -170,9 +170,11 @@ CSRC = $(ALLCSRC) \
        touch_lld.c \
        orchard-app.c \
        orchard-ui.c \
+       fix_fft.c \
        ides_gfx.c \
        app-info.c \
        app-video.c \
+       app-music.c \
        app-launcher.c \
        ui-keyboard.c \
        ui-list.c
