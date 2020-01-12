@@ -179,8 +179,12 @@ video_event(OrchardAppContext *context, const OrchardAppEvent *event)
 		strcat (videofn, "/");
 		strcat (videofn, p->listitems[uiContext->selected +1]);
 
+		chThdSetPriority (NORMALPRIO + 1);
+
 		if (videoPlay (videofn) != 0)
 			i2sPlay ("sound/click.snd");
+
+		chThdSetPriority (ORCHARD_APP_PRIO);
 
 		orchardAppExit ();
 	}

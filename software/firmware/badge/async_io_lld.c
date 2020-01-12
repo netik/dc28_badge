@@ -48,7 +48,7 @@ static int async_f;
 static int async_btr;
 static volatile int async_br = (int)ASYNC_THD_READY;
 
-static int * saved_br;
+static volatile int * saved_br;
 
 static thread_reference_t fsReference;
 static thread_reference_t wakeReference;
