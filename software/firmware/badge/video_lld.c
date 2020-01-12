@@ -256,10 +256,14 @@ videoPlay (char * path)
 			videoFrameDecompress (s, sz, g1);
 			LTDC_Layer1->CR = 0;
 			LTDC_Layer2->CR = LTDC_LxCR_LEN;
+			p1 = buf;
+			p2 += max;
 		} else {
 			videoFrameDecompress (s, sz, g0);
 			LTDC_Layer1->CR = LTDC_LxCR_LEN;
 			LTDC_Layer2->CR = 0;
+			p1 += max;
+			p2 = buf;
 		}
 
 		/*
@@ -272,14 +276,6 @@ videoPlay (char * path)
 
 		LTDC->SRCR = LTDC_SRCR_VBR;
 		toggle = ~toggle;
-
-		if (p1 == buf) {
-			p1 += max;
-			p2 = buf;
-		} else {
-			p1 = buf;
-			p2 += max;
-		}
 
 		asyncIoWait ();
 
