@@ -173,6 +173,8 @@ CSRC = $(ALLCSRC) \
        orchard-ui.c \
        fix_fft.c \
        ides_gfx.c \
+       app-doomguy.c \
+       app-email.c \
        app-info.c \
        app-video.c \
        app-music.c \
