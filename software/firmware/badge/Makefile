@@ -154,6 +154,7 @@ CSRC = $(ALLCSRC) \
        $(LIBJPEGSRC) \
        main.c \
        usbcfg.c \
+       cmd-adc.c \
        cmd-audio.c \
        cmd-cpu.c \
        cmd-mem.c \
@@ -165,6 +166,7 @@ CSRC = $(ALLCSRC) \
        badge_vectors.c \
        async_io_lld.c \
        video_lld.c \
+       stm32adc_lld.c \
        stm32sai_lld.c \
        sddetect_lld.c \
        touch_lld.c \

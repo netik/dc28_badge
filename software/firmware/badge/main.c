@@ -500,6 +500,12 @@ main (void)
 
 	printf ("Random number generator enabled\n");
 
+	/* Initialize Analog to Digital converter */
+
+	adcStart (&ADCD1, NULL);
+
+	printf ("Analog to digital converter ADC1 enabled\n");
+
 	/*
 	 * Initialize serial-over-USB CDC driver.
 	 */

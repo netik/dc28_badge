@@ -5,6 +5,8 @@
 
 #include <stdio.h>
 
+#define NEWLIB_HEAP_SDRAM
+
 /* Orchard command linker set handling */
 
 #define orchard_command_start()						\
