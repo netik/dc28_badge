@@ -53,7 +53,8 @@ cmd_temp (BaseSequentialStream *chp, int argc, char *argv[])
 
 	temp = stm32TempGet ();
 
-	printf ("CPU temperature: %f C (%f F)\n", temp, (temp * (9/5)) + 32);
+	printf ("CPU temperature: %f C (%f F)\n", temp,
+	    (temp * ((float)9/(float)5)) + (float)32);
 
 	return;
 }
