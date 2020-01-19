@@ -147,9 +147,15 @@ stm32VbatGet (void)
 		avg += samples[i];
 	avg /= 100;
 
-	/* Calculate voltage */
+	/*
+         * Calculate voltage
+	 * Per the manual, the Vbat voltage is sampled through
+	 * a voltage divider (in case it's higher than Vrefin)
+	 * so what we actually measure is VBAT/4. We have to
+	 * multilply by 4 here to compensate.
+	 */
 
-	vbat = avg * 4 * 3300 / 0xFFF;
+	vbat = avg * 4 * STM32_REFIN_CAL_VOLT / 0xFFF;
 
 	vbat /= 1000;
 
