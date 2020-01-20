@@ -179,8 +179,8 @@ videoPlay (char * path)
 	 * RGB565 as an output pixel format. However we can
 	 * can use the DMA2D engine to convert from RGB888 to
 	 * RGB565 in hardware, and it'll be faster than doing
-	 * than doing the RGB565 conversion in software
-	 * (at the cost of using a little more memory).
+	 * the RGB565 conversion in software (at the cost of
+	 * of using a little more memory).
 	 */
 
 	DMA2D->FGPFCCR = FGPFCCR_CM_RGB888;
