@@ -15,7 +15,11 @@ more than 8 data pins with the FMC with this part, which limits the
 possible RAM configuration to 4MB instead of 8MB. This is still
 pretty good, but I'd rather have 8.
 
-At qty 500, the STM32F746ZGY6TR price is $7.89
+Note: after further research, we don't want the WLCSP part. (It's not
+a chip that can be soldered to a board.) We need either BGA or LQFP.
+
+At qty 250 or more, the STM32F746IGK6 (BGA) price is $8.33
+At qty 500, the 511-STM32F746IGT6 (LQFP) is $7.39
 
 SDRAM:
 
@@ -39,12 +43,59 @@ Resistive touch controller:
 
 Optional. Might be able to use the ADCs in the CPU for this.
 
+The XPT2046 can be obtained very cheaply from China:
+
+https://lcsc.com/product-detail/Touch-Screen-Controllers_XPT-Shenzhen-XPTEK-Tech-XPT2046_C19076.html
+https://www.utsource.net/itm/p/8377894.html?digipart=1
+
+Cheapest price at qty 500: $0.15
+
 Audio codec:
 
 CS4344 (I think this would work)
 
+We used the CS4344 last time and it worked fine. The STM32F746 supports
+this chip just fine, and we can use the exact same clock settings.
+
+At qty 500, the CS4344-CZZ price is: $1.72
+
+Audio amplifier:
+
+Last time we used the LM4880.
+
+Price at qty 500: $0.92
+
+LED control chip:
+
+Last time we used the 31FL3736.
+
+Price at qty 500: $1.22
+
 Radio:
 
-???
+I would rather not deal with bluetooth again. I think we should use
+one of the SemTech LoRa chips, in particular the SX1262 (915MHz version).
+There is an MBed shield board available for this part which would be
+ideal for development with the Discovery board (SX1262MB2CAS).
 
-I would rather not deal with bluetooth again.
+At qty 500, the SX1262IMLTRT price is: $4.99
+
+Speakers:
+
+We need to find a speaker that will fit in between the boards.
+I don't know what to do for this yet.
+
+
+Total:
+$7.39 (MCU)
+$1.23 (8 MB RAM)
+$6.13 (screen)
+$1.06 (resistive touch panel)
+$0.15 (resistive touch controller)
+$1.72 (audio codec)
+$0.92 (audio amp)
+$4.99 (radio)
+$1.22 (LED chip)
+
+----
+$24.81
