@@ -24,7 +24,7 @@ PG14	LCD_B0
 PG12	LCD_B1
 PD6	LCD_B2
 PG11	LCD_B3
-PE12	LCD_B4	Note: conflict with DMC D9
+PE12	LCD_B4	Note: conflict with FMC D9
 
 FMC
 
