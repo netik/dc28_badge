@@ -161,8 +161,8 @@ static const SPIConfig hs_spicfg =
 	false,
 	NULL,
 	GPIOI,
-	GPIOI_ARD_D8,
-	SPI_CR1_CPOL | SPI_CR1_BR_0,
+	GPIOI_ARD_D7,
+	SPI_CR1_BR_0 | SPI_CR1_SSM | SPI_CR1_SSI,
 	SPI_CR2_DS_2 | SPI_CR2_DS_1 | SPI_CR2_DS_0
 };
 
@@ -227,25 +227,6 @@ static const GPTConfig gptcfg =
 	0,
 	0
 };
-
-/*
- * This is a periodic thread that does absolutely nothing except flash
- * a LED.
- */
-
-static THD_WORKING_AREA(waThread1, 128);
-static THD_FUNCTION(Thread1, arg)
-{
-
-	(void)arg;
-	chRegSetThreadName("blinker");
-	while (true) {
-		palSetLine (LINE_ARD_D13);
-		chThdSleepMilliseconds (500);
-		palClearLine (LINE_ARD_D13);
-		chThdSleepMilliseconds (500);
-	}
-}
 
 THD_FUNCTION(shellSdThreadStub, p)
 {
@@ -439,13 +420,6 @@ main (void)
 
 	_orchard_cmd_list_cmd_cpu.sc_function (NULL, 0, NULL);
 
-	/*
-	 * ARD_D13 is programmed as output (board LED).
-	 */
-
-	palClearLine (LINE_ARD_D13);
-	palSetLineMode (LINE_ARD_D13, PAL_MODE_OUTPUT_PUSHPULL);
-
 	/* Enable timer */
 
 	gptStart (&GPTD5, &gptcfg);
@@ -454,16 +428,13 @@ main (void)
 
 	/* Enable SPI */
 
-	palSetPadMode (GPIOI, GPIOI_ARD_D13,
-	    PAL_MODE_ALTERNATE(5) | PAL_STM32_OSPEED_HIGHEST);
-	palSetPadMode (GPIOB, GPIOB_ARD_D12,
-	    PAL_MODE_ALTERNATE(5) | PAL_STM32_OSPEED_HIGHEST);
-	palSetPadMode (GPIOB, GPIOB_ARD_D11,
-	    PAL_MODE_ALTERNATE(5) | PAL_STM32_OSPEED_HIGHEST);
-
-	palSetLineMode (LINE_ARD_D11, PAL_MODE_OUTPUT_PUSHPULL);
-	palSetLineMode (LINE_ARD_D12, PAL_MODE_OUTPUT_PUSHPULL);
-	palSetLineMode (LINE_ARD_D13, PAL_MODE_OUTPUT_PUSHPULL);
+	palSetLineMode (LINE_ARD_D11, PAL_MODE_ALTERNATE(5) |
+	    PAL_STM32_OTYPE_PUSHPULL | PAL_STM32_OSPEED_HIGHEST);
+	palSetLineMode (LINE_ARD_D12, PAL_MODE_ALTERNATE(5) |
+	    PAL_STM32_OTYPE_PUSHPULL | PAL_STM32_OSPEED_HIGHEST);
+	palSetLineMode (LINE_ARD_D13, PAL_MODE_ALTERNATE(5) |
+	    PAL_STM32_OTYPE_PUSHPULL | PAL_STM32_OSPEED_HIGHEST);
+	palSetLineMode (LINE_ARD_D7, PAL_MODE_OUTPUT_PUSHPULL);
 
 	spiStart(&SPID2, &hs_spicfg);
 
@@ -568,13 +539,6 @@ main (void)
 	sdDetectStart ();
 
 	printf ("SD card detect enabled\n");
-
-	/*
-	 * Create blinker thread.
-	 */
-
-	chThdCreateStatic (waThread1, sizeof(waThread1),
-	    NORMALPRIO+1, Thread1, NULL);
 
 	/* Initialize orchard subsystem */
 
