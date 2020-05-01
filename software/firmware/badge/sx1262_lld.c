@@ -103,6 +103,7 @@ sx1262Int (void * arg)
 	return;
 }
 
+#ifdef debug
 static void sx1262Status (SX1262_Driver * p)
 {
 	SX_GETSTS g;
@@ -115,6 +116,7 @@ static void sx1262Status (SX1262_Driver * p)
 
 	return;
 }
+#endif
 
 static void sx1262Standby (SX1262_Driver * p)
 {
@@ -396,7 +398,12 @@ static void
 sx1262Calibrate (SX1262_Driver * p)
 {
 	SX_CALIBRATE c;
-	SX_GETERRS e;
+	SX_GETERRS ge;
+	SX_CLRERRS ce;
+
+	ce.sx_opcode = SX_CMD_CLEARERRS;
+	ge.sx_opcode = SX_CMD_GETERRS;
+	sx1262CmdSend (p, &ce, sizeof(ce));
 
 	c.sx_opcode = SX_CMD_CALIBRATE;
 	c.sx_calparam = SX_CALIBRATE_RC64K|SX_CALIBRATE_RC13M|
@@ -406,10 +413,13 @@ sx1262Calibrate (SX1262_Driver * p)
 
 	sx1262CmdSend (p, &c, sizeof(c));
 
-	sx1262CmdExc (p, &e, sizeof(e));
+	/* Check for errors */
 
-	if (__builtin_bswap16(e.sx_errs) & 0x3F)
-		printf ("Calibration error detected.\n");
+	sx1262CmdExc (p, &ge, sizeof(ge));
+
+	if (__builtin_bswap16(ge.sx_errs) & 0x3F)
+		printf ("Calibration error detected (%x).\n",
+		    __builtin_bswap16(ge.sx_errs));
 
 	return;
 }
@@ -588,10 +598,10 @@ sx1262Enable (SX1262_Driver * p)
 	pkp.sx_invertiq = SX_LORA_IQ_STANDARD;
 	sx1262CmdSend (p, &pkp, sizeof(pkp));
 
-	/* Set radio to private network */
+	/* Set sync word */
 
-	sx1262RegWrite (p, SX_REG_LORA_SYNC_MSB, SX_LORA_SYNC_PRIVATE >> 8);
-	sx1262RegWrite (p, SX_REG_LORA_SYNC_LSB, SX_LORA_SYNC_PRIVATE & 0xFF);
+	sx1262RegWrite (p, SX_REG_LORA_SYNC_MSB, p->sx_syncword >> 8);
+	sx1262RegWrite (p, SX_REG_LORA_SYNC_LSB, p->sx_syncword & 0xFF);
 
 	/* Apply workaround for I/Q optimization */
 
@@ -690,10 +700,11 @@ sx1262Start (void)
 	/* Set the SPI interface */
 
 	SX1262D1.sx_spi = &SPID2;
-	SX1262D1.sx_freq = 921575000;
+	SX1262D1.sx_freq = 916000000;
+	SX1262D1.sx_syncword = SX_LORA_SYNC_PRIVATE;
 	SX1262D1.sx_symtimeout = 0;
 	SX1262D1.sx_pktlen = 64;
-	SX1262D1.sx_preamlen = 12;
+	SX1262D1.sx_preamlen = 8;
 	SX1262D1.sx_service = 0;
 
 	/* Configure I/O pins */
@@ -763,5 +774,12 @@ sx1262Start (void)
 		sx1262Receive (&SX1262D1);
 	}
 
+	return;
+}
+
+void
+sx1262Stop (SX1262_Driver * p)
+{
+	sx1262Disable (p);
 	return;
 }

@@ -744,6 +744,7 @@ typedef struct sx_clrerrs {
 typedef struct sx1262_driver {
 	SPIDriver *		sx_spi;
 	uint32_t		sx_freq;
+	uint16_t		sx_syncword;
 	uint8_t			sx_symtimeout;
 	uint8_t			sx_preamlen;
 	uint8_t			sx_pktlen;
@@ -756,6 +757,7 @@ typedef struct sx1262_driver {
 extern SX1262_Driver SX1262D1;
 
 extern void sx1262Start (void);
+extern void sx1262Stop (SX1262_Driver *);
 
 #endif /* _SX1262_LLDH_ */
 
