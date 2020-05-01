@@ -60,6 +60,8 @@
  * For compatibility, we use the standard mode here. The touch event
  * thread will loop and continue to call the mouse event handler as
  * long as the interrupt pin is asserted.
+ *
+ * On the STM32F746 Discovery board, the LINE_LCD_INT pin is PI13. 
  */
 
 static THD_WORKING_AREA(waTouchThread, 256);

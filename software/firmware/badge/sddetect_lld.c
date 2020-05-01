@@ -38,6 +38,10 @@
 
 #include "sddetect_lld.h"
 
+/*
+ * On the STM32F764 Discovery board, the LINE_SD_DETECT pin is PC13.
+ */
+
 static THD_WORKING_AREA(waSdDetectThread, 256);
 static thread_reference_t sdDetectThreadReference;
 static volatile uint8_t sdDetectService = 0;
