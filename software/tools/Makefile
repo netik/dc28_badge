@@ -15,7 +15,7 @@ CC=cc
 BIN=./bin
 SOURCE=./src/
 
-PROG=videomerge
+PROG=rgbhdr videomerge
 LIST=$(addprefix $(BIN)/, $(PROG))
 CFLAGS= -I$(SOURCE)
 
