@@ -396,6 +396,7 @@ static void
 sx1262Calibrate (SX1262_Driver * p)
 {
 	SX_CALIBRATE c;
+	SX_GETERRS e;
 
 	c.sx_opcode = SX_CMD_CALIBRATE;
 	c.sx_calparam = SX_CALIBRATE_RC64K|SX_CALIBRATE_RC13M|
@@ -405,8 +406,10 @@ sx1262Calibrate (SX1262_Driver * p)
 
 	sx1262CmdSend (p, &c, sizeof(c));
 
-	while (sx1262IsBusy (p) == TRUE)
-		;
+	sx1262CmdExc (p, &e, sizeof(e));
+
+	if (__builtin_bswap16(e.sx_errs) & 0x3F)
+		printf ("Calibration error detected.\n");
 
 	return;
 }
@@ -529,6 +532,7 @@ sx1262Enable (SX1262_Driver * p)
 	sx1262CmdSend (p, &di, sizeof(di));
 
 	sx1262CalImg (p);
+	sx1262Calibrate (p);
 
 	/* Set channel */
 
@@ -580,7 +584,7 @@ sx1262Enable (SX1262_Driver * p)
 	pkp.sx_preamlen = __builtin_bswap16(p->sx_preamlen);
 	pkp.sx_headertype = SX_LORA_HDR_FIXED;
 	pkp.sx_payloadlen = p->sx_pktlen;
-	pkp.sx_crctype = SX_LORA_CRCTYPE_OFF /*ON*/;
+	pkp.sx_crctype = SX_LORA_CRCTYPE_ON;
 	pkp.sx_invertiq = SX_LORA_IQ_STANDARD;
 	sx1262CmdSend (p, &pkp, sizeof(pkp));
 

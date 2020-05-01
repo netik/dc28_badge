@@ -670,6 +670,15 @@ typedef struct sx_clrerrs {
 } SX_CLRERRS;
 #pragma pack()
 
+#define SX_OPERR_RC64K_CAL_ERR	0x0001	/* RC64K calibration failed */
+#define SX_OPERR_RC13M_CAL_ERR	0x0002	/* RC13M calibration failed */
+#define SX_OPERR_PLL_CAL_ERR	0x0004	/* PLL calibration failed */
+#define SX_OPERR_ADC_CAL_ERR	0x0008	/* ADC calibration failed */
+#define SX_OPERR_IMG_CAL_ERR	0x0010	/* IMG calibration failed */
+#define SX_OPERR_XOSC_CAL_ERR	0x0020	/* XOSC calibration failed */
+#define SX_OPERR_PLL_LOCK_ERR	0x0040	/* PLL failed to lock */
+#define SX_OPERR_PA_RAMP_ERR	0x0100	/* PA ramping failed */
+
 /* Register table */
 
 #define SX_REG_DIOX_OUT_ENB	0x0580	/* Non-standard DIO control */
