@@ -87,6 +87,7 @@ typedef struct orchard_app_instance {
   uint32_t              ui_result;
 } orchard_app_instance;
 
+extern orchard_app_instance instance;
 
 #define orchard_app_start()                                                   \
   static char start[4] __attribute__((unused,                                 \
