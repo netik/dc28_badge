@@ -32,6 +32,7 @@
 #include "stm32sai_lld.h"
 #include "sddetect_lld.h"
 #include "touch_lld.h"
+#include "sx1262_lld.h"
 #include "wm8994.h"
 
 #include "gfx.h"
@@ -134,13 +135,17 @@ static const SDRAMConfig sdram_cfg =
 };
 
 /*
- * Maximum speed SPI configuration (27MHz, CPHA=0, CPOL=0, MSb first).
+ * Maximum speed SPI configuration (13.5MHz, CPHA=0, CPOL=0, MSB first).
  *
  * The SPI controller uses the APB2 clock, which is 108MHz, to drive
  * its baud rate generator. The BR divisor bits in the CR1 register
  * control the baud rate (SCK) output. There are 8 divisor values available,
- * from 2 (BR == 0) to 256 (BR == 7). We default BR to 1, which yields
- * a divisor of 4, for an output SCK of 27MHz.
+ * from 2 (BR == 0) to 256 (BR == 7). We default BR to 2, which yields
+ * a divisor of 2, for an output SCK of 13.5MHz.
+ *
+ * (The speed of 13.5MHz was chosen because the SemTech SX1262's SPI
+ * interface supports a maximum speed of 16MHz, so any of the settings
+ * above 13.5MHz would be too fast for reliable data transfer.)
  *
  * The complete list of SCK values is:
  *
@@ -162,7 +167,7 @@ static const SPIConfig hs_spicfg =
 	NULL,
 	GPIOI,
 	GPIOI_ARD_D7,
-	SPI_CR1_BR_0 | SPI_CR1_SSM | SPI_CR1_SSI,
+	SPI_CR1_BR_1 | SPI_CR1_SSM | SPI_CR1_SSI,
 	SPI_CR2_DS_2 | SPI_CR2_DS_1 | SPI_CR2_DS_0
 };
 
@@ -540,10 +545,20 @@ main (void)
 
 	printf ("SD card detect enabled\n");
 
-	/* Initialize orchard subsystem */
+	/* Initialize radio */
+
+	sx1262Start ();
+
+	/*
+	 * Initialize orchard subsystem
+	 * Note that at boot time, we temporarily set the default
+	 * app to the "Intro" app, which plays the Dragnet video.
+	 * After this, the default app will be the launcher.
+	 */
 
 	uiStart ();
  	orchardAppInit ();
+	instance.app = orchardAppByName ("Intro");
 	orchardAppRestart ();
 
 	/* Initialize shell subsystem */

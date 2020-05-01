@@ -31,7 +31,7 @@ endif
 
 # Enable this if you want link time optimizations (LTO).
 ifeq ($(USE_LTO),)
-  USE_LTO = yes
+  USE_LTO = no
 endif
 
 # Enable this if you want to see the full log while compiling.
@@ -169,6 +169,7 @@ CSRC = $(ALLCSRC) \
        stm32adc_lld.c \
        stm32sai_lld.c \
        sddetect_lld.c \
+       sx1262_lld.c \
        touch_lld.c \
        scroll_lld.c \
        orchard-app.c \
@@ -182,6 +183,7 @@ CSRC = $(ALLCSRC) \
        app-music.c \
        app-launcher.c \
        app-ledsign.c \
+       app-intro.c \
        ui-keyboard.c \
        ui-list.c
 
