@@ -547,7 +547,7 @@ main (void)
 
 	/* Initialize radio */
 
-	sx1262Start ();
+	sx1262Start (&SX1262D1);
 
 	/*
 	 * Initialize orchard subsystem

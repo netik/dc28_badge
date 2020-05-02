@@ -10,6 +10,8 @@
 
 #ifdef notdef
 
+/* For easy reference, this is a list of all commands in numerical order. */
+
 #define SX_CMD_RESETSTATS	0x00	/* Reset statistics */
 #define SX_CMD_ACKIRQ		0x02	/* Clear IRQ events */
 #define SX_CMD_CLEARERRS	0x07	/* Clear device errors */
@@ -51,9 +53,10 @@
 #define SX_CMD_SETCAD		0xC5	/* Set chip in RX with passed CAD */
 #define SX_CMD_TXCONTINUOUS	0xD1	/* TX dead carrier */
 #define SX_CMD_TXINFPREAMBLE	0xD2	/* Set TX infinite preamble */
+
 #endif
 
-/* Operational Modes Functions */
+/* -------------------- Operational Modes Functions ------------------------ */
 
 #define SX_CMD_SETSLEEP		0x84	/* Set chip in sleep mode */
 #define SX_CMD_SETSTDBY		0x80	/* Set chip in standby mode */
@@ -194,18 +197,20 @@ typedef struct sx_setrxtxfb {
 #define SX_FBMODE_STDBYXOSC	0x30
 #define SX_FBMODE_FS		0x40
 
-/* Registers and Buffer Access */
+/* -------------------- Registers and Buffer Access ------------------------ */
 
 #define SX_CMD_REGWRITE		0x0D	/* Write an internal register */
 #define SX_CMD_REGREAD		0x1D	/* Read an internal register */
 #define SX_CMD_BUFWRITE		0x0E	/* Write to an internal buffer */
 #define SX_CMD_BUFREAD		0x1E	/* Read from an internal buffer */
 
+#pragma pack(1)
 typedef struct sx_regwrite {
 	uint8_t		sx_opcode;
 	uint16_t	sx_address;
 	uint8_t		sx_val;
 } SX_REGWRITE;
+#pragma pack()
 
 #pragma pack(1)
 typedef struct sx_regread {
@@ -229,7 +234,7 @@ typedef struct sx_bufread {
 } SX_BUFREAD;
 #pragma pack()
 
-/* DIO and IRQ Control Functions */
+/* ------------------- DIO and IRQ Control Functions ----------------------- */
 
 #define SX_CMD_SETDIOIRQ	0x08	/* Set IRQ/DIO modes */
 #define SX_CMD_GETIRQ		0x12	/* Get IRQ events */
@@ -273,10 +278,12 @@ typedef struct sx_ackirq {
 } SX_ACKIRQ;
 #pragma pack()
 
+#pragma pack(1)
 typedef struct sx_setdio2asrfsw {
 	uint8_t		sx_opcode;
 	uint8_t		sx_enable;
 } SX_SETDIO2ASRFSW;
+#pragma pack()
 
 #define SX_DIO2_IRQ		0x00	/* DIO2 is an interrupt */
 #define SX_DIO2_RFSW		0x01	/* DIO2 is RX/TX RF switch control */
@@ -300,7 +307,7 @@ typedef struct sx_setdio3astxco {
 
 #define SX_TXCOPERIOD		15.625		/* microseconds */
 
-/* Modulation and Packet-Related Functions */
+/* -------------- Modulation and Packet-Related Functions ------------------ */
 
 #define SX_CMD_SETFREQ		0x86	/* Set RF frequency */
 #define SX_CMD_GETPKT		0x11	/* Get packet type */
@@ -334,10 +341,12 @@ typedef struct sx_setfreq {
 #define SX_POW			((double)0x2000000)
 #define SX_FREQ(x)	(uint32_t) (((double)(x) * SX_XTALFREQ) / SX_POW)
 
+#pragma pack(1)
 typedef struct sx_setpkt {
 	uint8_t		sx_opcode;
 	uint8_t		sx_pkttype;
 } SX_SETPKT;
+#pragma pack()
 
 #define SX_PKT_GFSK		0x00
 #define SX_PKT_LORA		0x01
@@ -447,7 +456,7 @@ typedef struct sx_setmodparam_lora {
 #define SX_LORA_CR_4_8		0x03
 
 #define SX_LORA_LDOPT_OFF	0x00
-#define SX_LORA_LDOPF_ON	0x01
+#define SX_LORA_LDOPT_ON	0x01
 
 /* GFSK packet parameters */
 
@@ -509,6 +518,7 @@ typedef struct sx_setpktparam_lora {
 #define SX_LORA_IQ_STANDARD	0x00
 #define SX_LORA_IQ_INVERT	0x01
 
+#pragma pack(1)
 typedef struct sx_setcadparams {
 	uint8_t		sx_opcode;
 	uint8_t		sx_cadsymnum;
@@ -517,6 +527,7 @@ typedef struct sx_setcadparams {
 	uint8_t		sx_cadexitmode;
 	uint8_t		sx_cadtimeo[3];
 } SX_SETCADPARAMS;
+#pragma pack()
 
 #define SX_CAD_SYMB_1		0x00
 #define SX_CAD_SYMB_2		0x01
@@ -535,12 +546,14 @@ typedef struct sx_setbufbase {
 } SX_SETBUFBASE;
 #pragma pack()
 
+#pragma pack(1)
 typedef struct sx_setlorasymto {
 	uint8_t		sx_opcode;
 	uint8_t		sx_symbnum;
 } SX_SETLORASYMTO;
+#pragma pack()
 
-/* Communication Status Information */
+/* ---------------- Communication Status Information ----------------------- */
 
 #define SX_CMD_GETSTS		0xC0	/* Set device status */
 #define SX_CMD_GETRXBUFSTS	0x13	/* Get buffer status */
@@ -549,10 +562,12 @@ typedef struct sx_setlorasymto {
 #define SX_CMD_GETSTATS		0x10	/* Get statistics */
 #define SX_CMD_RESETSTATS	0x00	/* Reset statistics */
 
+#pragma pack(1)
 typedef struct sx_getsts {
 	uint8_t		sx_opcode;
 	uint8_t		sx_status;
 } SX_GETSTS;
+#pragma pack()
 
 #define SX_GETSTS_RSVD0		0x01
 #define SX_GETSTS_CMDSTS	0x0E
@@ -578,12 +593,14 @@ typedef struct sx_getsts {
 #define SX_CHIPMODE_RX		0x05	/* RX mode */
 #define SX_CHIPMODE_TX		0x06	/* TX mode */
 
+#pragma pack(1)
 typedef struct sx_getrxbufsts {
 	uint8_t		sx_opcode;
 	uint8_t		sx_status;
 	uint8_t		sx_rxpaylen;
 	uint8_t		sx_rxstbufptr;
 } SX_GETRXBUFSTS;
+#pragma pack()
 
 #pragma pack(1)
 typedef struct sx_getpktsts_gfsk {
@@ -646,10 +663,10 @@ typedef struct sx_getstats_lora {
 typedef struct sx_resetstats {
 	uint8_t		sx_opcode;
 	uint8_t		sx_dummy[6];
-} SX_GETSTATS;
+} SX_RESETSTATS;
 #pragma pack()
 
-/* Miscellaneous */
+/* ---------------------------- Miscellaneous ------------------------------ */
 
 #define SX_CMD_GETERRS		0x17	/* Get device errors */
 #define SX_CMD_CLEARERRS	0x07	/* Clear device errors */
@@ -679,7 +696,7 @@ typedef struct sx_clrerrs {
 #define SX_OPERR_PLL_LOCK_ERR	0x0040	/* PLL failed to lock */
 #define SX_OPERR_PA_RAMP_ERR	0x0100	/* PA ramping failed */
 
-/* Register table */
+/* -------------------------- Register table ------------------------------- */
 
 #define SX_REG_DIOX_OUT_ENB	0x0580	/* Non-standard DIO control */
 #define SX_REG_DIOX_IN_ENB	0x0583	/* Non-standard DIO control */
@@ -725,6 +742,7 @@ typedef struct sx_clrerrs {
 #define SX_CRC_POLY_IBM		0x8005
 
 /* CCITT is the default */
+
 #define SX_CRC_SEED_CCITT	0x1D0F
 #define SX_CRC_POLY_CCITT	0x1201
 
@@ -736,6 +754,8 @@ typedef struct sx_clrerrs {
 
 #define SX_OCP_1261_60MA	0x18	/* Overcurrent level for SX1261 */
 #define SX_OCP_1262_140MA	0x38	/* Overcurrent level for SX1262 */
+
+/* -------------------------- Driver-specific ------------------------------ */
 
 #define SX_DELAY		100
 
@@ -756,7 +776,7 @@ typedef struct sx1262_driver {
 
 extern SX1262_Driver SX1262D1;
 
-extern void sx1262Start (void);
+extern void sx1262Start (SX1262_Driver *);
 extern void sx1262Stop (SX1262_Driver *);
 
 #endif /* _SX1262_LLDH_ */

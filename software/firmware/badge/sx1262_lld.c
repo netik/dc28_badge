@@ -167,7 +167,9 @@ static THD_FUNCTION(sx1262Thread, arg)
 		}
 
 		if (irq & SX_IRQ_RXDONE) {
-			sx1262RxHandle (p);
+			/* Ignore packets with bad CRC */
+			if (!(irq & SX_IRQ_CRCERR))
+				sx1262RxHandle (p);
 			sx1262Receive (p);
 		}
 
@@ -525,17 +527,11 @@ sx1262Enable (SX1262_Driver * p)
 	tp.sx_ramptime = SX_RAMPTIME_200US;
 	sx1262CmdSend (p, &tp, sizeof(tp));
 
-	/*
-	 * Setting the TX parameters may cause the radio to enter
-	 * the TX state. Put it back into standby state.
-	 */
-
-	sx1262Standby (p);
-
 	/* Set up interrupt event signalling -- we use DIO1 */
 
 	di.sx_opcode = SX_CMD_SETDIOIRQ;
-	di.sx_irqmask = __builtin_bswap16 (SX_IRQ_RXDONE | SX_IRQ_TXDONE);
+	di.sx_irqmask = __builtin_bswap16 (SX_IRQ_RXDONE |
+	    SX_IRQ_TXDONE | SX_IRQ_CRCERR);
 	di.sx_dio1mask = di.sx_irqmask;
 	di.sx_dio2mask = 0;
 	di.sx_dio3mask = 0;
@@ -543,6 +539,14 @@ sx1262Enable (SX1262_Driver * p)
 
 	sx1262CalImg (p);
 	sx1262Calibrate (p);
+
+	/*
+	 * All four of the above commands may cause the radio to
+	 * change its state (mostly resetting back to standby_rc).
+	 * Put it back into standby_xosc state before continuing.
+	 */
+
+	sx1262Standby (p);
 
 	/* Set channel */
 
@@ -579,7 +583,7 @@ sx1262Enable (SX1262_Driver * p)
 	pkt.sx_pkttype = SX_PKT_LORA;
 	sx1262CmdSend (p, &pkt, sizeof(pkt));
 
-	/* Then set modulation parameters */
+	/* Then set modulation parameters. */
 
 	m.sx_opcode = SX_CMD_SETMODPARAM;
 	m.sx_sf = SX_LORA_SF7;
@@ -588,7 +592,12 @@ sx1262Enable (SX1262_Driver * p)
 	m.sx_ldopt = SX_LORA_LDOPT_OFF;
 	sx1262CmdSend (p, &m, sizeof(m));
 
-	/* Then set the packet parameters */
+	/*
+	 * Then set the packet parameters
+	 * Apparently, the LoRa modem will only perform hardware
+	 * CRC checks when in implicit header mode (i.e. when
+	 * using fixed sized frames). So we use that here.
+	 */
 
 	pkp.sx_opcode = SX_CMD_SETPKTPARAM;
 	pkp.sx_preamlen = __builtin_bswap16(p->sx_preamlen);
@@ -674,6 +683,8 @@ void sx1262RxHandle (SX1262_Driver * p)
 {
 	SX_GETRXBUFSTS s;
 	SX_GETPKTSTS_LORA sp;
+	SX_GETSTATS_LORA st;
+	SX_RESETSTATS rs;
 
 	sp.sx_opcode = SX_CMD_GETPKTSTS;
 	sx1262CmdExc (p, &sp, sizeof(sp));
@@ -681,31 +692,45 @@ void sx1262RxHandle (SX1262_Driver * p)
 	s.sx_opcode = SX_CMD_GETRXBUFSTS;
 	sx1262CmdExc (p, &s, sizeof(s));
 
-	sx1262BufRead (p, p->sx_rxbuf, s.sx_rxstbufptr, s.sx_rxpaylen);
+	memset (p->sx_rxbuf, 0, SX_MAX_PKT);
+	sx1262BufRead (p, p->sx_rxbuf, s.sx_rxstbufptr, s.sx_rxpaylen + 10);
 
-printf ("RX payload: %d offset: %d ", s.sx_rxpaylen, s.sx_rxstbufptr);
-printf ("SnR: %x RSSI1: %x RSSI2: %x\n", sp.sx_snrpkt, sp.sx_rssipkt,
-    sp.sx_rssipkt);
+	/* Temporary: display packet RX statistics */
 
-printf ("PAYLOAD: [%s]\n", p->sx_rxbuf);
+	st.sx_opcode = SX_CMD_GETSTATS;
+	sx1262CmdExc (p, &st, sizeof(st));
+
+	rs.sx_opcode = SX_CMD_RESETSTATS;
+	sx1262CmdSend (p, &rs, sizeof(rs));
+
+	printf ("STATS: %d %d %d\n", 
+		__builtin_bswap16(st.sx_pktrcvd),
+		__builtin_bswap16(st.sx_pktcrcerr),
+		__builtin_bswap16(st.sx_pkthdrerr));
+
+	printf ("RX payload: %d offset: %d ", s.sx_rxpaylen, s.sx_rxstbufptr);
+	printf ("SnR: %x RSSI1: %x RSSI2: %x\n", sp.sx_snrpkt, sp.sx_rssipkt,
+	    sp.sx_rssipkt);
+
+	printf ("PAYLOAD: [%s]\n", p->sx_rxbuf);
 
 	return;
 }
 
 void
-sx1262Start (void)
+sx1262Start (SX1262_Driver * p)
 {
 	uint8_t ocp;
 
 	/* Set the SPI interface */
 
-	SX1262D1.sx_spi = &SPID2;
-	SX1262D1.sx_freq = 916000000;
-	SX1262D1.sx_syncword = SX_LORA_SYNC_PRIVATE;
-	SX1262D1.sx_symtimeout = 0;
-	SX1262D1.sx_pktlen = 64;
-	SX1262D1.sx_preamlen = 8;
-	SX1262D1.sx_service = 0;
+	p->sx_spi = &SPID2;
+	p->sx_freq = 916000000;
+	p->sx_syncword = SX_LORA_SYNC_PRIVATE;
+	p->sx_symtimeout = 0;
+	p->sx_pktlen = 64;
+	p->sx_preamlen = 8;
+	p->sx_service = 0;
 
 	/* Configure I/O pins */
 
@@ -725,12 +750,12 @@ sx1262Start (void)
 	/* DIO1 */
 	palSetLineMode (LINE_ARD_D10, PAL_STM32_PUPDR_PULLDOWN |
 	     PAL_STM32_MODE_INPUT);
-	palSetLineCallback (LINE_ARD_D10, sx1262Int, &SX1262D1);
+	palSetLineCallback (LINE_ARD_D10, sx1262Int, p);
 	palEnableLineEvent (LINE_ARD_D10, PAL_EVENT_MODE_RISING_EDGE);
 
 	/* Reset the chip */
 
-	sx1262Reset (&SX1262D1);
+	sx1262Reset (p);
 
 	/*
 	 * Try to probe for the radio chip. We do this by
@@ -738,7 +763,7 @@ sx1262Start (void)
 	 * checking that its reset default value makes sense.
 	 */
 
-	ocp = sx1262RegRead (&SX1262D1, SX_REG_OCPCFG);
+	ocp = sx1262RegRead (p, SX_REG_OCPCFG);
 
 	if (ocp == SX_OCP_1261_60MA)
 		printf ("SemTech SX1262 radio enabled\n");
@@ -749,14 +774,14 @@ sx1262Start (void)
 
 	/* Set up interrupt event thread */
 
-	SX1262D1.sx_thread = chThdCreateStatic (waSx1262Thread,
-	    sizeof(waSx1262Thread), NORMALPRIO - 1, sx1262Thread, &SX1262D1);
+	p->sx_thread = chThdCreateStatic (waSx1262Thread,
+	    sizeof(waSx1262Thread), NORMALPRIO - 1, sx1262Thread, p);
 
 	/* Enable the radio */
 
-	sx1262Enable (&SX1262D1);
+	sx1262Enable (p);
 
-	/* Send 5 packets as a quick test */
+	/* Send 5 packets as a quick test, then enter RX mode */
 
 	{
 		char * b;
@@ -765,13 +790,14 @@ sx1262Start (void)
 		b = malloc (64);
 
 		for (i = 0; i < 5; i++) {
+			memset (b, 0, 64);
 			sprintf (b, "testing%d...\n", i);
-			sx1262Send (&SX1262D1, (uint8_t *)b, 64);
+			sx1262Send (p, (uint8_t *)b, 64);
 			chThdSleepMilliseconds (1000);
 		}
 
 		free (b);
-		sx1262Receive (&SX1262D1);
+		sx1262Receive (p);
 	}
 
 	return;
