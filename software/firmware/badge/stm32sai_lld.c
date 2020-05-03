@@ -211,6 +211,7 @@ saiStart (SAIDriver * saip)
 			0 << SAI_xCR1_CKSTR_Pos |   /* clkstrobe rising edge */
 			0 << SAI_xCR1_PRTCFG_Pos |  /* free protocol */
 			0 << SAI_xCR1_SYNCEN_Pos |  /* asynchronous */
+			0 << SAI_xCR1_MONO_Pos |    /* stereo (mono == 0) */
 			0 << SAI_xCR1_OUTDRIV_Pos | /* outdrive disable */
 			0 << SAI_xCR1_LSBFIRST_Pos |/* MSB first */
 			0 << SAI_xCR1_MODE_Pos;	    /* master xmit mode */
