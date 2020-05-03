@@ -141,7 +141,7 @@ static const SDRAMConfig sdram_cfg =
  * its baud rate generator. The BR divisor bits in the CR1 register
  * control the baud rate (SCK) output. There are 8 divisor values available,
  * from 2 (BR == 0) to 256 (BR == 7). We default BR to 2, which yields
- * a divisor of 2, for an output SCK of 13.5MHz.
+ * a divisor of 8, for an output SCK of 13.5MHz.
  *
  * (The speed of 13.5MHz was chosen because the SemTech SX1262's SPI
  * interface supports a maximum speed of 16MHz, so any of the settings
