@@ -81,7 +81,9 @@ draw_launcher_buttons(struct launcher_list * list)
 	gwinRedraw (list->ghTitleL);
 
 	/* Create label widget: ghTitleR */
-	snprintf (tmp, sizeof(tmp), "%x:%x:%x:%x:%x:%x", 0, 0, 0, 0, 0, 0);
+	snprintf (tmp, sizeof(tmp), "%x:%x:%x:%x:%x:%x",
+	    badge_addr[0], badge_addr[1], badge_addr[2],
+	    badge_addr[3], badge_addr[4], badge_addr[5]);
 
 	wi.g.show = TRUE;
 	wi.g.x = 140;

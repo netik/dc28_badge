@@ -40,6 +40,10 @@
 #include "orchard-ui.h"
 #include "orchard-app.h"
 
+#include "crc32.h"
+
+uint8_t badge_addr[BADGE_ADDR_LEN];
+
 BaseSequentialStream * console;
 
 /* linker set for command objects */
@@ -296,6 +300,7 @@ int
 main (void)
 {
 	STM32_ID * pId;
+	uint32_t crc;
 
 	/*
 	 * System initializations.
@@ -416,6 +421,24 @@ main (void)
 	    pId->stm32_lotnum[0], pId->stm32_lotnum[1], pId->stm32_lotnum[2],
 	    pId->stm32_lotnum[3], pId->stm32_lotnum[4], pId->stm32_lotnum[5],
 	    pId->stm32_lotnum[6]);
+
+	/*
+	 * Hash the unique ID and create a MAC address out of it.
+	 * We use CRC32 as a hash routine for now, and take the
+	 * lower 24 bits as the device portion of the address.
+	 */
+
+	crc = crc32_le ((const uint8_t *)pId, sizeof (STM32_ID), 0x0);
+	badge_addr[0] = BADGE_OUI_0;
+	badge_addr[1] = BADGE_OUI_1;
+	badge_addr[2] = BADGE_OUI_2;
+	badge_addr[3] = crc & 0xFF;
+	badge_addr[4] = (crc & 0xFF00) >> 8;
+	badge_addr[5] = (crc & 0xFF0000) >> 16;
+
+	printf ("Station address: %02X:%02X:%02X:%02X:%02X:%02X\n",
+	    badge_addr[0], badge_addr[1], badge_addr[2],
+	    badge_addr[3], badge_addr[4], badge_addr[5]);
 
 	printf ("Flash size: %d KB\n", *(uint16_t *)FLASHSIZE_BASE);
 

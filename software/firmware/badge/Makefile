@@ -161,6 +161,7 @@ CSRC = $(ALLCSRC) \
        cmd-reset.c \
        cmd-video.c \
        cmd-scroll.c \
+       crc32.c \
        newlib_syscall.c \
        nullprot_lld.c \
        badge_vectors.c \

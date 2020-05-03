@@ -65,6 +65,19 @@ typedef struct _ble_evt_t {
 	uint32_t	ble_evt_dummy;
 } ble_evt_t;
 
+#define BADGE_ADDR_LEN	6
+
+/*
+ * Make up a fake vendor OUI (00:1D:35) ("IDES"). This isn't really ethernet
+ * so it doesn't matter if this overlaps with a real ethernet OUI.
+ */
+
+#define BADGE_OUI_0	0x00
+#define BADGE_OUI_1	0x1D
+#define BADGE_OUI_2	0x35
+
+extern uint8_t badge_addr[BADGE_ADDR_LEN];
+
 extern void badge_sleep_enable (void);
 extern void badge_sleep_disable (void);
 
