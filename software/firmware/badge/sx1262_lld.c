@@ -104,7 +104,8 @@ sx1262Int (void * arg)
 }
 
 #ifdef debug
-static void sx1262Status (SX1262_Driver * p)
+static void
+sx1262Status (SX1262_Driver * p)
 {
 	SX_GETSTS g;
 
@@ -118,7 +119,8 @@ static void sx1262Status (SX1262_Driver * p)
 }
 #endif
 
-static void sx1262Standby (SX1262_Driver * p)
+static void
+sx1262Standby (SX1262_Driver * p)
 {
 	SX_SETSTDBY s;
 	SX_SETRXTXFB fb;
@@ -136,7 +138,8 @@ static void sx1262Standby (SX1262_Driver * p)
 	return;
 }
 
-static THD_FUNCTION(sx1262Thread, arg)
+static
+THD_FUNCTION(sx1262Thread, arg)
 {
 	SX1262_Driver * p;
 	SX_GETIRQ i;
@@ -168,7 +171,7 @@ static THD_FUNCTION(sx1262Thread, arg)
 
 		if (irq & SX_IRQ_RXDONE) {
 			/* Ignore packets with bad CRC */
-			if (!(irq & SX_IRQ_CRCERR))
+			if (!(irq & (SX_IRQ_CRCERR | SX_IRQ_HDRERR)))
 				sx1262RxHandle (p);
 			sx1262Receive (p);
 		}
@@ -381,8 +384,6 @@ sx1262Reset (SX1262_Driver * p)
 		chThdSleepMilliseconds (1);
 	}
 
-	sx1262Standby (p);
-
 	return;
 }
 
@@ -488,6 +489,8 @@ sx1262Enable (SX1262_Driver * p)
 
 	sx1262Reset (p);
 
+	sx1262Standby (p);
+
 	/* Set DIO2 as RF control switch */
 
 	d.sx_opcode = SX_CMD_SETDIO2ASRFSW;
@@ -531,7 +534,7 @@ sx1262Enable (SX1262_Driver * p)
 
 	di.sx_opcode = SX_CMD_SETDIOIRQ;
 	di.sx_irqmask = __builtin_bswap16 (SX_IRQ_RXDONE |
-	    SX_IRQ_TXDONE | SX_IRQ_CRCERR);
+	    SX_IRQ_TXDONE | SX_IRQ_CRCERR | SX_IRQ_HDRERR);
 	di.sx_dio1mask = di.sx_irqmask;
 	di.sx_dio2mask = 0;
 	di.sx_dio3mask = 0;
@@ -593,10 +596,90 @@ sx1262Enable (SX1262_Driver * p)
 	sx1262CmdSend (p, &m, sizeof(m));
 
 	/*
-	 * Then set the packet parameters
-	 * Apparently, the LoRa modem will only perform hardware
-	 * CRC checks when in implicit header mode (i.e. when
-	 * using fixed sized frames). So we use that here.
+	 * Then set the packet parameters.
+	 *
+	 * A note about CRCs:
+	 *
+	 * LoRa frames may or may not include a header. When there
+	 * is no header, it's assumed that the stations communicating
+	 * the LoRa have previously agreed on a frame payload size and
+	 * coding rate, and all frames will be of the same fixed length.
+	 * An optional CRC may be appended at the end of of the frame.
+	 * This is called implicit header mode.
+	 *
+	 * If there is a header, then the header will specify the
+	 * frame length and coding rate of the payload, and indicate
+	 * whether or not the payload includes a checksum. The header
+	 * will also contain a checksum of its own. This is called
+	 * explicit header mode.
+	 *
+	 * Unfortunately the SX1261/SX1262 reference manual is unclear
+	 * as to if or when the chip will insert or check for valid
+	 * checksums and indicate checksum errors.
+	 *
+	 * The "set packet parameters" lets you specify if you want
+	 * to use implicit (fixed) or explicit (variable) header mode,
+	 * and lets you specify a "CRC type" of on or off.
+	 *
+	 * But there's some confusion: for explicit (variable) header
+	 * mode, there can be two checksums (one for the header and
+	 * one for the payload), but there is only one "CRC mode"
+	 * control. Does it control the inclusion of both the header
+	 * and payload CRCs, or just one? And if it's just one, then
+	 * which one?
+	 *
+	 * Also, explict (variable) header mode implies that each time
+	 * a station tranmits a frame, it can be of arbitrary size. So
+	 * how does software specify the TX packet size? The "set packet
+	 * parameters" command seems to be the only way to specify any
+	 * packet size, but does that means we have to issue a new "set
+	 * packet parameters" command every time we want to send a packet?
+	 * (I mean, we can do that, but it seems inefficient.)
+	 *
+	 * Experimentation has shown that with fixed (implicit) header
+	 * mode, the "CRC type" field does indeed control whether or
+	 * not a checksum is included with the frame, and it also
+	 * controls whether or not the chip will validate the checksum
+	 * on receive. So with SX_LORA_HDR_FIXED and SX_LORA_CRCTYPE_ON,
+	 * we will get an SX_IRQ_CRCERR interrupt indication when a
+	 * packet with a bad payload checksum is received.
+	 *
+	 * The situation with variable (explicit) header mode isn't as
+	 * clear. With SX_LORA_HDR_VARIABLE, if one radio is set to
+	 * SX_LORA_CRCTYPE_OFF and the other is set to SX_LORA_CRCTYPE_ON,
+	 * both radios are still able to successfully exhange packets
+	 * in both directions (no SX_IRQ_CRCERR or SX_IRQ_HDRERR errors
+	 * are flagged). This seems to imply that when using explicit
+	 * headers, the transmitter always generates both the header
+	 * and payload checksums.
+	 *
+	 * However there is some evidence that the "CRC type" setting
+	 * does control the receiver behavior with variable (explicit)
+	 * headers. When leaving the radio in continuous receive mode,
+	 * it will sometimes generate false packet receive events. (One
+	 * assumes this is due to the modem incorrectly interpreting
+	 * radio interference as a packet.) With SX_LORA_CRCTYPE_ON,
+	 * the radio seems to signal SX_IRQ_HDRERR errors on these
+	 * bogus frames and proceeds no further. However when using
+	 * SX_LORA_CRCTYPE_OFF, the receiver has been observed to signal
+	 * both SX_IRQ_HDRERR and SX_IRQ_CRCERR events, but still also
+	 * generate SX_IRQ_RXDONE (packet received) events as well.
+	 *
+	 * So from this I've inferred the following:
+	 *
+	 *                     SX_LORA_HDR_FIXED:
+	 *
+	 *     SX_LORA_CRCTYPE_ON            SX_LORA_CRCTYPE_OFF
+	 *     ----------------------------  ---------------------------
+	 *     TX: PL checksum sent          TX: no checksum sent
+	 *     RX: PL checksum checked       RX: checksum not checked
+	 *
+	 *                     SX_LORA_HDR_VARIABLE:
+	 *
+	 *     SX_LORA_CRCTYPE_ON            SX_LORA_CRCTYPE_OFF
+	 *     ----------------------------  ---------------------------
+	 *     TX: HDR+PL checksums sent     TX: HDR+PL checksums sent
+	 *     RX: HDR+PL checksums checked  RX: no checksums checked
 	 */
 
 	pkp.sx_opcode = SX_CMD_SETPKTPARAM;
@@ -645,10 +728,13 @@ static void
 sx1262Disable (SX1262_Driver * p)
 {
 	sx1262Reset (p);
+	sx1262Standby (p);
+
 	return;
 }
 
-void sx1262Send (SX1262_Driver * p, uint8_t * buf, uint8_t len)
+static void
+sx1262Send (SX1262_Driver * p, uint8_t * buf, uint8_t len)
 {
 	SX_SETTX t;
 
@@ -665,7 +751,8 @@ void sx1262Send (SX1262_Driver * p, uint8_t * buf, uint8_t len)
 	
 }
 
-void sx1262Receive (SX1262_Driver * p)
+static void
+sx1262Receive (SX1262_Driver * p)
 {
 	SX_SETRX r;
 
@@ -679,7 +766,8 @@ void sx1262Receive (SX1262_Driver * p)
 	return;
 }
 
-void sx1262RxHandle (SX1262_Driver * p)
+static void
+sx1262RxHandle (SX1262_Driver * p)
 {
 	SX_GETRXBUFSTS s;
 	SX_GETPKTSTS_LORA sp;
@@ -808,4 +896,17 @@ sx1262Stop (SX1262_Driver * p)
 {
 	sx1262Disable (p);
 	return;
+}
+
+uint32_t
+sx1262Random (SX1262_Driver * p)
+{
+	uint32_t r = 0;
+
+	r = sx1262RegRead (p, SX_REG_RNG_0);
+	r |= sx1262RegRead (p, SX_REG_RNG_1) << 8;
+	r |= sx1262RegRead (p, SX_REG_RNG_2) << 16;
+	r |= sx1262RegRead (p, SX_REG_RNG_3) << 24;
+
+	return (r);
 }

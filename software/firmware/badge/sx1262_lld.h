@@ -778,6 +778,7 @@ extern SX1262_Driver SX1262D1;
 
 extern void sx1262Start (SX1262_Driver *);
 extern void sx1262Stop (SX1262_Driver *);
+extern uint32_t sx1262Random (SX1262_Driver *);
 
 #endif /* _SX1262_LLDH_ */
 
