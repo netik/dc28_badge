@@ -761,6 +761,11 @@ typedef struct sx_clrerrs {
 
 #define SX_MAX_PKT		256
 
+#undef SX_TX_POWER_22DB
+#define SX_TX_POWER_14DB
+
+#undef SX_MANUAL_CAD
+
 typedef struct sx1262_driver {
 	SPIDriver *		sx_spi;
 	uint32_t		sx_freq;
@@ -769,9 +774,12 @@ typedef struct sx1262_driver {
 	uint8_t			sx_preamlen;
 	uint8_t			sx_pktlen;
 	thread_reference_t	sx_threadref;
+	thread_reference_t	sx_txwait;
 	uint8_t			sx_service;
+	bool			sx_txdone;
 	thread_t *		sx_thread;
-	uint8_t			sx_rxbuf[SX_MAX_PKT];
+	uint8_t *		sx_rxbuf;
+	void *			sx_netif;
 } SX1262_Driver;
 
 extern SX1262_Driver SX1262D1;

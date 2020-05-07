@@ -31,7 +31,7 @@ endif
 
 # Enable this if you want link time optimizations (LTO).
 ifeq ($(USE_LTO),)
-  USE_LTO = no
+  USE_LTO = yes
 endif
 
 # Enable this if you want to see the full log while compiling.
@@ -136,6 +136,9 @@ include $(WM8994)/build.mk
 LIBJPEG = $(CHIBIOS)/../jpeg-9c
 include $(LIBJPEG)/build.mk
 
+# lwIP TCP/IP stack
+include $(CHIBIOS)/../lwip_bindings/lwip.mk
+
 # STM SDK files
 # STM = $(CHIBIOS)/../stm
 # include $(STM)/build.mk
@@ -161,6 +164,7 @@ CSRC = $(ALLCSRC) \
        cmd-reset.c \
        cmd-video.c \
        cmd-scroll.c \
+       cmd-ping.c \
        crc32.c \
        newlib_syscall.c \
        nullprot_lld.c \

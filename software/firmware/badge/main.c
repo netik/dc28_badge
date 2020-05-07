@@ -42,6 +42,12 @@
 
 #include "crc32.h"
 
+#include <lwip/opt.h>
+#include <lwip/def.h>
+#include <lwip/mem.h>
+#include <lwip/sys.h>
+#include <lwip/tcpip.h>
+
 uint8_t badge_addr[BADGE_ADDR_LEN];
 
 BaseSequentialStream * console;
@@ -568,7 +574,13 @@ main (void)
 
 	printf ("SD card detect enabled\n");
 
-	/* Initialize radio */
+	/* Initialize TCP/IP stack */
+
+	tcpip_init (NULL, NULL);
+
+	printf ("lwIP TCP/IP stack enabled\n");
+
+	/* Initialize radio (and lwIP network interface) */
 
 	sx1262Start (&SX1262D1);
 
