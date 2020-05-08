@@ -43,6 +43,7 @@
 
 #define IP_REASS_MAX_PBUFS		64
 
+#define TCPIP_THREAD_NAME		"lwIPEvent"
 /*
  * *sigh* Thanks for making these so hard to find.
  */

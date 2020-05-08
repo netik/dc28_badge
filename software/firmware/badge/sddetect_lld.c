@@ -94,7 +94,7 @@ static THD_FUNCTION(sdDetectThread, arg)
 {
 	(void)arg;
 
-	chRegSetThreadName ("SdDetect");
+	chRegSetThreadName ("SDCardEvent");
 
 	while (1) {
 		osalSysLock ();
