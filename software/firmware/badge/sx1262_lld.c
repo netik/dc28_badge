@@ -885,7 +885,6 @@ sx1262RxHandle (SX1262_Driver * p)
 	if (s.sx_rxpaylen == 0)
 		return;
 
-	memset (p->sx_rxbuf, 0, SX_MAX_PKT);
 	sx1262BufRead (p, p->sx_rxbuf, s.sx_rxstbufptr, s.sx_rxpaylen);
 
 	len = s.sx_rxpaylen;
