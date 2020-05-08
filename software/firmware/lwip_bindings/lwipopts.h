@@ -41,6 +41,8 @@
 
 #define MEM_LIBC_MALLOC			1
 
+#define IP_REASS_MAX_PBUFS		64
+
 /*
  * *sigh* Thanks for making these so hard to find.
  */
