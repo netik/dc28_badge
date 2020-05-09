@@ -760,6 +760,8 @@ typedef struct sx_clrerrs {
 #define SX_DELAY		100
 
 #define SX_MAX_PKT		256
+#define SX_ALIGNMENT		CACHE_LINE_SIZE
+#define roundup(x, y)		((((x)+((y)-1))/(y))*(y))
 
 #undef SX_TX_POWER_22DB
 #define SX_TX_POWER_14DB
@@ -778,6 +780,7 @@ typedef struct sx1262_driver {
 	uint8_t			sx_service;
 	bool			sx_txdone;
 	thread_t *		sx_thread;
+	uint8_t *		sx_rxbuf_orig;
 	uint8_t *		sx_rxbuf;
 	void *			sx_netif;
 } SX1262_Driver;

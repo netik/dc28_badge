@@ -40,14 +40,24 @@
 #define LWIP_SO_SNDTIMEO		1
 
 #define MEM_LIBC_MALLOC			1
+#define MEMP_MEM_MALLOC			1
 
-#define IP_REASS_MAX_PBUFS		64
+#define IP_REASS_MAX_PBUFS		128
+#define MEMP_NUM_FRAG_PBUF		64
+#define MEMP_NUM_PBUF			256
+#define PBUF_POOL_SIZE			256
+
+#define LWIP_DEBUG                      1
+#define NETIF_DEBUG                     LWIP_DBG_ON
+#include <stdio.h>
+#define LWIP_PLATFORM_DIAG(x)           printf x
 
 #define TCPIP_THREAD_NAME		"lwIPEvent"
 /*
  * *sigh* Thanks for making these so hard to find.
  */
 
+#define TCPIP_MBOX_SIZE			MEMP_NUM_PBUF
 #define DEFAULT_RAW_RECVMBOX_SIZE 	MEMP_NUM_PBUF
 #define DEFAULT_UDP_RECVMBOX_SIZE	MEMP_NUM_PBUF
 #define DEFAULT_TCP_RECVMBOX_SIZE	MEMP_NUM_PBUF

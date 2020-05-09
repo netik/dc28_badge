@@ -161,12 +161,13 @@ cmd_ping (BaseSequentialStream *chp, int argc, char *argv[])
 	int o[4];
 	int size;
 	int i;
+	int count;
 	int hold;
 
 	(void)argv;
 	(void)chp;
 	if (argc < 1) {
-		printf ("Usage: ping <IP address> [size]\n");
+		printf ("Usage: ping <IP address> [size] [count]\n");
 		return;
 	}
 
@@ -188,6 +189,11 @@ cmd_ping (BaseSequentialStream *chp, int argc, char *argv[])
 		size = PING_DATA_SIZE;
 	else
 		size = atoi (argv[1]);
+
+	if (argc < 3)
+		count = 5;
+	else
+		count = atoi (argv[2]);
 
 	if (size > PING_MAX_PKT) {
 		printf ("size too large\n");
@@ -211,7 +217,7 @@ cmd_ping (BaseSequentialStream *chp, int argc, char *argv[])
 
 	IP4_ADDR(&ping_target, o[0], o[1], o[2], o[3]);
 
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < count; i++) {
 		ping_send (s, &ping_target, size, i);
 		ping_recv (s, PING_MAX_PKT);
 	}

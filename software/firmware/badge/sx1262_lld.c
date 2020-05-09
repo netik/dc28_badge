@@ -1064,7 +1064,10 @@ sx1262Start (SX1262_Driver * p)
 		return;
 	}
 
-	p->sx_rxbuf = malloc (SX_MAX_PKT);
+	p->sx_rxbuf_orig = malloc (SX_MAX_PKT + SX_ALIGNMENT);
+	p->sx_rxbuf = (uint8_t *)roundup ((uintptr_t)p->sx_rxbuf_orig,
+	    SX_ALIGNMENT);
+
 	p->sx_netif = malloc (sizeof(struct netif));
 
 	/* Set up interrupt event thread */
@@ -1095,6 +1098,10 @@ void
 sx1262Stop (SX1262_Driver * p)
 {
 	sx1262Disable (p);
+	netifapi_netif_remove (p->sx_netif);
+	free (p->sx_rxbuf_orig);
+	free (p->sx_netif);
+
 	return;
 }
 
