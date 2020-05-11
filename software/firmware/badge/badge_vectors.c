@@ -318,10 +318,12 @@ badge_deepsleep_enable (void)
 
 	/*
 	 * Executing a WFI here will immediately put us to sleep.
-	 * This function won't return until a wakeup event happens.
+	 * This instruction shouldn't complete until a wakeup event
+	 * happens, and by that point we the interrupt prologue hook
+	 * should have re-enabled all of the clocks.
 	 */
 
-	badge_idle ();
+	__WFI();
 
 	/*
 	 * Once we get here, we know we're awake again. Turn the

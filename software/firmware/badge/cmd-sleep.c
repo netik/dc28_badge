@@ -89,7 +89,6 @@ cmd_sleep (BaseSequentialStream * chp, int argc, char * argv[])
 
 	chThdSleepMilliseconds (10);
 
-	badge_sleep_enable ();
 	badge_deepsleep_enable ();
 
 	return;
