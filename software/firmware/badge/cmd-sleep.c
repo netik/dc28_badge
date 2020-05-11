@@ -55,18 +55,19 @@ cmd_sleep (BaseSequentialStream * chp, int argc, char * argv[])
 		return;
 	}
 
-	/* Wait a little while for the serial port to go idle. */
-
-	chThdSleepMilliseconds (10);
-
 	rtcGetTime (&RTCD1, &rtctm);
 	rtcConvertDateTimeToStructTm (&rtctm, &tim, NULL);
 	tv_sec = tim.tm_sec;
 
 	if (argc < 1)
 		sleep = 5;
-	else
+	else 
 		sleep = atoi (argv[0]);
+
+	if (sleep > 59) {
+		printf ("sleep interval %ld seconds too long\n", sleep);
+		return;
+	}
 
 	tv_sec += sleep;
 	if (tv_sec > 59)
@@ -84,10 +85,12 @@ cmd_sleep (BaseSequentialStream * chp, int argc, char * argv[])
 
 	rtcSetAlarm (&RTCD1, 0, &alarmspec);
 
-	badge_sleep_enable ();
-	badge_deepsleep_enable ();
+	/* Wait a little while for the serial port to go idle. */
 
 	chThdSleepMilliseconds (10);
+
+	badge_sleep_enable ();
+	badge_deepsleep_enable ();
 
 	return;
 }

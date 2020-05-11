@@ -257,11 +257,6 @@ badge_wakeup (void)
 		rccEnableI2C1 (TRUE);
 		rccEnableI2C3 (TRUE);
 
-		/* Turn the screen back on. */
-
-		palSetPad (GPIOI, GPIOI_LCD_DISP);
-		palSetPad (GPIOK, GPIOK_LCD_BL_CTRL);
-
 		osalSysUnlockFromISR ();
 	}
 
@@ -292,8 +287,20 @@ badge_deepsleep_enable (void)
 	osalSysLock ();
 	if (badge_sleep == TRUE) {
 		badge_deep_sleep = TRUE;
+
+		/* Enable deep sleep mode in the Cortex-M7 core. */
+
 		SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
-	        PWR->CR1 |= PWR_CR1_DBP_Msk | PWR_CR1_FPDS_Msk;
+
+		/*
+		 * Enable the following low power options:
+		 * - Disable backup domain write protection
+	 	 * - Flash power down in stop mode
+		 * - Low power regulator in stop mode.
+		 */
+
+	        PWR->CR1 |= PWR_CR1_DBP_Msk | PWR_CR1_FPDS_Msk |
+		    PWR_CR1_LPDS_Msk;
 
 		/*
 		 * When the CPU enters deep sleep mode, it will
@@ -309,6 +316,25 @@ badge_deepsleep_enable (void)
 	}
 	osalSysUnlock ();
 
+	/*
+	 * Executing a WFI here will immediately put us to sleep.
+	 * This function won't return until a wakeup event happens.
+	 */
+
+	badge_idle ();
+
+	/*
+	 * Once we get here, we know we're awake again. Turn the
+	 * screen back on. We pause very briefly between the time
+	 * we reactivate the display and the time we turn the
+	 * backlight on, otherwise the user will briefly see a
+	 * white flash.
+	 */
+
+	palSetPad (GPIOI, GPIOI_LCD_DISP);
+	chThdSleepMilliseconds (180);
+	palSetPad (GPIOK, GPIOK_LCD_BL_CTRL);
+
 	return;
 }
 
@@ -323,7 +349,7 @@ _putc (char c)
 	return;
 }
 
-/*static*/ void
+static void
 _puts (char * str)
 {
 	char * p;
