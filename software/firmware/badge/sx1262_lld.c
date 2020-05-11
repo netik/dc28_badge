@@ -1002,7 +1002,7 @@ sx1262EthernetInit (struct netif * netif)
 	netif->hwaddr[5] = badge_addr[5];
 	netif->mtu = p->sx_pktlen - 14;
 	netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP |
-	    NETIF_FLAG_LINK_UP;
+	    NETIF_FLAG_IGMP | NETIF_FLAG_LINK_UP;
 
 	return (ERR_OK);
 }
