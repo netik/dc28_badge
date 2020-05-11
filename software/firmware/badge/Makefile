@@ -164,6 +164,7 @@ CSRC = $(ALLCSRC) \
        cmd-reset.c \
        cmd-video.c \
        cmd-scroll.c \
+       cmd-sleep.c \
        cmd-ping.c \
        crc32.c \
        newlib_syscall.c \

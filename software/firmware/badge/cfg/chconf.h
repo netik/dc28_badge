@@ -643,6 +643,8 @@
  */
 #define CH_CFG_IRQ_PROLOGUE_HOOK() {                                        \
   /* IRQ prologue code here.*/                                              \
+  extern void badge_wakeup (void);                                          \
+  badge_wakeup ();                                                          \
 }
 
 /**

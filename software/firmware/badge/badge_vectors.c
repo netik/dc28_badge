@@ -120,6 +120,7 @@ static char exc_msgbuf[80];
  */
 
 static volatile uint8_t badge_sleep = TRUE;
+static volatile uint8_t badge_deep_sleep = FALSE;
 
 /*
  * FPU interrupt
@@ -205,19 +206,109 @@ badge_idle (void)
 {
 	if (badge_sleep == TRUE)
 		__WFI();
+	return;
+}
+
+void
+badge_wakeup (void)
+{
+	/*
+	 * If we entered an ISR and the deepsleep bit is set,
+	 * then it means we're waking up from deepsleep mode.
+	 * Then it off and re-enable all the clocks.
+	 */
+
+	if (badge_deep_sleep == TRUE && SCB->SCR & SCB_SCR_SLEEPDEEP_Msk) {
+		osalSysLockFromISR ();
+		badge_deep_sleep = FALSE;
+		SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
+		stm32_clock_init ();
+
+		/*
+		 * stm32_clock_init () will reinitialize the power controller			 * CR1 register. It expects that the "disable backup
+		 * domain write protection" bit will be set by the halInit()
+		 * path, but we don't want to call halInit() since it resets
+		 * extra things that we don't want to change. But we need to
+		 * make sure the DBP bit is turned back on otherwise we won't
+		 * be able to access the RTC registers again. We also set
+		 * the "flash power down in stop mode bit" while we're at it.
+		 */
+
+	        PWR->CR1 |= PWR_CR1_DBP_Msk | PWR_CR1_FPDS_Msk;
+
+		/*
+	 	 * Now restart the clocks on all the peripherals.
+		 * Strictly speaking, it looks like mainly just the
+		 * timers and SPI bus clocks really need to be reset,
+		 * but we may as well do the others to be safe.
+		 */
+
+		rccEnableTIM2 (TRUE);
+		rccEnableTIM5 (TRUE);
+		rccEnableSPI2 (TRUE);
+
+		rccEnableUSART1 (TRUE);
+		rccEnableSDMMC1 (TRUE);
+		rccEnableLTDC (TRUE);
+		rccEnableDMA2D (TRUE);
+		rccEnableOTG_FS (TRUE);
+		rccEnableRNG (TRUE);
+		rccEnableAPB2 (RCC_APB2ENR_SAI2EN, TRUE);
+		rccEnableI2C1 (TRUE);
+		rccEnableI2C3 (TRUE);
+
+		/* Turn the screen back on. */
+
+		palSetPad (GPIOI, GPIOI_LCD_DISP);
+		palSetPad (GPIOK, GPIOK_LCD_BL_CTRL);
+
+		osalSysUnlockFromISR ();
+	}
+
+	return;
 }
 
 void
 badge_sleep_enable (void)
 {
+	osalSysLock ();
 	badge_sleep = TRUE;
+	osalSysUnlock ();
 	return;
 }
 
 void
 badge_sleep_disable (void)
 {
+	osalSysLock ();
 	badge_sleep = FALSE;
+	osalSysUnlock ();
+	return;
+}
+
+void
+badge_deepsleep_enable (void)
+{
+	osalSysLock ();
+	if (badge_sleep == TRUE) {
+		badge_deep_sleep = TRUE;
+		SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
+	        PWR->CR1 |= PWR_CR1_DBP_Msk | PWR_CR1_FPDS_Msk;
+
+		/*
+		 * When the CPU enters deep sleep mode, it will
+		 * turn off the clock to the LCD controller, which
+		 * will produce this weird "melting" effect on the
+		 * screen once the controller stops refreshing it.
+		 * It's harmless but looks weird, so we turn off
+		 * the screen here so the user doesn't have to see it.
+		 */
+
+		palClearPad (GPIOI, GPIOI_LCD_DISP);
+		palClearPad (GPIOK, GPIOK_LCD_BL_CTRL);
+	}
+	osalSysUnlock ();
+
 	return;
 }
 
