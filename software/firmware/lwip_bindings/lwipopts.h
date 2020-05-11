@@ -38,6 +38,7 @@
 #define LWIP_RAW			1
 #define LWIP_SO_RCVTIMEO		1
 #define LWIP_SO_SNDTIMEO		1
+#define LWIP_IGMP			1
 
 #define LWIP_NETIF_LOOPBACK		1
 
