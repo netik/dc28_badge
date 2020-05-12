@@ -39,13 +39,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/*
+ * This command demonstrates how to use the wakeup timer to put the
+ * CPU into stop mode for a pre-determined amount of time. In stop mode,
+ * all internal clocks are disbled. Waking the CPU can only be done via
+ * EXTI interrupt, either by GPIO pin or via a small number of peripherals
+ * which can be run using separate clock sources. This includes the RTC,
+ * which can be set to run using the external low speed timer (a
+ * 32.768KHz crystal).
+ *
+ * We can program the RTC to generate a wakeup timer EXTI event after
+ * a certain number of ticks. It's also possible to use the RTC alarm
+ * to wake the CPU at a specific date and time, but ideally that requires
+ * the RTC to be kept synchronized to actual wall clock time, which we
+ * don't do right now.
+ */ 
+
 static void
 cmd_sleep (BaseSequentialStream * chp, int argc, char * argv[])
 {
-	RTCAlarm alarmspec;
-	RTCDateTime rtctm;
-	struct tm tim;
-	uint32_t tv_sec;
+	RTCWakeup wkup;
 	uint32_t sleep;
 
 	(void)argv;
@@ -55,41 +68,43 @@ cmd_sleep (BaseSequentialStream * chp, int argc, char * argv[])
 		return;
 	}
 
-	rtcGetTime (&RTCD1, &rtctm);
-	rtcConvertDateTimeToStructTm (&rtctm, &tim, NULL);
-	tv_sec = tim.tm_sec;
-
 	if (argc < 1)
 		sleep = 5;
 	else 
 		sleep = atoi (argv[0]);
 
-	if (sleep > 59) {
+	if (sleep == 0)
+		return;
+
+	if (sleep > 65535) {
 		printf ("sleep interval %ld seconds too long\n", sleep);
 		return;
 	}
 
-	tv_sec += sleep;
-	if (tv_sec > 59)
-		tv_sec -= 59;
+	/*
+	 * Set the wakeup timer. The RTC clock has been set to the
+	 * low speed external clock, which is a 32.768KHz crystal.
+	 * We can apply a special 32768 prescaler to this to yield
+	 * a 1s tick time, which allows us to delay from 1 to
+	 * 65535 seconds.
+	 */
 
-	rtcSetAlarm (&RTCD1, 0, NULL);
+	wkup.wutr = sleep - 1;
+	wkup.wutr |= (RTC_CR_WUCKSEL_2 << 16);
 
-	alarmspec.alrmr =
-	    /* Don't care about dats/hours/minutes match */
-	    RTC_ALRMAR_MSK4 | RTC_ALRMAR_MSK3 | RTC_ALRMAR_MSK2 |
-	    /* Tens of seconds */
-	    ((tv_sec / 10) << 4) |
-	    /* Single seconds */
-	    (tv_sec % 10);
-
-	rtcSetAlarm (&RTCD1, 0, &alarmspec);
+	rtcSTM32SetPeriodicWakeup (&RTCD1, &wkup);
 
 	/* Wait a little while for the serial port to go idle. */
 
 	chThdSleepMilliseconds (10);
 
+	/* Enter stop mode - this will block until wakeup. */
+
 	badge_deepsleep_enable ();
+
+	/* Aaaand we're back. Turn off the wakeup timer */
+
+	rtcSTM32SetPeriodicWakeup (&RTCD1, NULL);
 
 	return;
 }
