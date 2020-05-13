@@ -676,7 +676,7 @@ sx1262Enable (SX1262_Driver * p)
 	 *
 	 * LoRa frames may or may not include a header. When there
 	 * is no header, it's assumed that the stations communicating
-	 * the LoRa have previously agreed on a frame payload size and
+	 * via LoRa have previously agreed on a frame payload size and
 	 * coding rate, and all frames will be of the same fixed length.
 	 * An optional CRC may be appended at the end of of the frame.
 	 * This is called implicit header mode.
@@ -691,9 +691,9 @@ sx1262Enable (SX1262_Driver * p)
 	 * as to if or when the chip will insert or check for valid
 	 * checksums and indicate checksum errors.
 	 *
-	 * The "set packet parameters" lets you specify if you want
-	 * to use implicit (fixed) or explicit (variable) header mode,
-	 * and lets you specify a "CRC type" of on or off.
+	 * The "set packet parameters" command lets you specify if you
+	 * want to use implicit (fixed) or explicit (variable) header
+	 * mode, and lets you specify a "CRC type" of on or off.
 	 *
 	 * But there's some confusion: for explicit (variable) header
 	 * mode, there can be two checksums (one for the header and
@@ -1078,7 +1078,6 @@ sx1262Start (SX1262_Driver * p)
 	/* Enable the radio */
 
 	sx1262Enable (p);
-
 
 	/* Add this interface to the TCP/IP stack */
 
