@@ -81,6 +81,10 @@ cmd_sleep (BaseSequentialStream * chp, int argc, char * argv[])
 		return;
 	}
 
+	/* Wait a little while for the serial port to go idle. */
+
+	chThdSleepMilliseconds (10);
+
 	/*
 	 * Set the wakeup timer. The RTC clock has been set to the
 	 * low speed external clock, which is a 32.768KHz crystal.
@@ -93,10 +97,6 @@ cmd_sleep (BaseSequentialStream * chp, int argc, char * argv[])
 	wkup.wutr |= (RTC_CR_WUCKSEL_2 << 16);
 
 	rtcSTM32SetPeriodicWakeup (&RTCD1, &wkup);
-
-	/* Wait a little while for the serial port to go idle. */
-
-	chThdSleepMilliseconds (10);
 
 	/* Enter stop mode - this will block until wakeup. */
 

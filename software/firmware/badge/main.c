@@ -550,6 +550,8 @@ main (void)
 
 	asyncIoStart ();
 
+	printf ("Async I/O subsystem enabled\n");
+
 	/* Initialize uGFX subsystem */
 
 	gfxInit ();
@@ -573,6 +575,11 @@ main (void)
 	sdDetectStart ();
 
 	printf ("SD card detect enabled\n");
+
+	badge_deepsleep_init ();
+	badge_sleep_enable ();
+
+	printf ("Power management enabled\n");
 
 	/* Initialize TCP/IP stack */
 

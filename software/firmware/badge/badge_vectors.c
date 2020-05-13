@@ -122,7 +122,44 @@ static char exc_msgbuf[80];
  */
 
 static volatile uint8_t badge_sleep = TRUE;
+
+/*
+ * A few notes on deep sleep power management.
+ *
+ * We want to be able to put the CPU into STOP mode cleanly. To achieve
+ * this, we use a power manager thread whose job is to enable the deepsleep
+ * bit in the CPU's system control register and disable certain peripherals
+ * and/or put them into low power state. It turn executes a WFI instruction
+ * to enter STOP mode. At this point, all the CPU's peripheral clocks will
+ * be turned off.
+ *
+ * The power manager thread runs at the highest thread priority. The
+ * reason we use this scheme is so that ChibiOS will be forced to
+ * temporarily pause other threads while the power manager thread runs.
+ * This (hopefully) prevents any additional I/O operations from being
+ * started until the system wakes up again.
+ *
+ * The CPU can only be woken up from this state by an EXTI interrupt. This
+ * can be an external interrupt pin event like a radio or touch screen event,
+ * or an EXTI interrupt generated using the RTC wakeup timer. We need to
+ * restore the system ASAP once one of these interrupts triggers, so
+ * we install a custom interrupt prologue hook into ChibiOS that checks to
+ * see if we're waking from sleep mode, and if so it turns things back on
+ * again. The prologue hook must not block.
+ *
+ * Note that for best power savings, we put the external SDRAM into
+ * self-refresh mode. We must put it back into normal mode before we can
+ * access any data stored in SDRAM again (including the graphics frame
+ * buffer). When the CPU is operating in STOP mode, the internal SRAM is
+ * still powered on. It's therefore important that we put the power
+ * management variables and power thread stack into the internal SRAM
+ * rather than the external SDRAM. Fortunately the linker always uses
+ * the internal SRAM for static data allocations.
+ */
+
 static volatile uint8_t badge_deep_sleep = FALSE;
+static thread_t * badge_power_thread;
+static thread_reference_t badge_power_thread_reference;
 
 /*
  * FPU interrupt
@@ -232,11 +269,10 @@ badge_wakeup (void)
 		 * path, but we don't want to call halInit() since it resets
 		 * extra things that we don't want to change. But we need to
 		 * make sure the DBP bit is turned back on otherwise we won't
-		 * be able to access the RTC registers again. We also set
-		 * the "flash power down in stop mode bit" while we're at it.
+		 * be able to access the RTC registers again.
 		 */
 
-	        PWR->CR1 |= PWR_CR1_DBP_Msk | PWR_CR1_FPDS_Msk;
+	        PWR->CR1 |= PWR_CR1_DBP_Msk;
 
 		/*
 	 	 * Now restart the clocks on all the peripherals.
@@ -287,11 +323,15 @@ badge_sleep_disable (void)
 	return;
 }
 
-void
-badge_deepsleep_enable (void)
+static
+THD_FUNCTION(badge_power_loop, arg)
 {
-	osalSysLock ();
-	if (badge_sleep == TRUE) {
+	(void)arg;
+
+	while (1) {
+		osalSysLock ();
+		osalThreadSuspendS (&badge_power_thread_reference);
+
 		badge_deep_sleep = TRUE;
 
 		/* Enable deep sleep mode in the Cortex-M7 core. */
@@ -323,30 +363,47 @@ badge_deepsleep_enable (void)
 
 		palClearPad (GPIOI, GPIOI_LCD_DISP);
 		palClearPad (GPIOK, GPIOK_LCD_BL_CTRL);
+
+		osalSysUnlock ();
+
+		/*
+		 * Executing a WFI here will immediately put us to sleep.
+		 * This instruction shouldn't complete until a wakeup event
+		 * happens, and by that point we the interrupt prologue hook
+		 * should have re-enabled all of the clocks.
+		 */
+
+		__WFI();
+
+		/*
+		 * Once we get here, we know we're awake again. Turn the
+		 * screen back on. We pause very briefly between the time
+		 * we reactivate the display and the time we turn the
+		 * backlight on, otherwise the user will briefly see a
+		 * white flash.
+		 */
+
+		palSetPad (GPIOI, GPIOI_LCD_DISP);
+		chThdSleepMilliseconds (180);
+		palSetPad (GPIOK, GPIOK_LCD_BL_CTRL);
 	}
-	osalSysUnlock ();
 
-	/*
-	 * Executing a WFI here will immediately put us to sleep.
-	 * This instruction shouldn't complete until a wakeup event
-	 * happens, and by that point we the interrupt prologue hook
-	 * should have re-enabled all of the clocks.
-	 */
+	/* NOTREACHED */
+}
 
-	__WFI();
+void badge_deepsleep_init (void)
+{
+	badge_power_thread = chThdCreateFromHeap (NULL,
+	    THD_WORKING_AREA_SIZE(128), "PowerEvent",
+	HIGHPRIO, badge_power_loop, NULL);
 
-	/*
-	 * Once we get here, we know we're awake again. Turn the
-	 * screen back on. We pause very briefly between the time
-	 * we reactivate the display and the time we turn the
-	 * backlight on, otherwise the user will briefly see a
-	 * white flash.
-	 */
+	return;
+}
 
-	palSetPad (GPIOI, GPIOI_LCD_DISP);
-	chThdSleepMilliseconds (180);
-	palSetPad (GPIOK, GPIOK_LCD_BL_CTRL);
-
+void
+badge_deepsleep_enable (void)
+{
+	osalThreadResumeS (&badge_power_thread_reference, MSG_OK);
 	return;
 }
 

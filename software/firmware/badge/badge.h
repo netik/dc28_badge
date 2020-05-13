@@ -80,6 +80,7 @@ extern uint8_t badge_addr[BADGE_ADDR_LEN];
 
 extern void badge_sleep_enable (void);
 extern void badge_sleep_disable (void);
+extern void badge_deepsleep_init (void);
 extern void badge_deepsleep_enable (void);
 
 extern BaseSequentialStream * console;
