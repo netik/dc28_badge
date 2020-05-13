@@ -161,6 +161,8 @@ extern "C" {
 #endif
   void fsmcSdramInit(void);
   void fsmcSdramStart(SDRAMDriver *sdramp, const SDRAMConfig *cfgp);
+  void fsmcSdramSelfRefresh(SDRAMDriver *sdramp);
+  void fsmcSdramNormal(SDRAMDriver *sdramp);
   void fsmcSdramStop(SDRAMDriver *sdramp);
 #ifdef __cplusplus
 }

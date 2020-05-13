@@ -33,6 +33,8 @@
 #include "ch.h"
 #include "hal.h"
 
+#include "hal_fsmc_sdram.h"
+
 #include <stdio.h>
 #include <stdint.h>
 
@@ -257,6 +259,10 @@ badge_wakeup (void)
 		rccEnableI2C1 (TRUE);
 		rccEnableI2C3 (TRUE);
 
+		/* Put the SDRAM into normal mode. */
+
+		fsmcSdramNormal (&SDRAMD);
+
 		osalSysUnlockFromISR ();
 	}
 
@@ -301,6 +307,10 @@ badge_deepsleep_enable (void)
 
 	        PWR->CR1 |= PWR_CR1_DBP_Msk | PWR_CR1_FPDS_Msk |
 		    PWR_CR1_LPDS_Msk;
+
+		/* Put the SDRAM into self-refresh mode. */
+
+		fsmcSdramSelfRefresh (&SDRAMD);
 
 		/*
 		 * When the CPU enters deep sleep mode, it will
