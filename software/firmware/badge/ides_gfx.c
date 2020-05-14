@@ -221,7 +221,7 @@ screen_alert_draw (uint8_t clear, char *msg)
 	uint16_t middle;
 	gFont fontFF;
 
-	middle = (gdispGetHeight() >> 1);
+	middle = (gdispGetHeight () >> 1);
 	fontFF = gdispOpenFont (FONT_FIXED);
 
 
@@ -229,17 +229,19 @@ screen_alert_draw (uint8_t clear, char *msg)
 		gdispClear(GFX_BLACK);
 	} else {
 		/* just black out the drawing area. */
-		gdispFillArea( 0, middle - 20, 320, 40, GFX_BLACK );
+		gdispFillArea( 0, middle - 20,
+		    gdispGetWidth(), 40, GFX_BLACK);
 	}
 
-	gdispDrawThickLine (0, middle - 20, 320, middle -20, GFX_BLUE, 2, FALSE);
-	gdispDrawThickLine (0, middle + 20, 320, middle +20, GFX_BLUE, 2, FALSE);
+	gdispDrawThickLine (0, middle - 20, gdispGetWidth (),
+	    middle - 20, GFX_BLUE, 2, FALSE);
+	gdispDrawThickLine (0, middle + 20, gdispGetWidth (),
+	    middle +20, GFX_BLUE, 2, FALSE);
 
 	gdispDrawStringBox (0,
 	    middle - (gdispGetFontMetric(fontFF, gFontHeight) >> 1),
-	    gdispGetWidth(), gdispGetFontMetric(fontFF, gFontHeight),
+	    gdispGetWidth (), gdispGetFontMetric (fontFF, gFontHeight),
 	    msg, fontFF, GFX_YELLOW, gJustifyCenter);
-
 
 	gdispCloseFont (fontFF);
 
@@ -292,8 +294,8 @@ void drawProgressBar(gCoord x, gCoord y,
 
   GDISP->clipx0 = 0;
   GDISP->clipy0 = 0;
-  GDISP->clipx1 = 320;
-  GDISP->clipy1 = 240;
+  GDISP->clipx1 = gdispGetWidth ();
+  GDISP->clipy1 = gdispGetHeight ();
 
   if (reverse) {
     gdispFillArea(x,y+1,(width - remain)-1,height-2, GFX_BLACK);

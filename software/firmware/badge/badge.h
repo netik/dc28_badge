@@ -35,14 +35,16 @@ extern char   __heap_end__; /* Set by linker */
 
 #ifdef NEWLIB_HEAP_SDRAM
 /*
- * We reserve the top of RAM for the graphics frame buffer.
- * The size is 480 * 272 * 2 bytes per pixel. We round up
- * from to 256KB to make it easier to mark the frame buffer
+ * We reserve the top of RAM for the graphics frame buffers.
+ * The size is 320 * 240 * 2 bytes per pixel, and we use two
+ * layers, so the total is 307200 bytes. We round this up to
+ * 327680 bytes to turn it into two blocks of power of two
+ * size, to make it easier to mark the frame buffer memory
  * as uncached with the MPU.
  */
-#define FB_SIZE 0x80000
-#define FB_BASE0 0xC0780000
-#define FB_BASE1 0xC07FF800
+#define FB_SIZE 0x50000
+#define FB_BASE0 0xC07B0000
+#define FB_BASE1 0xC07F5800
 #define FB_BASE FB_BASE0
 #define HEAP_BASE ((char *)FSMC_Bank5_MAP_BASE)
 #define HEAP_END ((char *)(FSMC_Bank5_MAP_BASE + 0x77FFFF))

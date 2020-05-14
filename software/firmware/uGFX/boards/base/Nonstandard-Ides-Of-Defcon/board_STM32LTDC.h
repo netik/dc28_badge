@@ -50,11 +50,11 @@ static const ltdcConfig driverCfg = {
 
 	{										// Background layer config
 		(LLDCOLOR_TYPE *)SDRAM_DEVICE_ADDR, // Frame buffer address
-		480, 272,							// Width, Height (pixels)
-		480 * LTDC_PIXELBYTES,				// Line pitch (bytes)
+		320, 240,							// Width, Height (pixels)
+		320 * LTDC_PIXELBYTES,				// Line pitch (bytes)
 		LTDC_PIXELFORMAT,					// Pixel format
 		0, 0,								// Start pixel position (x, y)
-		480, 272,							// Size of virtual layer (cx, cy)
+		320, 240,							// Size of virtual layer (cx, cy)
 		0x00000000,							// Default color (ARGB8888)
 		0x000000,							// Color key (RGB888)
 		LTDC_BLEND_FIX1_FIX2,				// Blending factors
@@ -66,12 +66,12 @@ static const ltdcConfig driverCfg = {
 
 #if ALLOW_2ND_LAYER
 	{										// Foreground layer config (if turned on)
-		(LLDCOLOR_TYPE *)(SDRAM_DEVICE_ADDR+(480 * 272 * LTDC_PIXELBYTES)), // Frame buffer address
-		480, 272,							// Width, Height (pixels)
-		480 * LTDC_PIXELBYTES,				// Line pitch (bytes)
+		(LLDCOLOR_TYPE *)(SDRAM_DEVICE_ADDR+(320 * 240 * LTDC_PIXELBYTES)), // Frame buffer address
+		320, 240,							// Width, Height (pixels)
+		320 * LTDC_PIXELBYTES,				// Line pitch (bytes)
 		LTDC_PIXELFORMAT,					// Pixel format
 		0, 0,								// Start pixel position (x, y)
-		480, 272,							// Size of virtual layer (cx, cy)
+		320, 240,							// Size of virtual layer (cx, cy)
 		0x00000000,							// Default color (ARGB8888)
 		0x000000,							// Color key (RGB888)
 		LTDC_BLEND_MOD1_MOD2,				// Blending factors

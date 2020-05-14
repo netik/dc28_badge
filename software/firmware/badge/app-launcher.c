@@ -233,8 +233,8 @@ redraw_list (struct launcher_list * list)
 
 			GDISP->clipx0 = 0;
 			GDISP->clipy0 = 0;
-			GDISP->clipx1 = 320;
-			GDISP->clipy1 = 240;
+			GDISP->clipx1 = gdispGetWidth ();
+			GDISP->clipy1 = gdispGetHeight ();
 
 			gdispFillArea ((j * 90) + 2, 30 + (110 * i),
 			    81, 81, GFX_BLACK);

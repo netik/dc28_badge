@@ -66,9 +66,9 @@ scrollCount (int lines)
 
 	dst = (uint16_t *)FB_BASE;
 
-	DMA2D->FGOR = 480 - 319;
-	DMA2D->OOR = 480 - 319;
-	DMA2D->NLR = (319 << 16) | 240;
+	DMA2D->FGOR = 1;
+	DMA2D->OOR = 1;
+	DMA2D->NLR = ((gdispGetWidth () - 1) << 16) | gdispGetHeight ();
 	DMA2D->FGMAR = (uint32_t)src;
 	DMA2D->OMAR = (uint32_t)dst;
 

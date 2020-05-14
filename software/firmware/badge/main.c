@@ -384,7 +384,7 @@ main (void)
 	 * it to be because this improves performance.
 	 */
 
- 	mpuConfigureRegion (MPU_REGION_4, FSMC_Bank5_MAP_BASE,
+ 	mpuConfigureRegion (MPU_REGION_3, FSMC_Bank5_MAP_BASE,
 	    MPU_RASR_ATTR_AP_RW_RW | MPU_RASR_ATTR_CACHEABLE_WB_WA |
             MPU_RASR_SIZE_8M | MPU_RASR_ENABLE);
 
@@ -395,9 +395,13 @@ main (void)
 	 * one with the highest number takes precedence.)
 	 */
 
- 	mpuConfigureRegion (MPU_REGION_5, FB_BASE,
+ 	mpuConfigureRegion (MPU_REGION_4, FB_BASE,
 	    MPU_RASR_ATTR_AP_RW_RW | MPU_RASR_ATTR_SHARED_DEVICE |
-            MPU_RASR_SIZE_512K | MPU_RASR_ENABLE);
+            MPU_RASR_SIZE_64K | MPU_RASR_ENABLE);
+
+ 	mpuConfigureRegion (MPU_REGION_5, FB_BASE + 0x10000,
+	    MPU_RASR_ATTR_AP_RW_RW | MPU_RASR_ATTR_SHARED_DEVICE |
+            MPU_RASR_SIZE_256K | MPU_RASR_ENABLE);
 
 	/* Initialize newlib (libc) facilities. */
 
