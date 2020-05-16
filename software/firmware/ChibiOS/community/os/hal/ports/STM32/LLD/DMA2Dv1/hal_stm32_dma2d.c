@@ -181,7 +181,7 @@ void dma2dInit(void) {
   rccResetDMA2D();
 
   /* Enable the DMA2D clock.*/
-  rccEnableDMA2D(false);
+  rccEnableDMA2D(true);
 
   /* Driver struct initialization.*/
   dma2dObjectInit(&DMA2DD1);

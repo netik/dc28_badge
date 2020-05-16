@@ -232,9 +232,13 @@ void ltdcInit(void) {
   /* Reset the LTDC hardware module.*/
   rccResetLTDC();
 
+#ifdef notdef
+  /* This is already done by the platform clock init code */
   /* Enable the LTDC clock.*/
   RCC->DCKCFGR = (RCC->DCKCFGR & ~RCC_DCKCFGR_PLLSAIDIVR) | (2 << 16); /* /8 */
-  rccEnableLTDC(false);
+#endif
+
+  rccEnableLTDC(true);
 
   /* Driver struct initialization.*/
   ltdcObjectInit(&LTDCD1);
