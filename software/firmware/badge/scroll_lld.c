@@ -32,7 +32,9 @@
 
 #include "gfx.h"
 #include "src/gdisp/gdisp.h"
-#include "drivers/gdisp/STM32LTDC/stm32_dma2d.h"
+
+#include "hal_stm32_ltdc.h"
+#include "hal_stm32_dma2d.h"
 
 #include "ff.h"
 #include "ffconf.h"
@@ -58,25 +60,20 @@ scrollCount (int lines)
 	uint16_t * dst;
 	int i;
 
-	while (DMA2D->CR & DMA2D_CR_START) {
-	}
-
-	src = (uint16_t *)FB_BASE;
+	src = (uint16_t *)LTDCD1.config->fg_laycfg->frame->bufferp;
 	src += 1; /* skip to first column */
 
-	dst = (uint16_t *)FB_BASE;
+	dst = (uint16_t *)LTDCD1.config->fg_laycfg->frame->bufferp;
 
-	DMA2D->FGOR = 1;
-	DMA2D->OOR = 1;
-	DMA2D->NLR = ((gdispGetWidth () - 1) << 16) | gdispGetHeight ();
-	DMA2D->FGMAR = (uint32_t)src;
-	DMA2D->OMAR = (uint32_t)dst;
+	dma2dFgSetWrapOffsetI (&DMA2DD1, 1);
+	dma2dOutSetWrapOffsetI (&DMA2DD1, 1);
+	dma2dJobSetSizeI (&DMA2DD1, (gdispGetWidth () - 1), gdispGetHeight ());
+	dma2dFgSetAddressI (&DMA2DD1, src);
+	dma2dOutSetAddressI (&DMA2DD1, dst);
+	dma2dJobSetModeI (&DMA2DD1, DMA2D_JOB_COPY);
 
-	for (i = 0; i < lines; i++) {
-		DMA2D->CR = DMA2D_CR_MODE_M2M | DMA2D_CR_START;
-		while (DMA2D->CR & DMA2D_CR_START) {
-		}
-	}
+	for (i = 0; i < lines; i++)
+		dma2dJobExecute (&DMA2DD1);
 
 	return;
 }

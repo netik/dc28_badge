@@ -26,6 +26,8 @@
 #include "nullprot_lld.h"
 
 #include "hal_fsmc_sdram.h"
+#include "hal_stm32_ltdc.h"
+#include "hal_stm32_dma2d.h"
 #include "fsmc_sdram.h"
 
 #include "async_io_lld.h"
@@ -241,6 +243,88 @@ static const GPTConfig gptcfg =
 	NULL,		/* Timer callback function. */
 	0,
 	0
+};
+
+/* LCD driver configuration */
+
+static const ltdc_window_t ltdc_fullscreen_wincfg = {
+	0, 320 - 1, 0, 240 - 1
+};
+
+static const ltdc_frame_t ltdc_screen_frmcfg_fg = {
+	(void *)FB_BASE0,
+	320,
+	240,
+	320 * 2,
+	LTDC_FMT_RGB565,
+};
+
+static const ltdc_frame_t ltdc_screen_frmcfg_bg = {
+	(void *)FB_BASE1,
+	320,
+	240,
+	320 * 2,
+	LTDC_FMT_RGB565,
+};
+
+static const ltdc_laycfg_t ltdc_screen_laycfg_fg = {
+	&ltdc_screen_frmcfg_fg,
+	&ltdc_fullscreen_wincfg,
+	0,
+	0xFF,
+	0,
+	NULL,
+	0,
+	LTDC_BLEND_MOD1_MOD2,
+	LTDC_LEF_ENABLE
+};
+
+static const ltdc_laycfg_t ltdc_screen_laycfg_bg = {
+	&ltdc_screen_frmcfg_bg,
+	&ltdc_fullscreen_wincfg,
+	0,
+	0xFF,
+	0,
+	NULL,
+	0,
+	LTDC_BLEND_FIX1_FIX2,
+	0
+};
+
+static const LTDCConfig ltdc_cfg = {
+	/* Display specifications.*/
+	480,			/**< Screen pixel width.*/
+	272,			/**< Screen pixel height.*/
+	41,			/**< Horizontal sync pixel width.*/
+	10,			/**< Vertical sync pixel height.*/
+	13,			/**< Horizontal back porch pixel width.*/
+	2,			/**< Vertical back porch pixel height.*/
+	32,			/**< Horizontal front porch pixel width.*/
+	4,			/**< Vertical front porch pixel height.*/
+	0,			/**< Driver configuration flags.*/
+
+	/* ISR callbacks.*/
+	NULL,			/**< Line Interrupt ISR, or @p NULL.*/
+	NULL,			/**< Register Reload ISR, or @p NULL.*/
+	NULL,			/**< FIFO Underrun ISR, or @p NULL.*/
+	NULL,			/**< Transfer Error ISR, or @p NULL.*/
+
+	/* Color and layer settings.*/
+	LTDC_COLOR_TEAL,
+	&ltdc_screen_laycfg_bg,
+	&ltdc_screen_laycfg_fg
+};
+
+/* DMA2D configuration */
+
+static const DMA2DConfig dma2d_cfg = {
+	/* ISR callbacks.*/
+	NULL,		/**< Configuration error, or @p NULL.*/
+	NULL,		/**< Palette transfer done, or @p NULL.*/
+	NULL,		/**< Palette access error, or @p NULL.*/
+	NULL,		/**< Transfer watermark, or @p NULL.*/
+	NULL,		/**< Transfer complete, or @p NULL.*/
+	NULL		/**< Transfer error, or @p NULL.*/
 };
 
 THD_FUNCTION(shellSdThreadStub, p)
@@ -556,17 +640,28 @@ main (void)
 
 	printf ("Async I/O subsystem enabled\n");
 
+	dma2dInit ();
+	dma2dStart (&DMA2DD1, &dma2d_cfg);
+
+	printf ("DMA2D acceleration engine enabled\n");
+
+	ltdcInit ();
+	ltdcStart (&LTDCD1, &ltdc_cfg);
+
+	printf ("LCD display controller enabled\n");
+
+	/* Activate the display and backlight */
+
+	palSetPad (GPIOI, GPIOI_LCD_DISP);
+	palSetPad (GPIOK, GPIOK_LCD_BL_CTRL);
+
+	printf ("Main screen turn on\n");
+
 	/* Initialize uGFX subsystem */
 
 	gfxInit ();
 
-	/* Enable layer 0, since that's the default display */
-
-	LTDC_Layer1->CR = LTDC_LxCR_LEN;
-	LTDC_Layer2->CR = 0;
-	LTDC->SRCR = LTDC_SRCR_VBR;
-
-	printf ("Main screen turn on\n");
+	printf ("uGFX graphics enabled\n");
 
 	/* Initialize touch controller event thread */
 

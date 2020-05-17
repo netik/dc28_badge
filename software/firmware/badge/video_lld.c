@@ -40,6 +40,8 @@
 #include "video_lld.h"
 #include "async_io_lld.h"
 #include "stm32sai_lld.h"
+#include "hal_stm32_dma2d.h"
+#include "hal_stm32_ltdc.h"
 
 #include "badge.h"
 
@@ -66,6 +68,13 @@ static struct jpeg_error_mgr jerr;
 __attribute__((aligned(CACHE_LINE_SIZE)))
 static uint8_t frame[320 * 2 * VID_PIXEL_SIZE];
 
+#undef ROTATE
+
+#ifdef ROTATE
+__attribute__((aligned(CACHE_LINE_SIZE)))
+static uint8_t outframe[320 * 2 * VID_PIXEL_SIZE];
+#endif
+
 /*
  * This dummy error exit handler is provided so that the libjpeg
  * library doesn't try to call exit() if it encounters an error
@@ -80,6 +89,45 @@ videoErrorExit (j_common_ptr cinfo)
 	(void)cinfo;
 	return;
 }
+
+#ifdef ROTATE
+#define LINE_SHORT	(320 - 240)
+#define LINE_FULL	(320)
+#define LINE_GAP	(LINE_SHORT / 2)
+
+static void
+videoXForm (void)
+{
+	uint8_t * pSrc1;
+	uint8_t * pSrc2;
+	uint8_t * pDst1;
+	uint8_t * pDst2;
+	int i;
+
+	pSrc1 = &frame[(LINE_FULL * VID_PIXEL_SIZE) -
+	    (LINE_GAP * VID_PIXEL_SIZE) - VID_PIXEL_SIZE];
+	pDst1 = &outframe[0];
+
+	pSrc2 = &frame[(LINE_FULL * VID_PIXEL_SIZE * 2) -
+	    (LINE_GAP * VID_PIXEL_SIZE) - VID_PIXEL_SIZE];
+	pDst2 = &outframe[VID_PIXEL_SIZE];
+
+	for (i = 0; i < 320 - LINE_GAP; i++) {
+		pDst1[0] = pSrc1[0];
+		pDst1[1] = pSrc1[1];
+		pDst1[2] = pSrc1[2];
+		pDst1 += 6;
+		pSrc1 -= 3;
+		pDst2[0] = pSrc2[0];
+		pDst2[1] = pSrc2[1];
+		pDst2[2] = pSrc2[2];
+		pDst2 += 6;
+		pSrc2 -= 3;
+	}
+
+	return;
+}
+#endif
 
 static void
 videoFrameDecompress (uint8_t * in, size_t len, GDisplay * g)
@@ -115,23 +163,34 @@ videoFrameDecompress (uint8_t * in, size_t len, GDisplay * g)
 		 * of the frame may appear corrupted.
 		 */
 
+#ifdef ROTATE
+		videoXForm ();
+
+		cacheBufferFlush (outframe + (320 * 2),
+		    (320 * VID_PIXEL_SIZE) - (320 * 2));
+
+		gdispGBlitArea (g,
+		    /* Start position */
+		    LINE_GAP + (cinfo.output_scanline - 2), 0,
+		    /* Size of filled area */
+		    2, 240,
+		    /* Bitmap position to start fill from */
+		    0, 0,
+		    /* Width of bitmap line */
+		    2,
+		    /* Bitmap buffer */
+		    (gPixel *)outframe);
+#else
 		cacheBufferFlush (frame + (320 * 2),
 		    (320 * VID_PIXEL_SIZE) - (320 * 2));
 
-		gdispGBlitArea (g, 0, (cinfo.output_scanline - 2),
-		    320, 2, 0, 0, 320, (gPixel *)frame);
-
-		while (DMA2D->CR & DMA2D_CR_START) {
-
-		/*
-		 * Wait for DMA to complete. This is important since
-		 * we re-use the same buffer for every two scanlines.
-		 * We need to make sure the current scanline data has
-		 * been transfered to the frame buffer before re-using
-		 * it for the next two scanlines.
-		 */
-
-		}
+		gdispGBlitArea (g,
+		    0, (cinfo.output_scanline - 2),
+		    320, 2,
+		    0, 0,
+		    320,
+		    (gPixel *)frame);
+#endif
 	}
 
 	jpeg_finish_decompress (&cinfo);
@@ -173,6 +232,17 @@ videoPlay (char * path)
 	geventListenerInit (&gl);
 	geventAttachSource (&gl, gs, GLISTEN_MOUSEMETA);
 
+	/* Make sure we start out with layer 1 visible and layer 2 hidden. */
+
+	ltdcFgEnable (&LTDCD1);
+	ltdcReload (&LTDCD1, FALSE);
+
+	g0 = (GDisplay *)gdriverGetInstance (GDRIVER_TYPE_DISPLAY, 0);
+	g1 = (GDisplay *)gdriverGetInstance (GDRIVER_TYPE_DISPLAY, 1);
+
+	gdispGClear (g0, GFX_BLACK);
+	gdispGClear (g1, GFX_BLACK);
+
 	/*
 	 * Override the input pixel format used by the DMA2D
 	 * engine. The standard libjpeg library doesn't support
@@ -183,16 +253,7 @@ videoPlay (char * path)
 	 * of using a little more memory).
 	 */
 
-	DMA2D->FGPFCCR = FGPFCCR_CM_RGB888;
-
-	/* Make sure we start out with layer 1 visible and layer 2 hidden. */
-
-	LTDC_Layer1->CR = LTDC_LxCR_LEN;
-	LTDC_Layer2->CR = 0;
-	LTDC->SRCR = LTDC_SRCR_VBR;
-
-	g0 = (GDisplay *)gdriverGetInstance (GDRIVER_TYPE_DISPLAY, 0);
-	g1 = (GDisplay *)gdriverGetInstance (GDRIVER_TYPE_DISPLAY, 1);
+	dma2dFgSetPixelFormat (&DMA2DD1, DMA2D_FMT_RGB888);
 
 	ch = &_ch;
 
@@ -254,14 +315,14 @@ videoPlay (char * path)
 
 		if (toggle) {
 			videoFrameDecompress (s, sz, g1);
-			LTDC_Layer1->CR = 0;
-			LTDC_Layer2->CR = LTDC_LxCR_LEN;
+			ltdcFgDisableI (&LTDCD1);
+			ltdcBgEnableI (&LTDCD1);
 			p1 = buf;
 			p2 += max;
 		} else {
 			videoFrameDecompress (s, sz, g0);
-			LTDC_Layer1->CR = LTDC_LxCR_LEN;
-			LTDC_Layer2->CR = 0;
+			ltdcFgEnableI (&LTDCD1);
+			ltdcBgDisableI (&LTDCD1);
 			p1 += max;
 			p2 = buf;
 		}
@@ -274,7 +335,7 @@ videoPlay (char * path)
 		 * causes flicker.)
 	 	 */
 
-		LTDC->SRCR = LTDC_SRCR_VBR;
+		ltdcStartReloadI (&LTDCD1, FALSE);
 		toggle = ~toggle;
 
 		asyncIoWait ();
@@ -312,13 +373,12 @@ videoPlay (char * path)
 
 	/* Restore the DMA2D input pixel format. */
 
-	DMA2D->FGPFCCR = FGPFCCR_CM_RGB565;
+	dma2dFgSetPixelFormat (&DMA2DD1, DMA2D_FMT_RGB565);
 
 	/* Restore visible layer */
 
-	LTDC_Layer1->CR = LTDC_LxCR_LEN;
-	LTDC_Layer2->CR = 0;
-	LTDC->SRCR = LTDC_SRCR_VBR;
+	ltdcFgEnable (&LTDCD1);
+	ltdcReload (&LTDCD1, FALSE);
 
 	geventDetachSource (&gl, NULL);
 

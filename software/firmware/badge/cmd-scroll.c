@@ -38,7 +38,9 @@
 
 #include "gfx.h"
 #include "src/gdisp/gdisp_driver.h"
-#include "drivers/gdisp/STM32LTDC/stm32_dma2d.h"
+
+#include "hal_stm32_ltdc.h"
+#include "hal_stm32_dma2d.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -62,22 +64,20 @@ cmd_scroll_right (BaseSequentialStream *chp, int argc, char *argv[])
 
 	/* Image is at coordinates x=0, y=0 */
 
-	src = (uint16_t *)FB_BASE;
+	src = (uint16_t *)LTDCD1.config->fg_laycfg->frame->bufferp;
 
-	dst = (uint16_t *)FB_BASE;
+	dst = (uint16_t *)LTDCD1.config->fg_laycfg->frame->bufferp;
 	dst += 1; /* skip to first column */
 
-	DMA2D->FGOR = 1;
-	DMA2D->OOR = 1;
-	DMA2D->NLR = ((gdispGetWidth () - 1) << 16) | gdispGetHeight ();
-	DMA2D->FGMAR = (uint32_t)src;
-	DMA2D->OMAR = (uint32_t)dst;
+	dma2dFgSetWrapOffsetI (&DMA2DD1, 1);
+	dma2dOutSetWrapOffsetI (&DMA2DD1, 1);
+	dma2dJobSetSizeI (&DMA2DD1, (gdispGetWidth () - 1), gdispGetHeight ());
+	dma2dFgSetAddressI (&DMA2DD1, src);
+	dma2dOutSetAddressI (&DMA2DD1, dst);
+	dma2dJobSetModeI (&DMA2DD1, DMA2D_JOB_COPY);
 
-	for (i = 0; i < 319; i++) {
-		DMA2D->CR = DMA2D_CR_MODE_M2M | DMA2D_CR_START;
-		while (DMA2D->CR & DMA2D_CR_START) {
-		}
-	}
+	for (i = 0; i < gdispGetWidth () - 1; i++)
+		dma2dJobExecute (&DMA2DD1);
 
 	return;
 }
@@ -99,22 +99,20 @@ cmd_scroll_left (BaseSequentialStream *chp, int argc, char *argv[])
 
 	/* Image is at coordinates x=0, y=0 */
 
-	src = (uint16_t *)FB_BASE;
+	src = (uint16_t *)LTDCD1.config->fg_laycfg->frame->bufferp;
 	src += 1; /* skip to first column */
 
-	dst = (uint16_t *)FB_BASE;
+	dst = (uint16_t *)LTDCD1.config->fg_laycfg->frame->bufferp;
 
-	DMA2D->FGOR = 1;
-	DMA2D->OOR = 1;
-	DMA2D->NLR = ((gdispGetWidth () - 1) << 16) | gdispGetHeight ();
-	DMA2D->FGMAR = (uint32_t)src;
-	DMA2D->OMAR = (uint32_t)dst;
+	dma2dFgSetWrapOffsetI (&DMA2DD1, 1);
+	dma2dOutSetWrapOffsetI (&DMA2DD1, 1);
+	dma2dJobSetSizeI (&DMA2DD1, (gdispGetWidth () - 1), gdispGetHeight ());
+	dma2dFgSetAddressI (&DMA2DD1, src);
+	dma2dOutSetAddressI (&DMA2DD1, dst);
+	dma2dJobSetModeI (&DMA2DD1, DMA2D_JOB_COPY);
 
-	for (i = 0; i < 319; i++) {
-		DMA2D->CR = DMA2D_CR_MODE_M2M | DMA2D_CR_START;
-		while (DMA2D->CR & DMA2D_CR_START) {
-		}
-	}
+	for (i = 0; i < gdispGetWidth () - 1; i++)
+		dma2dJobExecute (&DMA2DD1);
 
 	return;
 }
@@ -136,24 +134,20 @@ cmd_scroll_up (BaseSequentialStream *chp, int argc, char *argv[])
 
 	/* Image is at coordinates x=0, y=0 */
 
-	src = (uint16_t *)FB_BASE;
+	src = (uint16_t *)LTDCD1.config->fg_laycfg->frame->bufferp;
 	src += gdispGetWidth (); /* skip 1 line */
 
-	dst = (uint16_t *)FB_BASE;
+	dst = (uint16_t *)LTDCD1.config->fg_laycfg->frame->bufferp;
 
-	DMA2D->FGOR = 0;
-	DMA2D->OOR = 0;
-	DMA2D->NLR = (gdispGetWidth () << 16) | (gdispGetHeight () - 1);
+	dma2dFgSetWrapOffsetI (&DMA2DD1, 0);
+	dma2dOutSetWrapOffsetI (&DMA2DD1, 0);
+	dma2dJobSetSizeI (&DMA2DD1, (gdispGetWidth () - 1), gdispGetHeight ());
+	dma2dFgSetAddressI (&DMA2DD1, src);
+	dma2dOutSetAddressI (&DMA2DD1, dst);
+	dma2dJobSetModeI (&DMA2DD1, DMA2D_JOB_COPY);
 
-	DMA2D->FGMAR = (uint32_t)src;
-	DMA2D->OMAR = (uint32_t)dst;
-
-	for (i = 0; i < 239; i++) {
-		DMA2D->CR = DMA2D_CR_MODE_M2M | DMA2D_CR_START;
-		while (DMA2D->CR & DMA2D_CR_START) {
-		}
-	}
-
+	for (i = 0; i < gdispGetHeight () - 1; i++)
+		dma2dJobExecute (&DMA2DD1);
 	return;
 }
 
@@ -175,24 +169,23 @@ cmd_scroll_down (BaseSequentialStream *chp, int argc, char *argv[])
 	/* Image is at coordinates x=0, y=0 */
 
 	for (i = 0; i < gdispGetHeight () - 1; i++) {
-		src = (uint16_t *)FB_BASE;
+		src = (uint16_t *)LTDCD1.config->fg_laycfg->frame->bufferp;
 		/* skip to bottom line of image */
 		src += gdispGetWidth () * (gdispGetHeight () - 2);
 
-		dst = (uint16_t *)FB_BASE;
+		dst = (uint16_t *)LTDCD1.config->fg_laycfg->frame->bufferp;
 		/* skip to first line of image */
 		dst += gdispGetWidth () * (gdispGetHeight () - 1);
 
-		DMA2D->FGOR = 0;
-		DMA2D->OOR = 0;
-		DMA2D->NLR = (gdispGetWidth () << 16) | 1;
+		dma2dFgSetWrapOffsetI (&DMA2DD1, 0);
+		dma2dOutSetWrapOffsetI (&DMA2DD1, 0);
+		dma2dJobSetSizeI (&DMA2DD1, gdispGetWidth (), 1);
 
 		for (j = 0; j < gdispGetHeight () - 1; j++) {
-			DMA2D->FGMAR = (uint32_t)src;
-			DMA2D->OMAR = (uint32_t)dst;
-			DMA2D->CR = DMA2D_CR_MODE_M2M | DMA2D_CR_START;
-			while (DMA2D->CR & DMA2D_CR_START) {
-			}
+			dma2dFgSetAddressI (&DMA2DD1, src);
+			dma2dOutSetAddressI (&DMA2DD1, dst);
+			dma2dJobSetModeI (&DMA2DD1, DMA2D_JOB_COPY);
+			dma2dJobExecute (&DMA2DD1);
 			src -= gdispGetWidth ();
 			dst -= gdispGetWidth ();
 		}
