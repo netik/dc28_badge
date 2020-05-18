@@ -115,7 +115,7 @@
 #define GDISP_NEED_CONVEX_POLYGON                    GFXON
 //#define GDISP_NEED_SCROLL                            GFXOFF
 //#define GDISP_NEED_PIXELREAD                         GFXOFF
-//#define GDISP_NEED_CONTROL                           GFXOFF
+#define GDISP_NEED_CONTROL                           GFXON
 //#define GDISP_NEED_QUERY                             GFXOFF
 #define GDISP_NEED_MULTITHREAD                       GFXON
 //#define GDISP_NEED_STREAMING                         GFXOFF

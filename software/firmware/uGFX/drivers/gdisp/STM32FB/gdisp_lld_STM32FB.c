@@ -63,6 +63,7 @@ typedef struct fbPriv {
   ((y) * ((fbPriv *)(g)->priv)->fbi.linelen + (x) * sizeof(LLDCOLOR_TYPE))
 #define PIXEL_ADDR(g, pos) \
   ((LLDCOLOR_TYPE *)(((char *)((fbPriv *)(g)->priv)->fbi.pixels)+pos))
+#define LLDCOLOR_BYTES	sizeof(LLDCOLOR_TYPE)
 
 /*===========================================================================*/
 /* Driver exported functions.                                                */
@@ -78,7 +79,7 @@ gdisp_lld_init (GDisplay *g)
 		    "Failed to allocate private memory");
 	}
 
-	((fbPriv *)g->priv)->fbi.pixels = 0;
+	((fbPriv *)g->priv)->fbi.pixels = NULL;
 	((fbPriv *)g->priv)->fbi.linelen = 0;
 
 	/* Initialize the GDISP structure */
@@ -180,29 +181,33 @@ gdisp_lld_fill_area (GDisplay* g)
 	default:
 		pos = PIXEL_POS(g, g->p.x, g->p.y);
 		lineadd = g->g.Width - g->p.cx;
+		dma2dJobSetSizeI (&DMA2DD1, g->p.cx, g->p.cy);
 		break;
 	case gOrientation90:
 		pos = PIXEL_POS(g, g->p.y, g->g.Width-g->p.x-g->p.cx);
 		lineadd = g->g.Height - g->p.cy;
+		dma2dJobSetSizeI (&DMA2DD1, g->p.cy, g->p.cx);
 		break;
 	case gOrientation180:
 		pos = PIXEL_POS(g, g->g.Width-g->p.x-g->p.cx,
 		    g->g.Height-g->p.y-g->p.cy);
 		lineadd = g->g.Width - g->p.cx;
+		dma2dJobSetSizeI (&DMA2DD1, g->p.cx, g->p.cy);
 		break;
 	case gOrientation270:
 		pos = PIXEL_POS(g, g->g.Height-g->p.y-g->p.cy, g->p.x);
 		lineadd = g->g.Height - g->p.cy;
+		dma2dJobSetSizeI (&DMA2DD1, g->p.cy, g->p.cx);
 		break;
 	}
 #else
 	pos = PIXEL_POS(g, g->p.x, g->p.y);
 	lineadd = g->g.Width - g->p.cx;
+	dma2dJobSetSizeI (&DMA2DD1, g->p.cx, g->p.cy);
 #endif
 
 	dma2dOutSetAddressI (&DMA2DD1, (void *)PIXEL_ADDR(g, pos));
 	dma2dOutSetWrapOffsetI (&DMA2DD1, lineadd);
-	dma2dJobSetSizeI (&DMA2DD1, g->p.cx, g->p.cy);
 #if GDISP_LLD_PIXELFORMAT == GDISP_PIXELFORMAT_RGB888
 	dma2dOutSetDefaultColorI (&DMA2DD1,
 	    gdispColor2Native(g->p.color)) ^ 0xFF000000);
@@ -215,7 +220,6 @@ gdisp_lld_fill_area (GDisplay* g)
 	return;
 }
 
-
 /*
  * Uses p.x,p.y  p.cx,p.cy  p.x1,p.y1 (=srcx,srcy)
  *  p.x2 (=srccx), p.ptr (=buffer)
@@ -226,16 +230,54 @@ gdisp_lld_blit_area (GDisplay* g)
 {
 	gU32	srcstart, dststart;
 	gU32	len;
+	gCoord	x;
+	gCoord	y;
+	gCoord	srcx;
+	gCoord	srcy;
+	gCoord	srccx;
+	const	gPixel * buffer;
 
-#define LTDC_PIXELBYTES 2
+#if GDISP_NEED_CONTROL
+	switch(g->g.Orientation) {
+	case gOrientation0:
+	default:
+		goto standard;
+		break;
+	case gOrientation90:
+	case gOrientation180:
+	case gOrientation270:
 
-	srcstart = LTDC_PIXELBYTES * ((gU32)g->p.x2 * g->p.y1 * + g->p.x1) + (gU32)g->p.ptr;
+		x = g->p.x;
+		y = g->p.y;
+		buffer = g->p.ptr;
+		srccx = g->p.x2;
+		srcx = g->p.x + g->p.cx;
+		srcy = g->p.y + g->p.cy;
+		srccx -= g->p.cx;
+
+		for (g->p.y = y; g->p.y < srcy; g->p.y++, buffer += srccx) {
+			for (g->p.x = x; g->p.x < srcx; g->p.x++) {
+				g->p.color = *buffer++;
+				gdisp_lld_draw_pixel(g);
+			}
+		}
+
+		break;
+	}
+
+	return;
+
+standard:
+#endif
+
+	srcstart = LLDCOLOR_BYTES * ((gU32)g->p.x2 * g->p.y1 * + g->p.x1) +
+	    (gU32)g->p.ptr;
 	dststart = (gU32)PIXEL_ADDR(g, PIXEL_POS(g, g->p.x, g->p.y));
 
 	/* Flush the source area */
 
 	len = (g->p.cy > 1 ? ((gU32)g->p.x2 * g->p.cy) :
-	    (gU32)g->p.cx) * LTDC_PIXELBYTES;
+	    (gU32)g->p.cx) * LLDCOLOR_BYTES;
 	len += CACHE_LINE_SIZE;
 	cacheBufferFlush ((void *)srcstart, len);
 
