@@ -35,7 +35,6 @@
 
 #include "gfx.h"
 #include "src/gdisp/gdisp_driver.h"
-#include "drivers/gdisp/STM32LTDC/stm32_dma2d.h"
 
 #include "video_lld.h"
 #include "async_io_lld.h"
