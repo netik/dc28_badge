@@ -60,6 +60,7 @@ board_init (GDisplay *g, fbInfo *fbi)
 	fbi->pixels = f->bufferp;
 
 	dma2dFgSetPixelFormat (&DMA2DD1, DMA2D_FMT_RGB565);
+	dma2dBgSetPixelFormat (&DMA2DD1, DMA2D_FMT_RGB565);
 	dma2dOutSetPixelFormat (&DMA2DD1, DMA2D_FMT_RGB565);
 
 	return;
