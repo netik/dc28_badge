@@ -640,15 +640,15 @@ main (void)
 
 	printf ("Async I/O subsystem enabled\n");
 
-	dma2dInit ();
-	dma2dStart (&DMA2DD1, &dma2d_cfg);
-
-	printf ("DMA2D acceleration engine enabled\n");
-
 	ltdcInit ();
 	ltdcStart (&LTDCD1, &ltdc_cfg);
 
 	printf ("LCD display controller enabled\n");
+
+	dma2dInit ();
+	dma2dStart (&DMA2DD1, &dma2d_cfg);
+
+	printf ("DMA2D acceleration engine enabled\n");
 
 	/* Activate the display and backlight */
 
