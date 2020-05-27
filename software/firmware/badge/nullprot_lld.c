@@ -65,7 +65,7 @@ nullProtStart (void)
 	__disable_irq();
 
 	/*
-	 * ChibiOS will use MPU region 0 for stack guards. We arbitrarily
+	 * ChibiOS will use MPU region 7 for stack guards. We arbitrarily
 	 * choose region 6 for null pointer protection.
 	 */
 
