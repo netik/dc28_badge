@@ -88,6 +88,8 @@ static void adc_lld_serve_rx_interrupt(ADCDriver *adcp, uint32_t flags) {
       if ((flags & STM32_DMA_ISR_TCIF) != 0) {
         /* Transfer complete processing.*/
         _adc_isr_full_code(adcp);
+        cacheBufferInvalidate (adcp->samples,
+          sizeof(adcsample_t) * adcp->depth);
       }
       else if ((flags & STM32_DMA_ISR_HTIF) != 0) {
         /* Half transfer processing.*/
@@ -352,6 +354,9 @@ void adc_lld_start_conversion(ADCDriver *adcp) {
       mode |= STM32_DMA_CR_HTIE;
     }
   }
+
+  cacheBufferFlush (adcp->samples, sizeof(adcsample_t) * adcp->depth);
+  cacheBufferInvalidate (adcp->samples, sizeof(adcsample_t) * adcp->depth);
   dmaStreamSetMemory0(adcp->dmastp, adcp->samples);
   dmaStreamSetTransactionSize(adcp->dmastp, (uint32_t)grpp->num_channels *
                                             (uint32_t)adcp->depth);
