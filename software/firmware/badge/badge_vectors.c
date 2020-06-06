@@ -294,6 +294,7 @@ badge_wakeup (void)
 		rccEnableAPB2 (RCC_APB2ENR_SAI2EN, TRUE);
 		rccEnableI2C1 (TRUE);
 		rccEnableI2C3 (TRUE);
+		rccEnableADC1 (TRUE);
 
 		/* Put the SDRAM into normal mode. */
 
