@@ -135,6 +135,9 @@ videoFrameDecompress (uint8_t * in, size_t len, GDisplay * g)
 	jpeg_mem_src (&cinfo, in, len);
 	jpeg_read_header (&cinfo, TRUE);
  	cinfo.out_color_space = JCS_RGB;
+	gCoord xlen;
+
+	xlen = gdispGetWidth ();
 
 	jpeg_start_decompress (&cinfo);
 
@@ -149,7 +152,7 @@ videoFrameDecompress (uint8_t * in, size_t len, GDisplay * g)
 
 		buffer_array[0] = frame;
 		buffer_array[1] = frame;
-		buffer_array[1] += 320 * VID_PIXEL_SIZE;
+		buffer_array[1] += xlen * VID_PIXEL_SIZE;
 		jpeg_read_scanlines (&cinfo, buffer_array, 2);
 
 		/*
@@ -165,8 +168,8 @@ videoFrameDecompress (uint8_t * in, size_t len, GDisplay * g)
 #ifdef ROTATE
 		videoXForm ();
 
-		cacheBufferFlush (outframe + (320 * 2),
-		    (320 * VID_PIXEL_SIZE) - (320 * 2));
+		cacheBufferFlush (outframe + (xlen * 2),
+		    (xlen * VID_PIXEL_SIZE) - (xlen * 2));
 
 		gdispGBlitArea (g,
 		    /* Start position */
@@ -180,14 +183,14 @@ videoFrameDecompress (uint8_t * in, size_t len, GDisplay * g)
 		    /* Bitmap buffer */
 		    (gPixel *)outframe);
 #else
-		cacheBufferFlush (frame + (320 * 2),
-		    (320 * VID_PIXEL_SIZE) - (320 * 2));
+		cacheBufferFlush (frame + (xlen * 2),
+		    (xlen * VID_PIXEL_SIZE) - (xlen * 2));
 
 		gdispGBlitArea (g,
 		    0, (cinfo.output_scanline - 2),
-		    320, 2,
+		    xlen, 2,
 		    0, 0,
-		    320,
+		    xlen,
 		    (gPixel *)frame);
 #endif
 	}
