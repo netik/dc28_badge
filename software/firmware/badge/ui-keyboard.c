@@ -93,7 +93,7 @@ static void backspace (KeyboardHandles * p)
 	p->ghConsole->display->clipy1 = gdispGetHeight ();
 
 	/*
-	 * GFX_BLACK out the character under the cursor. uGFX does not
+	 * Black out the character under the cursor. uGFX does not
 	 * actually draw anything when you ask it to render a space,
 	 * so we have to do this manually.
 	 */
@@ -192,7 +192,7 @@ static void keyboard_start (OrchardAppContext *context)
 	gwinAttachListener (&p->gl);
 
 	geventAttachSource (&p->gl, gwinKeyboardGetEventSource (p->ghKeyboard),
-		GLISTEN_KEYTRANSITIONS | GLISTEN_KEYUP);
+	    GLISTEN_KEYTRANSITIONS | GLISTEN_KEYUP);
 
 	geventRegisterCallback (&p->gl, orchardAppUgfxCallback, &p->gl);
 
@@ -275,4 +275,3 @@ static void keyboard_exit(OrchardAppContext *context)
 }
 
 orchard_ui("keyboard", keyboard_start, keyboard_event, keyboard_exit);
-
