@@ -53,14 +53,11 @@ static volatile int * saved_br;
 static thread_reference_t fsReference;
 static thread_reference_t wakeReference;
 
-static THD_WORKING_AREA(waAsyncIoThread, 256);
 static THD_FUNCTION(asyncIoThread, arg)
 {
 	int br = (int)ASYNC_THD_READY;
 
 	(void) arg;
-
-	chRegSetThreadName ("AsyncIo");
 
 	while (1) {
 		osalSysLock ();
@@ -126,8 +123,8 @@ asyncIoWait (void)
 void
 asyncIoStart (void)
 {
-	pThread = chThdCreateStatic (waAsyncIoThread, sizeof(waAsyncIoThread),
-	    NORMALPRIO + 5, asyncIoThread, NULL);
+	pThread = chThdCreateFromHeap (NULL, THD_WORKING_AREA_SIZE(256),
+	    "AsyncIO", NORMALPRIO + 5, asyncIoThread, NULL);
 
 	async_br = (int)ASYNC_THD_READY;
 

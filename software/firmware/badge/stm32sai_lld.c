@@ -71,10 +71,12 @@
  * do out of the box since the Makefiles must be generated using a GUI.
  */
 
+#define        roundup(x, y)   ((((x)+((y)-1))/(y))*(y))
+
 SAIDriver SAID2;
 
-__attribute__((aligned(CACHE_LINE_SIZE)))
-static uint16_t i2sBuf[I2S_SAMPLES * 2];
+static uint16_t * i2sBufOrig;
+static uint16_t * i2sBuf;
 
 uint8_t i2sEnabled = TRUE;
  
@@ -83,7 +85,6 @@ static thread_t * pThread = NULL;
 static volatile uint8_t play;
 static uint8_t i2sloop;
 
-static THD_WORKING_AREA(waI2sThread, 1024);
 static void i2sThread(void *);
 
 static thread_reference_t i2sThreadReference;
@@ -245,10 +246,16 @@ saiStart (SAIDriver * saip)
 
 	chThdSleepMilliseconds (200);
 
+	/* Allocate memory for playback buffer */
+
+	i2sBufOrig = chHeapAlloc (NULL, (I2S_SAMPLES * sizeof(uint16_t) * 2) +
+	    CACHE_LINE_SIZE);
+	i2sBuf = (uint16_t *)roundup ((uintptr_t)i2sBufOrig, CACHE_LINE_SIZE);
+
         /* Launch the player thread. */
 
-	pThread = chThdCreateStatic (waI2sThread, sizeof(waI2sThread),
-	    I2S_THREAD_PRIO, i2sThread, NULL);
+	pThread = chThdCreateFromHeap (NULL, THD_WORKING_AREA_SIZE(1024),
+            "I2SEvent", I2S_THREAD_PRIO, i2sThread, NULL);
 
 	return;
 }
@@ -263,8 +270,6 @@ THD_FUNCTION(i2sThread, arg)
         char * file = NULL;
 
 	(void)arg;
-
-	chRegSetThreadName ("I2S");
 
 	while (1) {
 		if (play == 0) {

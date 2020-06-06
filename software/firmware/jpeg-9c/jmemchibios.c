@@ -12,15 +12,12 @@
  * is shoved onto the user.
  */
 
-#include "ch.h"
-#include "hal.h"
-
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
 #include "jmemsys.h"		/* import the system-dependent declarations */
 
-#ifndef HAVE_STDLIB_H		/* <stdlib.h> should declare chHeapAlloc(),free() */
+#ifndef HAVE_STDLIB_H		/* <stdlib.h> should declare malloc(),free() */
 extern void * malloc JPP((size_t size));
 extern void free JPP((void *ptr));
 #endif
@@ -31,11 +28,6 @@ extern void free JPP((void *ptr));
 
 #include "ch.h"
 
-#include <string.h>
-#include <stdlib.h>
-
-#ifdef notdef
-/* Allocate these from the heap to save BSS space. */
 static uint8_t b0[84];
 static uint8_t b1[1784];
 static uint8_t b2[16280];
@@ -45,19 +37,16 @@ static uint8_t b5[5136];
 static uint8_t b6[1296];
 static uint8_t b7[1296];
 
+static uint8_t bcnt = 0;
 static uint8_t * buffers[] = {
 	b0, b1, b2, b3, b4, b5, b6, b7
 };
-#endif
-
-static uint8_t bcnt = 0;
-static uint8_t * buffers[8];
 
 /*
  * Memory allocation and freeing are controlled by the regular library
  * routines malloc() and free().
  */
-volatile int scnt = 0;
+
 GLOBAL(void *)
 jpeg_get_small (j_common_ptr cinfo, size_t sizeofobject)
 {
@@ -226,31 +215,12 @@ jpeg_mem_init (j_common_ptr cinfo)
 {
   (void)cinfo;
   bcnt = 0;
-  buffers[0] = malloc (84);
-  buffers[1] = malloc (1784);
-  buffers[2] = malloc (16280);
-  buffers[3] = malloc (976);
-  buffers[4] = malloc (1296);
-  buffers[5] = malloc (5136);
-  buffers[6] = malloc (1296);
-  buffers[7] = malloc (1296);
-
   return DEFAULT_MAX_MEM;	/* default for max_memory_to_use */
 }
 
 GLOBAL(void)
 jpeg_mem_term (j_common_ptr cinfo)
 {
+  /* no work */
   (void)cinfo;
-  free (buffers[0]);
-  free (buffers[1]);
-  free (buffers[2]);
-  free (buffers[3]);
-  free (buffers[4]);
-  free (buffers[5]);
-  free (buffers[6]);
-  free (buffers[7]);
-
-  memset (buffers, 0, sizeof(buffers));
-  return;
 }

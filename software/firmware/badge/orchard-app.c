@@ -34,7 +34,6 @@ static thread_reference_t ugfxThreadReference;
 static int ugfxPend;
 
 static struct evt_table orchard_events;
-static THD_WORKING_AREA(waOrchardThread, 256);
 
 /* orchard event sources */
 event_source_t unlocks_updated;
@@ -357,7 +356,6 @@ void orchardAppTimer(const OrchardAppContext *context,
   return;
 }
 
-static THD_WORKING_AREA(waOrchardAppThread, 2048); // was 1280
 static THD_FUNCTION(orchard_app_thread, arg) {
 
   struct orchard_app_instance *instance = arg;
@@ -390,8 +388,6 @@ static THD_FUNCTION(orchard_app_thread, arg) {
     app_context.priv_size = instance->app->init(&app_context);
   else
     app_context.priv_size = 0;
-
-  chRegSetThreadName(instance->app->name);
 
   /* Allocate private data on the stack (word-aligned) */
   uint32_t priv_data[app_context.priv_size / 4];
@@ -473,7 +469,6 @@ orchard_app_restart(eventid_t id)
 static THD_FUNCTION(orchardThread, arg)
 {
   (void)arg;
-  chRegSetThreadName ("Orchard");
 
   evtTableInit (orchard_events, 3);
   chEvtObjectInit(&orchard_app_terminated);
@@ -491,8 +486,8 @@ void orchardAppInit(void) {
   orchard_app_list = orchard_apps();
   instance.app = orchard_app_list;
 
-  chThdCreateStatic (waOrchardThread, sizeof(waOrchardThread),
-    NORMALPRIO - 1, orchardThread, NULL);
+  chThdCreateFromHeap (NULL, THD_WORKING_AREA_SIZE(256),
+    "Orchard", NORMALPRIO - 1, orchardThread, NULL);
 
   chEvtObjectInit(&orchard_app_terminate);
   chEvtObjectInit(&timer_expired);
@@ -520,9 +515,7 @@ void orchardAppRestart(void) {
     instance.thr = NULL;
   }
 
-  instance.thr = chThdCreateStatic(waOrchardAppThread,
-                                   sizeof(waOrchardAppThread),
-                                   ORCHARD_APP_PRIO,
-                                   orchard_app_thread,
-                                   (void *)&instance);
+  instance.thr = chThdCreateFromHeap (NULL, THD_WORKING_AREA_SIZE(2048),
+    instance.app->name, ORCHARD_APP_PRIO, orchard_app_thread,
+    (void *)&instance);
 }

@@ -197,4 +197,3 @@ stm32VrefGet (void)
 
 	return (vref);
 }
-

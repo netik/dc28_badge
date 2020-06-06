@@ -42,7 +42,6 @@
  * On the STM32F764 Discovery board, the LINE_SD_DETECT pin is PC13.
  */
 
-static THD_WORKING_AREA(waSdDetectThread, 256);
 static thread_reference_t sdDetectThreadReference;
 static volatile uint8_t sdDetectService = 0;
 
@@ -94,8 +93,6 @@ static THD_FUNCTION(sdDetectThread, arg)
 {
 	(void)arg;
 
-	chRegSetThreadName ("SDCardEvent");
-
 	while (1) {
 		osalSysLock ();
 		if (sdDetectService == 0)
@@ -131,8 +128,8 @@ sdDetectStart (void)
 
 	/* Launch the event handler thread. */
 
-	chThdCreateStatic (waSdDetectThread, sizeof(waSdDetectThread),
-	    NORMALPRIO - 1, sdDetectThread, NULL);
+	chThdCreateFromHeap (NULL, THD_WORKING_AREA_SIZE(256),
+            "SDCardEvent", NORMALPRIO - 1, sdDetectThread, NULL);
 
 	sdCheck ();
 

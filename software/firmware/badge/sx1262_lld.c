@@ -80,8 +80,6 @@
  * in this driver.
  */
 
-static THD_WORKING_AREA(waSx1262Thread, 512);
-
 SX1262_Driver SX1262D1;
 
 static void sx1262CmdSend (SX1262_Driver *, void *, uint8_t);
@@ -186,8 +184,6 @@ THD_FUNCTION(sx1262Thread, arg)
 	uint16_t irq;
 
 	p = arg;
-
-	chRegSetThreadName ("RadioEvent");
 
 	while (1) {
 		osalSysLock ();
@@ -603,13 +599,24 @@ sx1262Enable (SX1262_Driver * p)
 	tp.sx_ramptime = SX_RAMPTIME_200US;
 	sx1262CmdSend (p, &tp, sizeof(tp));
 
-	/* Set up interrupt event signalling -- we use DIO1 */
+	/*
+	 * Set up interrupt event signalling -- we use DIO1.
+	 * Note that we unmask several different IRQ events,
+	 * but we only program DIO1 to toggle for RX and TX
+	 * completions, to limit how often we actually get
+	 * woken up. For RX, we want to be notified if the
+	 * receiver thinks it's actually received a packet,
+	 * but once that happens we also need to check if
+	 * the packet is actually valid by looking for CRC
+	 * or header errors.
+	 */
 
 	di.sx_opcode = SX_CMD_SETDIOIRQ;
 	di.sx_irqmask = __builtin_bswap16 (SX_IRQ_RXDONE |
 	    SX_IRQ_TXDONE | SX_IRQ_CRCERR | SX_IRQ_HDRERR |
 	    SX_IRQ_CADDONE | SX_IRQ_CADDET);
-	di.sx_dio1mask = di.sx_irqmask;
+	di.sx_dio1mask = __builtin_bswap16(SX_IRQ_RXDONE | SX_IRQ_TXDONE |
+	    SX_IRQ_CADDONE | SX_IRQ_CADDET);
 	di.sx_dio2mask = 0;
 	di.sx_dio3mask = 0;
 	sx1262CmdSend (p, &di, sizeof(di));
@@ -1072,8 +1079,8 @@ sx1262Start (SX1262_Driver * p)
 
 	/* Set up interrupt event thread */
 
-	p->sx_thread = chThdCreateStatic (waSx1262Thread,
-	    sizeof(waSx1262Thread), LWIP_THREAD_PRIORITY, sx1262Thread, p);
+	p->sx_thread = chThdCreateFromHeap (NULL, THD_WORKING_AREA_SIZE(512),
+            "RadioEvent", LWIP_THREAD_PRIORITY, sx1262Thread, p);
 
 	/* Enable the radio */
 

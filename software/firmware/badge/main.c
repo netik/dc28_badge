@@ -61,7 +61,6 @@ orchard_command_end();
 extern ShellCommand _orchard_cmd_list_cmd_cpu;
 
 /* Resources for UART shell */
-static THD_WORKING_AREA(shell_wa_sd, 3072);
 static ShellConfig shell_cfg_sd =
 {
 	(BaseSequentialStream *)&SD1,
@@ -71,7 +70,6 @@ static thread_t * shell_tp_sd = NULL;
 
 /* Resources for USB shell */
 
-static THD_WORKING_AREA(shell_wa_usb, 3072);
 static ShellConfig shell_cfg_usb =
 {
 	(BaseSequentialStream *)&SDU1,
@@ -329,15 +327,12 @@ static const DMA2DConfig dma2d_cfg = {
 
 THD_FUNCTION(shellSdThreadStub, p)
 {
-	chRegSetThreadName ("UartShell");
 	shellThread (p);
 }
 
 THD_FUNCTION(shellUsbThreadStub, p)
 {
 	uint8_t c;
-
-	chRegSetThreadName ("UsbShell");
 
 	/*
 	 * We launch the USB shell thread right away,
@@ -717,15 +712,17 @@ main (void)
 
 	while (true) {
 		if (shell_tp_sd == NULL) {
-			shell_tp_sd = chThdCreateStatic (shell_wa_sd,
-			    sizeof(shell_wa_sd), NORMALPRIO + 5,
- 			    shellSdThreadStub, (void *)&shell_cfg_sd);
+			shell_tp_sd = chThdCreateFromHeap (NULL,
+			    THD_WORKING_AREA_SIZE(3072), "UartShell",
+			    NORMALPRIO + 5, shellSdThreadStub,
+			    (void *)&shell_cfg_sd);
 		}
 
 		if (shell_tp_usb == NULL) {
-			shell_tp_usb = chThdCreateStatic (shell_wa_usb,
-			    sizeof(shell_wa_usb), NORMALPRIO + 5,
- 			    shellUsbThreadStub, (void *)&shell_cfg_usb);
+			shell_tp_usb = chThdCreateFromHeap (NULL,
+			    THD_WORKING_AREA_SIZE(3072), "UsbShell",
+			    NORMALPRIO + 5, shellUsbThreadStub,
+			    (void *)&shell_cfg_usb);
 		}
 
 		chEvtWaitAny (EVENT_MASK(0));

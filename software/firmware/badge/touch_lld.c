@@ -64,7 +64,6 @@
  * On the STM32F746 Discovery board, the LINE_LCD_INT pin is PI13. 
  */
 
-static THD_WORKING_AREA(waTouchThread, 256);
 static thread_reference_t touchThreadReference;
 static volatile uint8_t touchService = 0;
 static volatile uint8_t plevel = 1;
@@ -88,8 +87,6 @@ static THD_FUNCTION(touchThread, arg)
 	GMouse * mouse;
 
 	mouse = arg;
-
-	chRegSetThreadName ("TouchEvent");
 
 	while (1) {
 		osalSysLock ();
@@ -130,8 +127,8 @@ touchStart (void)
 
 	mouse = (GMouse*)gdriverGetInstance (GDRIVER_TYPE_MOUSE, 0);
 
-	chThdCreateStatic (waTouchThread, sizeof(waTouchThread),
-	    NORMALPRIO - 1, touchThread, mouse);
+        chThdCreateFromHeap (NULL, THD_WORKING_AREA_SIZE(256),
+            "TouchEvent", NORMALPRIO - 1, touchThread, mouse);
 
 	return;
 }
