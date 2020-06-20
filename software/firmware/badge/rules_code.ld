@@ -23,18 +23,6 @@ SECTIONS
         KEEP(*(.vectors))
     } > VECTORS_FLASH AT > VECTORS_FLASH_LMA
 
-    .xtors : ALIGN(4)
-    {
-        __init_array_start = .;
-        KEEP(*(SORT(.init_array.*)))
-        KEEP(*(.init_array))
-        __init_array_end = .;
-        __fini_array_start = .;
-        KEEP(*(.fini_array))
-        KEEP(*(SORT(.fini_array.*)))
-        __fini_array_end = .;
-    } > XTORS_FLASH AT > XTORS_FLASH_LMA
-
     .text : ALIGN(4)
     {
         __text_base = .;
@@ -46,6 +34,18 @@ SECTIONS
         *(.gcc*)
         __text_end = .;
     } > TEXT_FLASH AT > TEXT_FLASH_LMA
+
+    .xtors : ALIGN(4)
+    {
+        __init_array_start = .;
+        KEEP(*(SORT(.init_array.*)))
+        KEEP(*(.init_array))
+        __init_array_end = .;
+        __fini_array_start = .;
+        KEEP(*(.fini_array))
+        KEEP(*(SORT(.fini_array.*)))
+        __fini_array_end = .;
+    } > XTORS_FLASH AT > XTORS_FLASH_LMA
 
     .rodata : ALIGN(4)
     {
