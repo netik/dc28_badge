@@ -25,6 +25,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
 #include <noftypes.h>
 #include <bitmap.h>
 
@@ -61,7 +62,8 @@ static bitmap_t *_make_bitmap(uint8 *data_addr, bool hw, int width,
    if (false == bitmap->hardware)
    {
       bitmap->pitch = (bitmap->pitch + 3) & ~3;
-      bitmap->line[0] = (uint8 *) (((uint32) bitmap->data + overdraw + 3) & ~3);
+      bitmap->line[0] = (uint8 *) (((uintptr_t) bitmap->data +
+        overdraw + 3) & ~3);
    }
    else
    { 
