@@ -32,7 +32,7 @@
 #include <nes_ppu.h>
 #include <nes_rom.h>
 #include "nes6502.h"
-#include <bitmap.h>
+#include <nes_bitmap.h>
 
 /* Visible (NTSC) screen height */
 #ifndef NES_VISIBLE_HEIGHT
@@ -70,7 +70,7 @@ typedef struct nes_s
    rominfo_t *rominfo;
 
    /* video buffer */
-   bitmap_t *vidbuf;
+   nes_bitmap_t *vidbuf;
 
    bool fiq_occurred;
    uint8 fiq_state;

@@ -4,7 +4,7 @@ SUBDIRS = cpu libsnss sndhrdw mappers nes sdl $(SYSTEM)
 
 bin_PROGRAMS = nofrendo
 
-nofrendo_SOURCES = bitmap.c \
+nofrendo_SOURCES = nes_bitmap.c \
 	config.c \
 	event.c \
 	gui.c \

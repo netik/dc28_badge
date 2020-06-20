@@ -25,7 +25,7 @@
 
 #include <math.h>
 #include <noftypes.h>
-#include <bitmap.h>
+#include <nes_bitmap.h>
 #include <nes_pal.h>
 
 #ifndef PI

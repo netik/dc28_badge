@@ -27,17 +27,17 @@
 #include <string.h>
 #include <stdint.h>
 #include <noftypes.h>
-#include <bitmap.h>
+#include <nes_bitmap.h>
 
-void bmp_clear(const bitmap_t *bitmap, uint8 color)
+void bmp_clear(const nes_bitmap_t *bitmap, uint8 color)
 {
    memset(bitmap->data, color, bitmap->pitch * bitmap->height);
 }
 
-static bitmap_t *_make_bitmap(uint8 *data_addr, bool hw, int width, 
+static nes_bitmap_t *_make_bitmap(uint8 *data_addr, bool hw, int width, 
                               int height, int pitch, int overdraw)
 {
-   bitmap_t *bitmap;
+   nes_bitmap_t *bitmap;
    int i;
 
    /* quick safety check */
@@ -45,7 +45,7 @@ static bitmap_t *_make_bitmap(uint8 *data_addr, bool hw, int width,
       return NULL;
 
    /* Make sure to add in space for line pointers */
-   bitmap = malloc(sizeof(bitmap_t) + (sizeof(uint8 *) * height));
+   bitmap = malloc(sizeof(nes_bitmap_t) + (sizeof(uint8 *) * height));
    if (NULL == bitmap)
       return NULL;
 
@@ -77,7 +77,7 @@ static bitmap_t *_make_bitmap(uint8 *data_addr, bool hw, int width,
 }
 
 /* Allocate and initialize a bitmap structure */
-bitmap_t *bmp_create(int width, int height, int overdraw)
+nes_bitmap_t *bmp_create(int width, int height, int overdraw)
 {
    uint8 *addr;
    int pitch;
@@ -92,13 +92,13 @@ bitmap_t *bmp_create(int width, int height, int overdraw)
 }
 
 /* allocate and initialize a hardware bitmap */
-bitmap_t *bmp_createhw(uint8 *addr, int width, int height, int pitch)
+nes_bitmap_t *bmp_createhw(uint8 *addr, int width, int height, int pitch)
 {
    return _make_bitmap(addr, true, width, height, pitch, 0); /* zero overdraw */
 }
 
 /* Deallocate space for a bitmap structure */
-void bmp_destroy(bitmap_t **bitmap)
+void bmp_destroy(nes_bitmap_t **bitmap)
 {
    if (*bitmap)
    {

@@ -28,7 +28,7 @@
 #include <math.h>
 #include <string.h>
 #include <noftypes.h>
-#include <bitmap.h>
+#include <nes_bitmap.h>
 #include <nofconfig.h>
 #include <event.h>
 #include <gui.h>
@@ -218,7 +218,7 @@ static void shutdown(void);
 static int set_mode(int width, int height);
 static void set_palette(rgb_t *pal);
 static void clear(uint8 color);
-static bitmap_t *lock_write(void);
+static nes_bitmap_t *lock_write(void);
 static void free_write(int num_dirties, rect_t *dirty_rects);
 
 viddriver_t sdlDriver =
@@ -245,7 +245,7 @@ void osd_getvideoinfo(vidinfo_t *info)
 /* Now that the driver declaration is out of the way, on to the SDL stuff */
 static SDL_Surface *mySurface = NULL;
 static SDL_Color myPalette[256];
-static bitmap_t *myBitmap = NULL;
+static nes_bitmap_t *myBitmap = NULL;
 static bool fullscreen = false;
 
 /* flip between full screen and windowed */
@@ -356,7 +356,7 @@ static void clear(uint8 color)
 }
 
 /* acquire the directbuffer for writing */
-static bitmap_t *lock_write(void)
+static nes_bitmap_t *lock_write(void)
 {
    SDL_LockSurface(mySurface);
    myBitmap = bmp_createhw(mySurface->pixels, mySurface->w, 

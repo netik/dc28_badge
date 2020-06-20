@@ -27,7 +27,7 @@
 #define _PCX_H_
 
 #include <osd.h>
-#include <bitmap.h>
+#include <nes_bitmap.h>
 
 /* Got these out of ZSoft's document */
 typedef struct pcxheader_s
@@ -52,7 +52,7 @@ typedef struct pcxheader_s
    uint8  Filler[54]       __PACKED__;
 } pcxheader_t;
 
-extern int pcx_write(char *filename, bitmap_t *bmp, rgb_t *pal);
+extern int pcx_write(char *filename, nes_bitmap_t *bmp, rgb_t *pal);
 
 #endif /* _PCX_H_ */
 

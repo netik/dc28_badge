@@ -26,11 +26,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <noftypes.h>
-#include <bitmap.h>
+#include <nes_bitmap.h>
 #include <pcx.h>
 
 /* Save a PCX snapshot from a given NES bitmap */
-int pcx_write(char *filename, bitmap_t *bmp, rgb_t *pal)
+int pcx_write(char *filename, nes_bitmap_t *bmp, rgb_t *pal)
 {
    FILE *fp;
    pcxheader_t header;

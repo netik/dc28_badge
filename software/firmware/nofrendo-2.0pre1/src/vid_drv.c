@@ -26,16 +26,16 @@
 #include <string.h>
 #include <noftypes.h>
 #include <log.h>
-#include <bitmap.h>
+#include <nes_bitmap.h>
 #include <vid_drv.h>
 #include <gui.h>
 #include <osd.h>
 
 /* hardware surface */
-static bitmap_t *screen = NULL;
+static nes_bitmap_t *screen = NULL;
 
 /* primary / backbuffer surfaces */
-static bitmap_t *primary_buffer = NULL, *back_buffer = NULL;
+static nes_bitmap_t *primary_buffer = NULL, *back_buffer = NULL;
 
 static viddriver_t *driver = NULL;
 
@@ -118,7 +118,7 @@ INLINE void vid_memcpy(void *dest, const void *src, int len)
 
 
 /* TODO: any way to remove this filth (GUI needs it)? */
-bitmap_t *vid_getbuffer(void)
+nes_bitmap_t *vid_getbuffer(void)
 {
    return primary_buffer;
 }
@@ -132,7 +132,7 @@ void vid_setpalette(rgb_t *p)
 }
 
 /* blits a bitmap onto primary buffer */
-void vid_blit(bitmap_t *bitmap, int src_x, int src_y, int dest_x, int dest_y, 
+void vid_blit(nes_bitmap_t *bitmap, int src_x, int src_y, int dest_x, int dest_y, 
               int width, int height)
 {
    int bitmap_pitch, primary_pitch;
@@ -334,7 +334,7 @@ INLINE int calc_dirties(rect_t *list)
 
 void vid_flush(void)
 {
-   bitmap_t *temp;
+   nes_bitmap_t *temp;
    int num_dirties;
    rect_t dirty_rects[MAX_DIRTIES];
 

@@ -26,7 +26,7 @@
 #ifndef _VID_DRV_H_
 #define _VID_DRV_H_
 
-#include <bitmap.h>
+#include <nes_bitmap.h>
 
 typedef struct viddriver_s
 {
@@ -43,18 +43,18 @@ typedef struct viddriver_s
    /* custom bitmap clear (can be NULL) */
    void      (*clear)(uint8 color);
    /* lock surface for writing (required) */
-   bitmap_t *(*lock_write)(void);
+   nes_bitmap_t *(*lock_write)(void);
    /* free a locked surface (can be NULL) */
    void      (*free_write)(int num_dirties, rect_t *dirty_rects);
    /* custom blitter - num_dirties == -1 if full blit required */
-   void      (*custom_blit)(bitmap_t *primary, int num_dirties, 
+   void      (*custom_blit)(nes_bitmap_t *primary, int num_dirties, 
                             rect_t *dirty_rects);
    /* immediately invalidate the buffer, i.e. full redraw */
    bool      invalidate;
 } viddriver_t;
 
 /* TODO: filth */
-extern bitmap_t *vid_getbuffer(void);
+extern nes_bitmap_t *vid_getbuffer(void);
 
 extern int  vid_init(int width, int height, viddriver_t *osd_driver);
 extern void vid_shutdown(void);
@@ -62,7 +62,7 @@ extern void vid_shutdown(void);
 extern int  vid_setmode(int width, int height);
 extern void vid_setpalette(rgb_t *pal);
 
-extern void vid_blit(bitmap_t *bitmap, int src_x, int src_y, int dest_x, 
+extern void vid_blit(nes_bitmap_t *bitmap, int src_x, int src_y, int dest_x, 
                      int dest_y, int blit_width, int blit_height);
 extern void vid_flush(void);
 

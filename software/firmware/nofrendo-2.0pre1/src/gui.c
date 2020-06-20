@@ -34,7 +34,7 @@
 #include <log.h>
 #include <osd.h>
 
-#include <bitmap.h>
+#include <nes_bitmap.h>
 
 #include <gui.h>
 #include <gui_elem.h>
@@ -171,7 +171,7 @@ static int gui_refresh = 60; /* default to 60Hz */
 
 static int mouse_x, mouse_y, mouse_button;
 
-static bitmap_t *gui_surface;
+static nes_bitmap_t *gui_surface;
 
 
 /* Put a pixel on our bitmap- just for GUI use */

@@ -33,7 +33,7 @@
 #include <log.h>
 #include <nes_mmc.h>
 
-#include <bitmap.h>
+#include <nes_bitmap.h>
 #include <vid_drv.h>
 #include <nes_pal.h>
 #include <nesinput.h>
@@ -1009,7 +1009,7 @@ bool ppu_enabled(void)
    return (ppu.bg_on || ppu.obj_on);
 }
 
-static void ppu_renderscanline(bitmap_t *bmp, int scanline, bool draw_flag)
+static void ppu_renderscanline(nes_bitmap_t *bmp, int scanline, bool draw_flag)
 {
    uint8 *buf = bmp->line[scanline];
 
@@ -1078,7 +1078,7 @@ void ppu_checknmi(void)
       nes_nmi();
 }
 
-void ppu_scanline(bitmap_t *bmp, int scanline, bool draw_flag)
+void ppu_scanline(nes_bitmap_t *bmp, int scanline, bool draw_flag)
 {
    if (scanline < 240)
    {
@@ -1102,7 +1102,7 @@ void ppu_scanline(bitmap_t *bmp, int scanline, bool draw_flag)
 }
 
 /*
-bool ppu_checkzapperhit(bitmap_t *bmp, int x, int y)
+bool ppu_checkzapperhit(nes_bitmap_t *bmp, int x, int y)
 {
    uint8 pixel = bmp->line[y][x] & 0x3F;
 
@@ -1116,7 +1116,7 @@ bool ppu_checkzapperhit(bitmap_t *bmp, int x, int y)
 /*************************************************/
 /* TODO: all this stuff should go somewhere else */
 /*************************************************/
-INLINE void draw_box(bitmap_t *bmp, int x, int y, int height)
+INLINE void draw_box(nes_bitmap_t *bmp, int x, int y, int height)
 {
    int i;
    uint8 *vid;
@@ -1135,7 +1135,7 @@ INLINE void draw_box(bitmap_t *bmp, int x, int y, int height)
       *vid++ = GUI_GRAY;
 }
 
-INLINE void draw_deadsprite(bitmap_t *bmp, int x, int y, int height)
+INLINE void draw_deadsprite(nes_bitmap_t *bmp, int x, int y, int height)
 {
    int i, j, index;
    uint8 *vid;
@@ -1163,7 +1163,7 @@ INLINE void draw_deadsprite(bitmap_t *bmp, int x, int y, int height)
 
 
 /* Stuff for the OAM viewer */
-static void draw_sprite(bitmap_t *bmp, int x, int y, uint8 tile_num, uint8 attrib)
+static void draw_sprite(nes_bitmap_t *bmp, int x, int y, uint8 tile_num, uint8 attrib)
 {
    int line, height;
    int col_high, vram_adr;
@@ -1197,7 +1197,7 @@ static void draw_sprite(bitmap_t *bmp, int x, int y, uint8 tile_num, uint8 attri
    }
 }
 
-void ppu_dumpoam(bitmap_t *bmp, int x_loc, int y_loc)
+void ppu_dumpoam(nes_bitmap_t *bmp, int x_loc, int y_loc)
 {
    int sprite, x_pos, y_pos, height;
    obj_t *spr_ptr;
@@ -1225,7 +1225,7 @@ void ppu_dumpoam(bitmap_t *bmp, int x_loc, int y_loc)
 }
 
 /* More of a debugging thing than anything else */
-void ppu_dumppattern(bitmap_t *bmp, int table_num, int x_loc, int y_loc, int col)
+void ppu_dumppattern(nes_bitmap_t *bmp, int table_num, int x_loc, int y_loc, int col)
 {
    int x_tile, y_tile;
    uint8 *bmp_ptr, *data_ptr, *ptr;

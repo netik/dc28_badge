@@ -26,7 +26,7 @@
 #ifndef _NES_PPU_H_
 #define _NES_PPU_H_
 
-#include <bitmap.h>
+#include <nes_bitmap.h>
 
 /* PPU register defines */
 #define  PPU_CTRL0            0x2000
@@ -134,7 +134,7 @@ extern uint8 *ppu_getpage(int page);
 /* control */
 extern void ppu_reset(int reset_type);
 extern bool ppu_enabled(void);
-extern void ppu_scanline(bitmap_t *bmp, int scanline, bool draw_flag);
+extern void ppu_scanline(nes_bitmap_t *bmp, int scanline, bool draw_flag);
 extern void ppu_endscanline(int scanline);
 extern void ppu_checknmi();
 
@@ -152,8 +152,8 @@ extern void ppu_setpal(ppu_t *src_ppu, rgb_t *pal);
 extern void ppu_setdefaultpal(ppu_t *src_ppu);
 
 /* bleh */
-extern void ppu_dumppattern(bitmap_t *bmp, int table_num, int x_loc, int y_loc, int col);
-extern void ppu_dumpoam(bitmap_t *bmp, int x_loc, int y_loc);
+extern void ppu_dumppattern(nes_bitmap_t *bmp, int table_num, int x_loc, int y_loc, int col);
+extern void ppu_dumpoam(nes_bitmap_t *bmp, int x_loc, int y_loc);
 extern void ppu_displaysprites(bool display);
 
 #endif /* _NES_PPU_H_ */
