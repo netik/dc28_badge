@@ -46,12 +46,19 @@ static viddriver_t *driver = NULL;
    switch (count % 8) \
    { \
    case 0:  do {  { transfer; } \
+            /* FALLTHROUGH */   \
    case 7:        { transfer; } \
+            /* FALLTHROUGH */   \
    case 6:        { transfer; } \
+            /* FALLTHROUGH */   \
    case 5:        { transfer; } \
+            /* FALLTHROUGH */   \
    case 4:        { transfer; } \
+            /* FALLTHROUGH */   \
    case 3:        { transfer; } \
+            /* FALLTHROUGH */   \
    case 2:        { transfer; } \
+            /* FALLTHROUGH */   \
    case 1:        { transfer; } \
             } while (--n > 0); \
    } \

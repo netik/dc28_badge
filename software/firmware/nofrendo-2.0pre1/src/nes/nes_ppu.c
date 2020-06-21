@@ -167,11 +167,14 @@ void ppu_setpage(int size, int page_num, uint8 *location)
       ppu.page[page_num++] = location;
       ppu.page[page_num++] = location;
       ppu.page[page_num++] = location;
+      /* FALLTHROUGH */
    case 4:  
       ppu.page[page_num++] = location;
       ppu.page[page_num++] = location;
+      /* FALLTHROUGH */
    case 2:
       ppu.page[page_num++] = location;
+      /* FALLTHROUGH */
    case 1:
       ppu.page[page_num++] = location;
       break;
@@ -787,7 +790,7 @@ typedef struct obj_s
 static void ppu_renderoam(uint8 *vidbuf, int scanline)
 {
    uint8 *buf_ptr;
-   uint32 vram_offset, savecol[2];
+   uint32 vram_offset, savecol[2] = { 0, 0 };
    int sprite_num, spritecount;
    obj_t *sprite_ptr;
    uint8 sprite_height;
