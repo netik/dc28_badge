@@ -136,7 +136,7 @@ extern void ppu_reset(int reset_type);
 extern bool ppu_enabled(void);
 extern void ppu_scanline(nes_bitmap_t *bmp, int scanline, bool draw_flag);
 extern void ppu_endscanline(int scanline);
-extern void ppu_checknmi();
+extern void ppu_checknmi(void);
 
 extern ppu_t *ppu_create(void);
 extern void ppu_destroy(ppu_t **ppu);

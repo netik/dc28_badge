@@ -101,7 +101,7 @@ void gui_togglefs(void)
 }
 
 /* display rom information */
-void gui_displayinfo()
+void gui_displayinfo(void)
 {
    gui_sendmsg(GUI_ORANGE, (char *) rom_getinfo(nes_getcontextptr()->rominfo));
 }

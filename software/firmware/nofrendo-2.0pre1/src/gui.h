@@ -86,7 +86,7 @@ extern void gui_incpatterncol(void);
 extern void gui_savesnap(void);
 extern void gui_togglesprites(void);
 extern void gui_togglefs(void);
-extern void gui_displayinfo();
+extern void gui_displayinfo(void);
 extern void gui_toggle_chan(int chan);
 extern void gui_setfilter(int filter_type);
 
