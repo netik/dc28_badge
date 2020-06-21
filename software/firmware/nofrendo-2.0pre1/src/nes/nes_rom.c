@@ -58,17 +58,17 @@
 #define  ROM_MIRRORTYPE    0x01
 #define  ROM_INES_MAGIC    "NES\x1A"
 
-
+#pragma pack(1)
 typedef struct inesheader_s
 {
-   uint8 ines_magic[4]     __PACKED__;
-   uint8 rom_banks         __PACKED__;
-   uint8 vrom_banks        __PACKED__;
-   uint8 rom_type          __PACKED__;
-   uint8 mapper_hinybble   __PACKED__;
-   uint8 reserved[8]       __PACKED__;
+   uint8 ines_magic[4];
+   uint8 rom_banks;
+   uint8 vrom_banks;
+   uint8 rom_type;
+   uint8 mapper_hinybble;
+   uint8 reserved[8];
 } inesheader_t;
-
+#pragma pack()
 
 #define  TRAINER_OFFSET    0x1000
 #define  TRAINER_LENGTH    0x200
