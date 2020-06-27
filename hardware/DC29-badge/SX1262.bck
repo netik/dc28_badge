@@ -1,0 +1,7 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP SX1262
+D SemTech SX1262 LoRa Radio
+$ENDCMP
+#
+#End Doc Library

@@ -1,0 +1,284 @@
+EESchema Schematic File Version 4
+EELAYER 30 0
+EELAYER END
+$Descr USLetter 11000 8500
+encoding utf-8
+Sheet 2 5
+Title "DC29 Badge"
+Date "06/01/2020"
+Rev "1"
+Comp "Team IDES"
+Comment1 "SemTech SX1262 LoRa radio"
+Comment2 "RGB 320x240 TFT display"
+Comment3 "STM32F746 CPU with 8MB external SDRAM"
+Comment4 "\"Roaring 20s\" prototype design"
+$EndDescr
+$Comp
+L Memory_RAM:IS42S16400J-xC U?
+U 1 1 5F0161BA
+P 5450 3800
+AR Path="/5F0161BA" Ref="U?"  Part="1" 
+AR Path="/5EDB16BD/5F0161BA" Ref="U2"  Part="1" 
+F 0 "U2" H 5450 2219 50  0000 C CNN
+F 1 "IS42S16400J-xC" H 5450 2310 50  0000 C CNN
+F 2 "Package_SO:TSOP-II-54_10.16x22.22mm_P0.8mm" H 5450 3800 50  0001 C CNN
+F 3 "http://www.issi.com/WW/pdf/42-45S16400J.pdf" H 4850 5050 50  0001 C CNN
+	1    5450 3800
+	-1   0    0    1   
+$EndComp
+Entry Wire Line
+	7800 4700 7900 4600
+Wire Wire Line
+	6250 4700 7800 4700
+Text Label 7200 4700 0    50   ~ 0
+RAMADDR0
+Entry Wire Line
+	7800 4600 7900 4500
+Entry Wire Line
+	7800 4500 7900 4400
+Wire Wire Line
+	6250 4500 7800 4500
+Text Label 7200 4600 0    50   ~ 0
+RAMADDR1
+Entry Wire Line
+	7800 4400 7900 4300
+Entry Wire Line
+	7800 4300 7900 4200
+Entry Wire Line
+	7800 4200 7900 4100
+Entry Wire Line
+	7800 4100 7900 4000
+Entry Wire Line
+	7800 4000 7900 3900
+Entry Wire Line
+	7800 3900 7900 3800
+Entry Wire Line
+	7800 3800 7900 3700
+Entry Wire Line
+	7800 3700 7900 3600
+Entry Wire Line
+	7800 3600 7900 3500
+Wire Wire Line
+	6250 4400 7800 4400
+Wire Wire Line
+	7800 4300 6250 4300
+Wire Wire Line
+	6250 4200 7800 4200
+Wire Wire Line
+	6250 4100 7800 4100
+Wire Wire Line
+	7800 4000 6250 4000
+Wire Wire Line
+	7800 3900 6250 3900
+Wire Wire Line
+	7800 3800 6250 3800
+Wire Wire Line
+	7800 3700 6250 3700
+Wire Wire Line
+	7800 3600 6250 3600
+Text Label 7200 4500 0    50   ~ 0
+RAMADDR2
+Text Label 7200 4400 0    50   ~ 0
+RAMADDR3
+Text Label 7200 4300 0    50   ~ 0
+RAMADDR4
+Text Label 7200 4200 0    50   ~ 0
+RAMADDR5
+Text Label 7200 4100 0    50   ~ 0
+RAMADDR6
+Text Label 7200 4000 0    50   ~ 0
+RAMADDR7
+Text Label 7200 3900 0    50   ~ 0
+RAMADDR8
+Text Label 7200 3800 0    50   ~ 0
+RAMADDR9
+Text Label 7200 3700 0    50   ~ 0
+RAMADDR10
+Text Label 7200 3600 0    50   ~ 0
+RAMADDR11
+Wire Wire Line
+	6250 4600 7800 4600
+Text GLabel 7900 3350 2    50   Input ~ 0
+RAMADDR[0..11]
+Text GLabel 3300 2950 0    50   Input ~ 0
+RAMDATA[0..15]
+Entry Wire Line
+	3300 4800 3400 4900
+Entry Wire Line
+	3300 4700 3400 4800
+Entry Wire Line
+	3300 4600 3400 4700
+Entry Wire Line
+	3300 4500 3400 4600
+Entry Wire Line
+	3300 4400 3400 4500
+Entry Wire Line
+	3300 4300 3400 4400
+Entry Wire Line
+	3300 4200 3400 4300
+Entry Wire Line
+	3300 4100 3400 4200
+Entry Wire Line
+	3300 4000 3400 4100
+Entry Wire Line
+	3300 3900 3400 4000
+Wire Wire Line
+	4650 4900 3400 4900
+Wire Wire Line
+	3400 4800 4650 4800
+Wire Wire Line
+	3400 4700 4650 4700
+Wire Wire Line
+	3400 4600 4650 4600
+Wire Wire Line
+	3400 4500 4650 4500
+Wire Wire Line
+	3400 4400 4650 4400
+Wire Wire Line
+	3400 4300 4650 4300
+Wire Wire Line
+	3400 4200 4650 4200
+Wire Wire Line
+	3400 4100 4650 4100
+Wire Wire Line
+	3400 4000 4650 4000
+Entry Wire Line
+	3300 3800 3400 3900
+Entry Wire Line
+	3300 3700 3400 3800
+Entry Wire Line
+	3300 3600 3400 3700
+Entry Wire Line
+	3300 3500 3400 3600
+Entry Wire Line
+	3300 3400 3400 3500
+Entry Wire Line
+	3300 3300 3400 3400
+Wire Wire Line
+	3400 3400 4650 3400
+Wire Wire Line
+	3400 3500 4650 3500
+Wire Wire Line
+	3400 3600 4650 3600
+Wire Wire Line
+	3400 3700 4650 3700
+Wire Wire Line
+	3400 3800 4650 3800
+Wire Wire Line
+	3400 3900 4650 3900
+Text Label 3600 4900 0    50   ~ 0
+RAMDATA0
+Text Label 3600 4800 0    50   ~ 0
+RAMDATA1
+Text Label 3600 4700 0    50   ~ 0
+RAMDATA2
+Text Label 3600 4600 0    50   ~ 0
+RAMDATA3
+Text Label 3600 4500 0    50   ~ 0
+RAMDATA4
+Text Label 3600 4400 0    50   ~ 0
+RAMDATA5
+Text Label 3600 4300 0    50   ~ 0
+RAMDATA6
+Text Label 3600 4200 0    50   ~ 0
+RAMDATA7
+Text Label 3600 4100 0    50   ~ 0
+RAMDATA8
+Text Label 3600 4000 0    50   ~ 0
+RAMDATA9
+Text Label 3600 3900 0    50   ~ 0
+RAMDATA10
+Text Label 3600 3800 0    50   ~ 0
+RAMDATA11
+Text Label 3600 3700 0    50   ~ 0
+RAMDATA12
+Text Label 3600 3600 0    50   ~ 0
+RAMDATA13
+Text Label 3600 3500 0    50   ~ 0
+RAMDATA14
+Text Label 3600 3400 0    50   ~ 0
+RAMDATA15
+Wire Wire Line
+	6250 4900 6250 5300
+Wire Wire Line
+	6250 5300 6500 5300
+Wire Wire Line
+	6250 4800 6350 4800
+Wire Wire Line
+	6350 4800 6350 5200
+Wire Wire Line
+	6350 5200 6500 5200
+Text GLabel 6500 5300 2    50   Input ~ 0
+RAM_BA0
+Text GLabel 6500 5200 2    50   Input ~ 0
+RAM_BA1
+Wire Wire Line
+	6250 3200 6500 3200
+Text GLabel 6500 3200 2    50   Input ~ 0
+RAM_CLK
+Wire Wire Line
+	6250 2800 6500 2800
+Text GLabel 6500 2800 2    50   Input ~ 0
+RAM_CAS
+Wire Wire Line
+	6250 2700 6500 2700
+Text GLabel 6500 2700 2    50   Input ~ 0
+RAM_RAS
+Wire Wire Line
+	6250 2900 6500 2900
+Text GLabel 6500 2900 2    50   Input ~ 0
+RAM_WE
+Wire Wire Line
+	6250 3100 6500 3100
+Wire Wire Line
+	6250 3000 6500 3000
+Wire Wire Line
+	6250 3300 6500 3300
+Wire Wire Line
+	6250 3400 6500 3400
+Text GLabel 6500 3300 2    50   Input ~ 0
+RAM_CKE
+Text GLabel 6500 3400 2    50   Input ~ 0
+RAM_CS
+Text GLabel 6500 3100 2    50   Input ~ 0
+RAM_QM0
+Text GLabel 6500 3000 2    50   Input ~ 0
+RAM_QM1
+$Comp
+L power:GND #PWR0101
+U 1 1 5F350908
+P 4400 2400
+F 0 "#PWR0101" H 4400 2150 50  0001 C CNN
+F 1 "GND" H 4405 2227 50  0000 C CNN
+F 2 "" H 4400 2400 50  0001 C CNN
+F 3 "" H 4400 2400 50  0001 C CNN
+	1    4400 2400
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	5750 2400 5650 2400
+Connection ~ 5150 2400
+Wire Wire Line
+	5150 2400 4400 2400
+Connection ~ 5250 2400
+Wire Wire Line
+	5250 2400 5150 2400
+Connection ~ 5350 2400
+Wire Wire Line
+	5350 2400 5250 2400
+Connection ~ 5450 2400
+Wire Wire Line
+	5450 2400 5350 2400
+Connection ~ 5550 2400
+Wire Wire Line
+	5550 2400 5450 2400
+Connection ~ 5650 2400
+Wire Wire Line
+	5650 2400 5550 2400
+Text Notes 4800 1650 0    50   ~ 0
+ISSI IS42S16400J-6TL 8MB SDRAM
+Wire Bus Line
+	7900 3350 7900 4600
+Wire Bus Line
+	3300 2950 3300 4800
+$EndSCHEMATC

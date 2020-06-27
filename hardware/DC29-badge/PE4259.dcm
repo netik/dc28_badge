@@ -1,0 +1,8 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP PE4259
+D pSemi RF Switch SPDT 10MHz - 3GHz
+F https://www.psemi.com/pdf/datasheets/pe4259ds.pdf
+$ENDCMP
+#
+#End Doc Library

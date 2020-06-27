@@ -1,0 +1,6 @@
+(sym_lib_table
+  (lib (name er-tft043-3)(type Legacy)(uri ${KIPRJMOD}/er-tft043-3.lib)(options "")(descr ""))
+  (lib (name ER-CON50HT-1)(type Legacy)(uri ${KIPRJMOD}/ER-CON50HT-1.lib)(options "")(descr ""))
+  (lib (name SX1262)(type Legacy)(uri ${KIPRJMOD}/SX1262.lib)(options "")(descr ""))
+  (lib (name PE4259)(type Legacy)(uri ${KIPRJMOD}/PE4259.lib)(options "")(descr ""))
+)
