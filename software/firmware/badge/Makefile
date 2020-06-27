@@ -139,6 +139,10 @@ include $(LIBJPEG)/build.mk
 # lwIP TCP/IP stack
 include $(CHIBIOS)/../lwip_bindings/lwip.mk
 
+# NES emulator
+NES = $(CHIBIOS)/../nofrendo-2.0pre1
+include $(NES)/build.mk
+
 # STM SDK files
 # STM = $(CHIBIOS)/../stm
 # include $(STM)/build.mk
@@ -155,6 +159,7 @@ CSRC = $(ALLCSRC) \
        $(TJPGDSRC) \
        $(WM8994SRC) \
        $(LIBJPEGSRC) \
+       $(NESSRC) \
        main.c \
        usbcfg.c \
        cmd-adc.c \
@@ -190,6 +195,7 @@ CSRC = $(ALLCSRC) \
        app-music.c \
        app-launcher.c \
        app-ledsign.c \
+       app-nes.c \
        app-intro.c \
        ui-keyboard.c \
        ui-list.c
@@ -206,7 +212,7 @@ ASMXSRC = $(ALLXASMSRC) badge_fault.S
 
 # Inclusion directories.
 INCDIR = $(CONFDIR) $(ALLINC) $(CHIBIOS_CONTRIB)/os/various $(FATFSINC)
-INCDIR += $(GFXINC) $(STMINC) $(TJPGDINC) $(WM8994INC) $(LIBJPEGINC)
+INCDIR += $(GFXINC) $(STMINC) $(TJPGDINC) $(WM8994INC) $(LIBJPEGINC) $(NESINC)
 
 # Define C warning options here.
 CWARN = -Wall -Wextra -Wundef -Wstrict-prototypes

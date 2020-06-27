@@ -515,7 +515,7 @@ void orchardAppRestart(void) {
     instance.thr = NULL;
   }
 
-  instance.thr = chThdCreateFromHeap (NULL, THD_WORKING_AREA_SIZE(2048),
+  instance.thr = chThdCreateFromHeap (NULL, THD_WORKING_AREA_SIZE(4096),
     instance.app->name, ORCHARD_APP_PRIO, orchard_app_thread,
     (void *)&instance);
 }
