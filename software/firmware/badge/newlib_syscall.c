@@ -367,6 +367,39 @@ _fstat (int desc, struct stat * st)
 
 __attribute__((used))
 int
+_mkdir (const char * path, mode_t mode)
+{
+	(void)mode;
+
+	if (f_mkdir (path) != FR_OK)
+		return (-1);
+	return (0);
+}
+
+__attribute__((used, alias ("_mkdir")))
+int
+mkdir (const char * path, mode_t mode);
+
+__attribute__((used))
+char *
+getcwd (char * buf, size_t size)
+{
+	if (f_getcwd ((TCHAR *)buf, (UINT)size) != FR_OK)
+		return (NULL);
+	return (buf);
+}
+
+__attribute__((used))
+int
+chdir (const char * path)
+{
+	if (f_chdir (path) != FR_OK)
+		return (-1);
+	return (0);
+}
+
+__attribute__((used))
+int
 _isatty (int fd)
 {
 	if (fd >=0 && fd < 3)
