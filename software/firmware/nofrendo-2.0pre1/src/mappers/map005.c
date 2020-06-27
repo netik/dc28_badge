@@ -59,7 +59,7 @@ static void map5_hblank(int vblank)
 
 static void map5_write(uint32 address, uint8 value)
 {
-   static int page_size = 8;
+   //static int page_size = 8;
 
    /* ex-ram memory-- bleh! */
    if (address >= 0x5C00 && address <= 0x5FFF)
@@ -70,21 +70,21 @@ static void map5_write(uint32 address, uint8 value)
    case 0x5100:
       /* PRG page size setting */
       /* 0:32k 1:16k 2,3:8k */
-      switch (value & 3)
-      {
-      case 0:
-         page_size = 32;
-         break;
+      //switch (value & 3)
+      //{
+      //case 0:
+      //   page_size = 32;
+      //   break;
 
-      case 1:
-         page_size = 16;
-         break;
+      //case 1:
+      //   page_size = 16;
+      //   break;
       
-      case 2:
-      case 3:
-         page_size = 8;
-         break;
-      }
+      //case 2:
+      //case 3:
+      //   page_size = 8;
+      //   break;
+      //}
       break;
 
    case 0x5101:

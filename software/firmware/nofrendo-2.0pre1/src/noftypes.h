@@ -72,8 +72,8 @@ typedef enum
 
 #else /* !NOFRENDO_DEBUG */
 
-#define  ASSERT(expr)
-#define  ASSERT_MSG(msg)
+#define  ASSERT(expr)      (void)(expr)
+#define  ASSERT_MSG(msg)   (void)(msg)
 
 #endif /* !NOFRENDO_DEBUG */
 

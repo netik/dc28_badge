@@ -139,6 +139,13 @@ void gui_setfilter(int filter_type)
 /**************************************************************/
 
 
+#ifdef notdef
+
+/*
+ * Sorry pal, but you're not really allowed to treat enums
+ * as though they're equivalent to ints or other types.
+ */
+
 enum
 {
    GUI_WAVENONE,
@@ -152,7 +159,15 @@ enum
    BUTTON_UP,
    BUTTON_DOWN
 };
+#endif
 
+#define GUI_WAVENONE		0
+#define GUI_WAVELINE		1
+#define GUI_WAVESOLID		2
+#define GUI_NUMWAVESTYLES	3
+
+#define BUTTON_UP		0
+#define BUTTON_DOWN		1
 
 /* TODO: roll options into a structure */
 static message_t msg;

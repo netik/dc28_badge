@@ -423,6 +423,7 @@ static void func_event_joypad2_right(int code)
    input_event(&kb_alt_input, code, INP_PAD_RIGHT);
 }
 
+#ifdef notused
 static void func_event_songup(int code)
 {
 }
@@ -434,6 +435,7 @@ static void func_event_songdown(int code)
 static void func_event_startsong(int code)
 {
 }
+#endif
 
 /* NES events */
 static event_t nes_events[] =

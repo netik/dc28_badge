@@ -30,7 +30,9 @@
 #include <log.h>
 
 
+#ifdef NOFRENDO_DEBUG
 static FILE *errorlog = NULL;
+#endif
 static int (*log_func)(const char *string) = NULL;
 
 /* first up: debug versions of calls */
