@@ -41,7 +41,6 @@ typedef struct palette_color {
 static virtual_timer_t timer;
 static vtfunc_t timer_func;
 static sysinterval_t timer_delay;
-static palette_color_t * palettebuf;
 
 static void timer_cb (void * arg)
 {
@@ -112,6 +111,9 @@ static void badge_blit (nes_bitmap_t * , int, rect_t *);
 static void * d0;
 static void * d1;
 static int layer;
+static nes_bitmap_t * myBitmap;
+static palette_color_t * palettebuf;
+static uint8_t fb[1];
 
 viddriver_t sdlDriver =
 {
@@ -142,6 +144,8 @@ init (int width, int height)
 	(void)width;
 	(void)height;
 
+	palettebuf = malloc (sizeof(palette_color_t) * 256);
+
 	d0 = (void *)gdriverGetInstance (GDRIVER_TYPE_DISPLAY, 0);
 	d1 = (void *)gdriverGetInstance (GDRIVER_TYPE_DISPLAY, 1);
 
@@ -155,6 +159,20 @@ init (int width, int height)
 static void
 shutdown (void)
 {
+	/* Restore pixel format translation */
+
+	dma2dFgSetPixelFormat (&DMA2DD1, DMA2D_FMT_RGB565);
+
+	/* Re-enable the right layer */
+
+	ltdcFgEnableI (&LTDCD1);
+	ltdcBgDisableI (&LTDCD1);
+
+	free (palettebuf);
+
+	gdispGClear (d0, GFX_BLACK);
+	gdispGClear (d1, GFX_BLACK);
+
 	return;
 }
 
@@ -227,12 +245,14 @@ set_palette (rgb_t * pal)
 		palettebuf[i].b = pal[i].b;
 	}
 
+	cacheBufferFlush (palettebuf, sizeof(palette_color_t) * 256);
+
 	palcfg.length = 256;
 	palcfg.fmt = DMA2D_FMT_ARGB8888;
 	palcfg.colorsp = palettebuf;
 
 	dma2dFgSetPalette (&DMA2DD1, &palcfg);
-	
+
 	return;
 }
 
@@ -240,30 +260,32 @@ set_palette (rgb_t * pal)
 static void
 clear (uint8 color)
 {
-	gColor c;
-	palette_color_t * p;
+	(void)color;
 
-	/* We need to convert to the actual palette color. */
+	/*
+	 * This is a bit of a hack. We really should use the color
+	 * provided to us, but Nofrendo is written so that it doesn't
+	 * load the palette until after the clear routine is called.
+	 * From testing it's evident that the clear() routine is
+	 * only called when starting the emulator, and we always
+	 * clear the screen to black, so we assume that's what
+	 * will always happen here.
+	 */
 
-	p = &palettebuf[color];
-	c = RGB2COLOR(EXACT_RED_OF(p->r), EXACT_GREEN_OF(p->g),
-	    EXACT_BLUE_OF(p->b));
-
-	gdispGClear (d0, c);
-	gdispGClear (d1, c);
+	dma2dFgSetPixelFormat (&DMA2DD1, DMA2D_FMT_RGB565);
+	gdispGClear (d0, GFX_BLACK);
+	gdispGClear (d1, GFX_BLACK);
+	dma2dFgSetPixelFormat (&DMA2DD1, DMA2D_FMT_L8);
 
 	return;
 }
-
-static uint8_t fb[1];
-static nes_bitmap_t * myBitmap;
 
 /* acquire the directbuffer for writing */
 static nes_bitmap_t *
 lock_write (void)
 {
 	myBitmap = bmp_createhw (fb, DEFAULT_WIDTH, DEFAULT_HEIGHT,
-	    DEFAULT_HEIGHT * 2);
+	    DEFAULT_WIDTH);
 	return myBitmap;
 }
 
@@ -290,6 +312,13 @@ osd_initinput(void)
 void
 osd_getinput(void)
 {
+	event_t ev;
+
+	if (palReadLine(LINE_BUTTON_USER)) {
+		ev = event_get (event_quit);
+		ev (INP_STATE_MAKE);
+	}
+
 	return;
 }
 void
@@ -309,7 +338,6 @@ osd_getmouse(int *x, int *y, int *button)
 void
 osd_shutdown()
 {
-	free (palettebuf);
 	chVTReset (&timer);
 	return;
 }
@@ -326,7 +354,6 @@ osd_init()
 
 	osd_initinput();
 
-	palettebuf = malloc (sizeof(palette_color_t) * 256);
 	chVTObjectInit (&timer);
 	chVTReset (&timer);
 
