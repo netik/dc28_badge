@@ -223,7 +223,7 @@ int main_loop(const char *filename, system_t type)
    vidinfo_t video;
 
    /* register shutdown, in case of assertions, etc. */
-   atexit(shutdown_everything);
+   /* atexit(shutdown_everything); */
 
    if (config.open())
       return -1;
@@ -246,6 +246,8 @@ int main_loop(const char *filename, system_t type)
       if (internal_insert(console.nextfilename, console.nexttype))
          return 1;
    }
+
+   shutdown_everything ();
 
    return 0;
 }
