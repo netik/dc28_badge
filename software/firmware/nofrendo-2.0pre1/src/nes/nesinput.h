@@ -81,6 +81,7 @@ extern uint8 input_get(int type);
 extern void input_register(nesinput_t *input);
 extern void input_event(nesinput_t *input, int state, int value);
 extern void input_strobe(void);
+extern void input_init(void);
 
 #endif /* _NESINPUT_H_ */
 

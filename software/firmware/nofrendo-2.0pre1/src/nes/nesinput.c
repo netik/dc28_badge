@@ -180,6 +180,12 @@ void input_strobe(void)
    ark_readcount = 0;
 }
 
+void input_init(void)
+{
+   active_entries = 0;
+   return;
+}
+
 /*
 ** $Log: nesinput.c,v $
 ** Revision 1.2  2001/04/27 14:37:11  neil
