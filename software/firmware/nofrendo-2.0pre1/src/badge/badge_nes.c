@@ -19,36 +19,38 @@
 #include "src/gdisp/gdisp_driver.h"
 #include "hal_stm32_dma2d.h"
 #include "hal_stm32_ltdc.h"
+#include "stm32sai_lld.h"
 
 #define roundup(x, y)              ((((x)+((y)-1))/(y))*(y))
 
 #define  DEFAULT_SAMPLERATE   15625
 #define  DEFAULT_BPS          16
-#define  DEFAULT_FRAGSIZE     1024
+#define  DEFAULT_FRAGSIZE     (DEFAULT_SAMPLERATE/NES_REFRESH_RATE)
 
 #define  DEFAULT_WIDTH        256
 #define  DEFAULT_HEIGHT       NES_VISIBLE_HEIGHT
 
-#pragma pack(1)
-typedef struct palette_color {
-	uint8_t		b;
-	uint8_t		g;
-	uint8_t		r;
-	uint8_t		a;
-} palette_color_t;
-#pragma pack()
+#define GPT_FREQ              4000000
 
-static virtual_timer_t timer;
-static vtfunc_t timer_func;
-static sysinterval_t timer_delay;
+static gptcallback_t timer_func;
 
-static void timer_cb (void * arg)
+static void
+timer_cb (GPTDriver * gpt)
 {
+	(void)gpt;
 	chSysLockFromISR();
-	timer_func (arg);
-	chVTSet (&timer, timer_delay, timer_cb, NULL);
+	timer_func (gpt);
+	__DSB();
 	chSysUnlockFromISR();
 }
+
+static const GPTConfig gptcfg =
+{
+	GPT_FREQ,	/* 4MHz timer clock.*/
+	timer_cb,	/* Timer callback function. */
+	0,
+	0
+};
 
 int
 osd_installtimer (int frequency, void *func, int funcsize,
@@ -57,11 +59,8 @@ osd_installtimer (int frequency, void *func, int funcsize,
 	(void)funcsize;
 	(void)counter;
 	(void)countersize;
-
-	timer_delay = CH_CFG_ST_FREQUENCY / frequency;
-	timer_func = (vtfunc_t)func;
-	chVTSet (&timer, timer_delay, timer_cb, NULL);
-
+	timer_func = (gptcallback_t)func;
+	gptStartContinuous (&GPTD5, (4000000 / frequency) + 1);
 	return 0;
 }
 
@@ -70,29 +69,29 @@ osd_installtimer (int frequency, void *func, int funcsize,
 ** Audio
 */
 
+/*
+ * We put the sample buffer in the BSS so that it will end
+ * up in the DTCM RAM where we won't need to flush/invalidate it.
+ * and to hopefully get a small performance improvement in
+ * the code that generates the samples.
+ */
+
+static uint16_t audio_samples[DEFAULT_FRAGSIZE];
+static void (*audio_callback)(void *buffer, int length);
+
 void
 osd_setsound (void (*playfunc)(void *buffer, int length))
 {
-	(void)playfunc;
+	audio_callback = playfunc;
 	return;
 }
 
 void
 osd_getsoundinfo (sndinfo_t *info)
 {
-#ifdef notdef
-	info->sample_rate = sound_samplerate;
-	info->bps = sound_bps;
-#endif
 	info->sample_rate = DEFAULT_SAMPLERATE;
 	info->bps = DEFAULT_BPS;
 	return;
-}
-
-static int
-osd_init_sound(void)
-{
-	return (0);
 }
 
 /*
@@ -108,6 +107,13 @@ static nes_bitmap_t *lock_write(void);
 static void free_write(int num_dirties, rect_t *dirty_rects);
 static void badge_blit (nes_bitmap_t * , int, rect_t *);
 
+typedef struct palette_color {
+	uint8_t		b;
+	uint8_t		g;
+	uint8_t		r;
+	uint8_t		a;
+} palette_color_t;
+
 static void * d0;
 static void * d1;
 static int layer;
@@ -117,16 +123,16 @@ static uint8_t fb[1];
 
 viddriver_t sdlDriver =
 {
-   "Team IDES Badge DirectMedia Layer",         /* name */
-   init,          /* init */
-   shutdown,      /* shutdown */
-   set_mode,      /* set_mode */
-   set_palette,   /* set_palette */
-   clear,         /* clear */
-   lock_write,    /* lock_write */
-   free_write,    /* free_write */
-   badge_blit,    /* custom_blit */
-   false          /* invalidate flag */
+	"Team IDES Badge DirectMedia Layer",	/* name */
+	init,					/* init */
+	shutdown,				/* shutdown */
+	set_mode,				/* set_mode */
+	set_palette,				/* set_palette */
+	clear,					/* clear */
+	lock_write,				/* lock_write */
+	free_write,				/* free_write */
+	badge_blit,				/* custom_blit */
+	false					/* invalidate flag */
 };
 
 void
@@ -167,6 +173,7 @@ shutdown (void)
 
 	ltdcFgEnableI (&LTDCD1);
 	ltdcBgDisableI (&LTDCD1);
+	ltdcReload (&LTDCD1, FALSE);
 
 	free (palettebuf);
 
@@ -228,10 +235,17 @@ badge_blit (nes_bitmap_t * primary, int num_dirties, rect_t *dirty_rects)
 		layer ^= layer;
 	}
 
+	/* Grab the audio samples and start them playing */
+
+	audio_callback (audio_samples, DEFAULT_FRAGSIZE);
+	i2sSamplesWait ();
+	i2sSamplesPlay (audio_samples, DEFAULT_FRAGSIZE);
+
 	return;
 }
 
 /* copy nes palette over to hardware */
+
 static void
 set_palette (rgb_t * pal)
 {
@@ -303,26 +317,44 @@ free_write (int num_dirties, rect_t *dirty_rects)
 ** Input
 */
 
+static int buttontmp = 0;
+
 static void
-osd_initinput(void)
+osd_initinput (void)
 {
+	buttontmp = 0;
 	return;
 }
 
 void
-osd_getinput(void)
+osd_getinput (void)
 {
 	event_t ev;
 
-	if (palReadLine(LINE_BUTTON_USER)) {
+	if (buttontmp) {
+		buttontmp = 0;
+#ifdef NES_SIMULATE_START
+		ev = event_get (event_joypad1_start);
+#else
 		ev = event_get (event_quit);
+#endif
+		ev (INP_STATE_BREAK);
+	}
+
+	if (buttontmp == 0 && palReadLine(LINE_BUTTON_USER) == 1) {
+		buttontmp = 1;
+#ifdef NES_SIMULATE_START
+		ev = event_get (event_joypad1_start);
+#else
+		ev = event_get (event_quit);
+#endif
 		ev (INP_STATE_MAKE);
 	}
 
 	return;
 }
 void
-osd_getmouse(int *x, int *y, int *button)
+osd_getmouse (int *x, int *y, int *button)
 {
 	(void)x;
 	(void)y;
@@ -336,9 +368,11 @@ osd_getmouse(int *x, int *y, int *button)
 
 /* this is at the bottom, to eliminate warnings */
 void
-osd_shutdown()
+osd_shutdown (void)
 {
-	chVTReset (&timer);
+	gptStopTimer (&GPTD5);
+	gptStop (&GPTD5);
+	saiStereo (&SAID2, TRUE);
 	return;
 }
 
@@ -347,15 +381,13 @@ osd_shutdown()
 */
 
 int
-osd_init()
+osd_init (void)
 {
-	if (osd_init_sound())
-		return -1;
+	saiStereo (&SAID2, FALSE);
+	gptStop (&GPTD5);
+	gptStart (&GPTD5, &gptcfg);
 
 	osd_initinput();
-
-	chVTObjectInit (&timer);
-	chVTReset (&timer);
 
 	return 0;
 }

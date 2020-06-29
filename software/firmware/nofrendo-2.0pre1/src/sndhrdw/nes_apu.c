@@ -30,8 +30,16 @@
 #include "nes6502.h"
  
 
+/*
+ * The decay shift was originally 7, but for reasons I haven't
+ * figured out yet, the sound output sounds a bit "buzzy" unless
+ * I increase the decay speed a little (and even then it's still
+ * not that great. If someone wants to explain to me why this is,
+ * I'd love to hear. The same code running on my UNIX desktop seems
+ * to work just fine.
+ */
 #define  APU_OVERSAMPLE
-#define  APU_VOLUME_DECAY(x)  ((x) -= ((x) >> 7))
+#define  APU_VOLUME_DECAY(x)  ((x) -= ((x) >> 5))
 
 /* the following seem to be the correct (empirically determined)
 ** relative volumes between the sound channels

@@ -97,7 +97,7 @@ saiDmaInt (void * arg, uint32_t flags)
 
 	saip = arg;
 
-        osalSysLock ();
+        osalSysLockFromISR ();
 	if (flags & STM32_DMA_ISR_TCIF) {
 		i2sState = I2S_STATE_IDLE;
 		saip->saiblock->CR1 &= ~SAI_xCR1_DMAEN;
@@ -105,7 +105,7 @@ saiDmaInt (void * arg, uint32_t flags)
 		osalThreadResumeI (&i2sThreadReference, MSG_OK);
 
 	}
-        osalSysUnlock ();
+        osalSysUnlockFromISR ();
 
 	return;
 }
@@ -160,6 +160,27 @@ saiWait (void)
 
 	osalThreadSuspendS (&i2sThreadReference);
 	osalSysUnlock ();
+
+	return;
+}
+
+void
+saiStereo (SAIDriver * saip, bool enable)
+{
+	/*i2sSamplesWait ();*/
+	/*saiWait ();*/
+
+	chThdSleepMilliseconds (200);
+
+	osalSysLock ();
+	if (enable == TRUE) {
+		saip->saiblock->CR1 &= ~SAI_xCR1_MONO;
+	} else {
+		saip->saiblock->CR1 |= SAI_xCR1_MONO;
+	}
+	osalSysUnlock ();
+
+	chThdSleepMilliseconds (200);
 
 	return;
 }
