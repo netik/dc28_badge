@@ -211,9 +211,6 @@ badge_blit (nes_bitmap_t * primary, int num_dirties, rect_t *dirty_rects)
 			ltdcBgDisableI (&LTDCD1);
 		}
 
-		cacheBufferFlush (primary->data,
-		    primary->width * primary->height);
-
 		gdispGBlitArea (g,
 			/* Start position */
 			32, 0,
