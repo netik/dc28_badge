@@ -1135,7 +1135,7 @@ static nes6502_context cpu;
 static int remaining_cycles = 0; /* so we can release timeslice */
 /* memory region pointers */
 static uint8 *ram = NULL, *stack = NULL;
-static uint8 null_page[NES6502_BANKSIZE];
+static uint8 *null_page;
 
 
 /*
@@ -1266,6 +1266,8 @@ void nes6502_setcontext(nes6502_context *context)
 
    cpu = *context;
 
+   null_page = malloc (NES6502_BANKSIZE);
+
    /* set dead page for all pages not pointed at anything */
    for (loop = 0; loop < NES6502_NUMBANKS; loop++)
    {
@@ -1292,6 +1294,9 @@ void nes6502_getcontext(nes6502_context *context)
       if (null_page == context->mem_page[loop])
          context->mem_page[loop] = NULL;
    }
+
+   free (null_page);
+   null_page = NULL;
 }
 
 /* DMA a byte of data from ROM */
