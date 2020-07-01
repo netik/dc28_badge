@@ -86,7 +86,10 @@ SNSS_WriteBlockHeader (SnssBlockHeader *header, SNSS_FILE *snssFile)
    char headerBytes[12];
    unsigned int tempInt;
 
-   strncpy (&headerBytes[0], header->tag, TAG_LENGTH);
+   headerBytes[0] = header->tag[0];
+   headerBytes[1] = header->tag[1];
+   headerBytes[2] = header->tag[2];
+   headerBytes[3] = header->tag[3];
 
    tempInt = swap32 (header->blockVersion);
    headerBytes[4] = ((char *) &tempInt)[0];

@@ -42,7 +42,7 @@ static void addSlash(char *path)
 /* filename must be a valid filename, and therefore no longer than PATH_MAX */
 static void removePath(char *filename)
 {
-   char temp[PATH_MAX + 1];
+   char temp[PATH_MAX];
    int i;
 
    i = strlen(filename);
@@ -50,7 +50,7 @@ static void removePath(char *filename)
 
    if(filename[i] == '/')
    {
-      strncpy(temp, (filename + i + 1), PATH_MAX);
+      strncpy(temp, (filename + i + 1), PATH_MAX - 1);
       strncpy(filename, temp, PATH_MAX);
    }
 }
@@ -75,9 +75,9 @@ static void removeExtension(char *filename, const char *extension)
 /* this determines where to store our data files */
 static const char *dataDirectory(void)
 {
-   static char dataPath[PATH_MAX + 1];
+   static char dataPath[PATH_MAX];
    static bool checked = false;
-   char cwd[PATH_MAX + 1];
+   char cwd[PATH_MAX];
 
    if(!checked)
    {
@@ -90,8 +90,8 @@ static const char *dataDirectory(void)
       /* but default to using ~/.nofrendo/ if possible */
       if(getenv("HOME"))
       {
-         char temp[PATH_MAX + 1];
-         strncpy(temp, getenv("HOME"), PATH_MAX);
+         char temp[PATH_MAX];
+         strncpy(temp, getenv("HOME"), PATH_MAX - 1);
          addSlash(temp);
          strncat(temp, ".nofrendo", PATH_MAX - strlen(temp));
 

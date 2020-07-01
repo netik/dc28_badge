@@ -57,7 +57,7 @@ typedef struct rominfo_s
 
    uint8 flags;
 
-   char filename[PATH_MAX + 1];
+   char filename[PATH_MAX];
 } rominfo_t;
 
 

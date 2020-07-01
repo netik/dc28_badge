@@ -349,7 +349,7 @@ int state_save(void)
    ASSERT(machine);
    
    /* build our filename using the image's name and the slot number */
-   strncpy(fn, machine->rominfo->filename, PATH_MAX - 4);
+   strncpy(fn, machine->rominfo->filename, PATH_MAX);
    
    ASSERT(state_slot >= FIRST_STATE_SLOT && state_slot <= LAST_STATE_SLOT);
    sprintf(ext, ".ss%d", state_slot);
@@ -424,7 +424,7 @@ int state_load(void)
    ASSERT(machine);
 
    /* build the state name using the ROM's name and the slot number */
-   strncpy(fn, machine->rominfo->filename, PATH_MAX - 4);
+   strncpy(fn, machine->rominfo->filename, PATH_MAX);
 
    ASSERT(state_slot >= FIRST_STATE_SLOT && state_slot <= LAST_STATE_SLOT);
    sprintf(ext, ".ss%d", state_slot);
