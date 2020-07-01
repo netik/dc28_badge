@@ -1265,7 +1265,6 @@ void nes6502_setcontext(nes6502_context *context)
    ASSERT(context);
 
    cpu = *context;
-printf ("6502setcont...\n");
 
    /* set dead page for all pages not pointed at anything */
    for (loop = 0; loop < NES6502_NUMBANKS; loop++)
@@ -1293,10 +1292,6 @@ void nes6502_getcontext(nes6502_context *context)
       if (null_page == context->mem_page[loop])
          context->mem_page[loop] = NULL;
    }
-
-printf ("6502getcont...\n");
-   free (null_page);
-   null_page = NULL;
 }
 
 /* DMA a byte of data from ROM */

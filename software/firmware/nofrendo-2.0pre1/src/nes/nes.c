@@ -61,20 +61,17 @@ int nes_isourfile(const char *filename)
 /* TODO: just asking for problems -- please remove */
 nes_t *nes_getcontextptr(void)
 {
-   return nes;
+   return &nes;
 }
 
 void nes_getcontext(nes_t *machine)
 {
-   apu_getcontext(nes->apu);
-   ppu_getcontext(nes->ppu);
-   nes6502_getcontext(nes->cpu);
-   mmc_getcontext(nes->mmc);
+   apu_getcontext(nes.apu);
+   ppu_getcontext(nes.ppu);
+   nes6502_getcontext(nes.cpu);
+   mmc_getcontext(nes.mmc);
 
-printf ("nesgetcont...\n");
-   memcpy (machine, nes, sizeof(nes_t));
-   free (nes);
-   nes = NULL;
+   *machine = nes;
 }
 
 void nes_setcontext(nes_t *machine)
@@ -85,19 +82,18 @@ void nes_setcontext(nes_t *machine)
    ppu_setcontext(machine->ppu);
    nes6502_setcontext(machine->cpu);
    mmc_setcontext(machine->mmc);
-printf ("nessetcont...\n");
-   nes = malloc (sizeof(nes_t));
-   memcpy (nes, machine, sizeof(nes_t));
+
+   nes = *machine;
 }
 
 static uint8 ram_read(uint32 address)
 {
-   return nes->cpu->mem_page[0][address & (NES_RAMSIZE - 1)];
+   return nes.cpu->mem_page[0][address & (NES_RAMSIZE - 1)];
 }
 
 static void ram_write(uint32 address, uint8 value)
 {
-   nes->cpu->mem_page[0][address & (NES_RAMSIZE - 1)] = value;
+   nes.cpu->mem_page[0][address & (NES_RAMSIZE - 1)] = value;
 }
 
 static void write_protect(uint32 address, uint8 value)
