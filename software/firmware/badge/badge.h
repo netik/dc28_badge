@@ -47,7 +47,7 @@ extern char   __heap_end__; /* Set by linker */
 #define FB_BASE1 0xC07D5800
 #define FB_BASE FB_BASE0
 #define HEAP_BASE ((char *)FSMC_Bank5_MAP_BASE)
-#define HEAP_END ((char *)(FSMC_Bank5_MAP_BASE + 0x77FFFF))
+#define HEAP_END ((char *)(FSMC_Bank5_MAP_BASE + 0x7AFFFF))
 #endif
 
 /*
