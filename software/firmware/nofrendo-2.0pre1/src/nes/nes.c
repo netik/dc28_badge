@@ -50,6 +50,7 @@
 
 #define  NES_SKIP_LIMIT       (NES_REFRESH_RATE / 5)   /* 12 or 10, depending on PAL/NTSC */
 
+__attribute__((section(".ram7")))
 static nes_t nes;
 
 /* find out if a file is ours */

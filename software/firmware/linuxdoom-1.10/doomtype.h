@@ -24,14 +24,31 @@
 #ifndef __DOOMTYPE__
 #define __DOOMTYPE__
 
-
 #ifndef __BYTEBOOL__
 #define __BYTEBOOL__
 // Fixed to use builtin bool type with C++.
 #ifdef __cplusplus
 typedef bool boolean;
 #else
+#ifdef notdef
 typedef enum {false, true} boolean;
+#endif
+
+/*
+ * Why do we define boolean to be an int instead of a bool? Well,
+ * apparently Doom has a funny idea that boolean variables can
+ * sometimes have three states: 0 (false), 1 (true) or -1 (list
+ * termination). A boolean variable is really only supposed to
+ * have two states, so this is a little nuts. But what do I know,
+ * I'm only an engineer.
+ *
+ * We also include stdbool.h to get the definitions of true and false.
+ */
+
+#include <stdbool.h>
+#include <stdint.h>
+typedef int boolean;
+
 #endif
 typedef unsigned char byte;
 #endif

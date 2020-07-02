@@ -124,10 +124,6 @@ include $(GFXLIB)/boards/base/Nonstandard-Ides-Of-Defcon/board.mk
 FATFS = $(CHIBIOS)/../FatFs
 include $(FATFS)/build.mk
 
-# JPEG library
-# TJPGD = $(CHIBIOS)/../TJPGD
-# include $(TJPGD)/build.mk
-
 # WM8994 Codec driver
 WM8994 = $(CHIBIOS)/../wm8994
 include $(WM8994)/build.mk
@@ -143,9 +139,9 @@ include $(CHIBIOS)/../lwip_bindings/lwip.mk
 NES = $(CHIBIOS)/../nofrendo-2.0pre1
 include $(NES)/build.mk
 
-# STM SDK files
-# STM = $(CHIBIOS)/../stm
-# include $(STM)/build.mk
+# Doom
+DOOM = $(CHIBIOS)/../linuxdoom-1.10
+include $(DOOM)/build.mk
 
 # Define linker script file here
 LDSCRIPT= STM32F746xG.ld
@@ -160,6 +156,7 @@ CSRC = $(ALLCSRC) \
        $(WM8994SRC) \
        $(LIBJPEGSRC) \
        $(NESSRC) \
+       $(DOOMSRC) \
        main.c \
        usbcfg.c \
        cmd-adc.c \
@@ -189,6 +186,7 @@ CSRC = $(ALLCSRC) \
        ides_gfx.c \
        app-badge.c \
        app-doomguy.c \
+       app-doom.c \
        app-email.c \
        app-info.c \
        app-video.c \
@@ -212,7 +210,8 @@ ASMXSRC = $(ALLXASMSRC) badge_fault.S
 
 # Inclusion directories.
 INCDIR = $(CONFDIR) $(ALLINC) $(CHIBIOS_CONTRIB)/os/various $(FATFSINC)
-INCDIR += $(GFXINC) $(STMINC) $(TJPGDINC) $(WM8994INC) $(LIBJPEGINC) $(NESINC)
+INCDIR += $(GFXINC) $(STMINC) $(TJPGDINC) $(WM8994INC) $(LIBJPEGINC)
+INCDIR += $(NESINC) $(DOOMINC)
 
 # Define C warning options here.
 CWARN = -Wall -Wextra -Wundef -Wstrict-prototypes

@@ -233,68 +233,68 @@ typedef struct
 
 default_t	defaults[] =
 {
-    {"mouse_sensitivity",&mouseSensitivity, 5},
-    {"sfx_volume",&snd_SfxVolume, 8},
-    {"music_volume",&snd_MusicVolume, 8},
-    {"show_messages",&showMessages, 1},
+    {"mouse_sensitivity",&mouseSensitivity, 5, 0, 0 },
+    {"sfx_volume",&snd_SfxVolume, 8, 0, 0 },
+    {"music_volume",&snd_MusicVolume, 8, 0, 0 },
+    {"show_messages",&showMessages, 1, 0, 0 },
     
 
 #ifdef NORMALUNIX
-    {"key_right",&key_right, KEY_RIGHTARROW},
-    {"key_left",&key_left, KEY_LEFTARROW},
-    {"key_up",&key_up, KEY_UPARROW},
-    {"key_down",&key_down, KEY_DOWNARROW},
-    {"key_strafeleft",&key_strafeleft, ','},
-    {"key_straferight",&key_straferight, '.'},
+    {"key_right",&key_right, KEY_RIGHTARROW, 0, 0 },
+    {"key_left",&key_left, KEY_LEFTARROW, 0, 0 },
+    {"key_up",&key_up, KEY_UPARROW, 0, 0 },
+    {"key_down",&key_down, KEY_DOWNARROW, 0, 0 },
+    {"key_strafeleft",&key_strafeleft, ',', 0, 0 },
+    {"key_straferight",&key_straferight, '.', 0, 0 },
 
-    {"key_fire",&key_fire, KEY_RCTRL},
-    {"key_use",&key_use, ' '},
-    {"key_strafe",&key_strafe, KEY_RALT},
-    {"key_speed",&key_speed, KEY_RSHIFT},
+    {"key_fire",&key_fire, KEY_RCTRL, 0, 0 },
+    {"key_use",&key_use, ' ', 0, 0 },
+    {"key_strafe",&key_strafe, KEY_RALT, 0, 0 },
+    {"key_speed",&key_speed, KEY_RSHIFT, 0, 0 },
 
 // UNIX hack, to be removed. 
 #ifdef SNDSERV
-    {"sndserver", (int *) &sndserver_filename, (int) "sndserver"},
-    {"mb_used", &mb_used, 2},
+    {"sndserver", (int *) &sndserver_filename, (int) "sndserver", 0, 0 },
+    {"mb_used", &mb_used, 2, 0, 0 },
 #endif
     
 #endif
 
 #ifdef LINUX
-    {"mousedev", (int*)&mousedev, (int)"/dev/ttyS0"},
-    {"mousetype", (int*)&mousetype, (int)"microsoft"},
+    {"mousedev", (int*)&mousedev, (int)"/dev/ttyS0", 0, 0 },
+    {"mousetype", (int*)&mousetype, (int)"microsoft", 0, 0 },
 #endif
 
-    {"use_mouse",&usemouse, 1},
-    {"mouseb_fire",&mousebfire,0},
-    {"mouseb_strafe",&mousebstrafe,1},
-    {"mouseb_forward",&mousebforward,2},
+    {"use_mouse",&usemouse, 1, 0, 0 },
+    {"mouseb_fire",&mousebfire,0, 0, 0 },
+    {"mouseb_strafe",&mousebstrafe,1, 0, 0 },
+    {"mouseb_forward",&mousebforward,2, 0, 0 },
 
-    {"use_joystick",&usejoystick, 0},
-    {"joyb_fire",&joybfire,0},
-    {"joyb_strafe",&joybstrafe,1},
-    {"joyb_use",&joybuse,3},
-    {"joyb_speed",&joybspeed,2},
+    {"use_joystick",&usejoystick, 0, 0, 0 },
+    {"joyb_fire",&joybfire,0, 0, 0 },
+    {"joyb_strafe",&joybstrafe,1, 0, 0 },
+    {"joyb_use",&joybuse,3, 0, 0 },
+    {"joyb_speed",&joybspeed,2, 0, 0 },
 
-    {"screenblocks",&screenblocks, 9},
-    {"detaillevel",&detailLevel, 0},
+    {"screenblocks",&screenblocks, 9, 0, 0 },
+    {"detaillevel",&detailLevel, 0, 0, 0 },
 
-    {"snd_channels",&numChannels, 3},
+    {"snd_channels",&numChannels, 3, 0, 0 },
 
 
 
-    {"usegamma",&usegamma, 0},
+    {"usegamma",&usegamma, 0, 0, 0 },
 
-    {"chatmacro0", (int *) &chat_macros[0], (int) HUSTR_CHATMACRO0 },
-    {"chatmacro1", (int *) &chat_macros[1], (int) HUSTR_CHATMACRO1 },
-    {"chatmacro2", (int *) &chat_macros[2], (int) HUSTR_CHATMACRO2 },
-    {"chatmacro3", (int *) &chat_macros[3], (int) HUSTR_CHATMACRO3 },
-    {"chatmacro4", (int *) &chat_macros[4], (int) HUSTR_CHATMACRO4 },
-    {"chatmacro5", (int *) &chat_macros[5], (int) HUSTR_CHATMACRO5 },
-    {"chatmacro6", (int *) &chat_macros[6], (int) HUSTR_CHATMACRO6 },
-    {"chatmacro7", (int *) &chat_macros[7], (int) HUSTR_CHATMACRO7 },
-    {"chatmacro8", (int *) &chat_macros[8], (int) HUSTR_CHATMACRO8 },
-    {"chatmacro9", (int *) &chat_macros[9], (int) HUSTR_CHATMACRO9 }
+    {"chatmacro0", (int *) &chat_macros[0], (int) HUSTR_CHATMACRO0, 0, 0 },
+    {"chatmacro1", (int *) &chat_macros[1], (int) HUSTR_CHATMACRO1, 0, 0 },
+    {"chatmacro2", (int *) &chat_macros[2], (int) HUSTR_CHATMACRO2, 0, 0 },
+    {"chatmacro3", (int *) &chat_macros[3], (int) HUSTR_CHATMACRO3, 0, 0 },
+    {"chatmacro4", (int *) &chat_macros[4], (int) HUSTR_CHATMACRO4, 0, 0 },
+    {"chatmacro5", (int *) &chat_macros[5], (int) HUSTR_CHATMACRO5, 0, 0 },
+    {"chatmacro6", (int *) &chat_macros[6], (int) HUSTR_CHATMACRO6, 0, 0 },
+    {"chatmacro7", (int *) &chat_macros[7], (int) HUSTR_CHATMACRO7, 0, 0 },
+    {"chatmacro8", (int *) &chat_macros[8], (int) HUSTR_CHATMACRO8, 0, 0 },
+    {"chatmacro9", (int *) &chat_macros[9], (int) HUSTR_CHATMACRO9, 0, 0 }
 
 };
 

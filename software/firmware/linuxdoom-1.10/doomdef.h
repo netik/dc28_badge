@@ -30,7 +30,7 @@
 // Global parameters/defines.
 //
 // DOOM version
-enum { VERSION =  110 };
+enum { VERSION =  110, VERSION_19 = 109 };
 
 
 // Game mode handling - identify IWAD version
@@ -81,7 +81,6 @@ typedef enum
 //  and unfinished. Default is synchronous.
 // Experimental asynchronous timer based is
 //  handled by SNDINTR. 
-#define SNDSERV  1
 //#define SNDINTR  1
 
 

@@ -408,6 +408,14 @@ _isatty (int fd)
 }
 
 __attribute__((used))
+int
+usleep (useconds_t usecs)
+{
+	chThdSleepMicroseconds (usecs);
+	return (0);
+}
+
+__attribute__((used))
 void
 __malloc_lock (struct _reent * ptr)
 {

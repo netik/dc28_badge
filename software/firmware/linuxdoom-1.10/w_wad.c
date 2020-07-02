@@ -66,10 +66,12 @@ void**			lumpcache;
 
 #define strcmpi	strcasecmp
 
+#ifdef notdef
 void strupr (char* s)
 {
     while (*s) { *s = toupper(*s); s++; }
 }
+#endif
 
 int filelength (int handle) 
 { 
@@ -516,6 +518,7 @@ W_CacheLumpName
 //
 // W_Profile
 //
+__attribute__((section(".ram7")))
 int		info[2500][10];
 int		profilecount;
 

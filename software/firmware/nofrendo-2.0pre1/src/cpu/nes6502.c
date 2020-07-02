@@ -1135,6 +1135,7 @@ static nes6502_context cpu;
 static int remaining_cycles = 0; /* so we can release timeslice */
 /* memory region pointers */
 static uint8 *ram = NULL, *stack = NULL;
+__attribute__((section(".ram7")))
 static uint8 null_page[NES6502_BANKSIZE];
 
 

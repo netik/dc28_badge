@@ -147,7 +147,7 @@ extern  line_t*	linespeciallist[MAXLINEANIMS];
 
 void P_InitPicAnims (void)
 {
-    int		i;
+    volatile int		i;
 
     
     //	Init animation

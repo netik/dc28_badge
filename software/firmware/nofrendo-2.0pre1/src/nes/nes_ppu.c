@@ -53,6 +53,7 @@
 #define  FULLBG               (ppu.palette[0] | BG_TRANS)
 
 /* the NES PPU */
+__attribute__((section(".ram7")))
 static ppu_t ppu;
 
 

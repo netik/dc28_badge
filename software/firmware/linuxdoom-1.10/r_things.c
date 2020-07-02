@@ -78,7 +78,9 @@ lighttable_t**	spritelights;
 
 // constant arrays
 //  used for psprite clipping and initializing clipping
+__attribute__((section(".ram7")))
 short		negonearray[SCREENWIDTH];
+__attribute__((section(".ram7")))
 short		screenheightarray[SCREENWIDTH];
 
 
@@ -286,6 +288,7 @@ void R_InitSpriteDefs (char** namelist)
 //
 // GAME FUNCTIONS
 //
+__attribute__((section(".ram7")))
 vissprite_t	vissprites[MAXVISSPRITES];
 vissprite_t*	vissprite_p;
 int		newvissprite;

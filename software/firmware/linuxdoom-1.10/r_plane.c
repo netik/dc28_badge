@@ -50,6 +50,7 @@ planefunction_t		ceilingfunc;
 
 // Here comes the obnoxious "visplane".
 #define MAXVISPLANES	128
+__attribute__((section(".ram7")))
 visplane_t		visplanes[MAXVISPLANES];
 visplane_t*		lastvisplane;
 visplane_t*		floorplane;
@@ -57,6 +58,7 @@ visplane_t*		ceilingplane;
 
 // ?
 #define MAXOPENINGS	SCREENWIDTH*64
+__attribute__((section(".ram7")))
 short			openings[MAXOPENINGS];
 short*			lastopening;
 
@@ -66,14 +68,18 @@ short*			lastopening;
 //  floorclip starts out SCREENHEIGHT
 //  ceilingclip starts out -1
 //
+__attribute__((section(".ram7")))
 short			floorclip[SCREENWIDTH];
+__attribute__((section(".ram7")))
 short			ceilingclip[SCREENWIDTH];
 
 //
 // spanstart holds the start of a plane span
 // initialized to 0 at start
 //
+__attribute__((section(".ram7")))
 int			spanstart[SCREENHEIGHT];
+__attribute__((section(".ram7")))
 int			spanstop[SCREENHEIGHT];
 
 //
@@ -82,14 +88,20 @@ int			spanstop[SCREENHEIGHT];
 lighttable_t**		planezlight;
 fixed_t			planeheight;
 
+__attribute__((section(".ram7")))
 fixed_t			yslope[SCREENHEIGHT];
+__attribute__((section(".ram7")))
 fixed_t			distscale[SCREENWIDTH];
 fixed_t			basexscale;
 fixed_t			baseyscale;
 
+__attribute__((section(".ram7")))
 fixed_t			cachedheight[SCREENHEIGHT];
+__attribute__((section(".ram7")))
 fixed_t			cacheddistance[SCREENHEIGHT];
+__attribute__((section(".ram7")))
 fixed_t			cachedxstep[SCREENHEIGHT];
+__attribute__((section(".ram7")))
 fixed_t			cachedystep[SCREENHEIGHT];
 
 

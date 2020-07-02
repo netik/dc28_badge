@@ -23,17 +23,33 @@
 static const char
 rcsid[] = "$Id: m_bbox.c,v 1.1 1997/02/03 22:45:10 b1 Exp $";
 
+#include <lwip/opt.h>
+#include <lwip/sys.h>
+#include <lwip/timeouts.h>
+
+#include <lwip/sockets.h>
+#include <lwip/inet.h>
+#include <lwip/netdb.h>
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
+#define IPPORT_USERRESERVED 1025
+
+#ifdef notdef
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#endif
+
 #include <errno.h>
 #include <unistd.h>
+#ifdef notdef
 #include <netdb.h>
 #include <sys/ioctl.h>
+#endif
+
 
 #include "i_system.h"
 #include "d_event.h"
@@ -50,7 +66,7 @@ rcsid[] = "$Id: m_bbox.c,v 1.1 1997/02/03 22:45:10 b1 Exp $";
 
 
 
-
+#ifdef notdef
 // For some odd reason...
 #define ntohl(x) \
         ((unsigned long int)((((unsigned long int)(x) & 0x000000ffU) << 24) | \
@@ -64,6 +80,7 @@ rcsid[] = "$Id: m_bbox.c,v 1.1 1997/02/03 22:45:10 b1 Exp $";
 	  
 #define htonl(x) ntohl(x)
 #define htons(x) ntohs(x)
+#endif
 
 void	NetSend (void);
 boolean NetListen (void);
@@ -163,7 +180,7 @@ void PacketGet (void)
     int			i;
     int			c;
     struct sockaddr_in	fromaddress;
-    int			fromlen;
+    socklen_t		fromlen;
     doomdata_t		sw;
 				
     fromlen = sizeof(fromaddress);

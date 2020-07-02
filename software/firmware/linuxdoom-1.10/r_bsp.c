@@ -50,6 +50,7 @@ line_t*		linedef;
 sector_t*	frontsector;
 sector_t*	backsector;
 
+__attribute__((section(".ram7")))
 drawseg_t	drawsegs[MAXDRAWSEGS];
 drawseg_t*	ds_p;
 

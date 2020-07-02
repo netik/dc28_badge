@@ -159,6 +159,8 @@ init (int width, int height)
 
 	dma2dFgSetPixelFormat (&DMA2DD1, DMA2D_FMT_L8);
 
+	layer = 0;
+
 	return (0);
 }
 
