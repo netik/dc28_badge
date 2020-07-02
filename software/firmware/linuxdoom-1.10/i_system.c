@@ -46,8 +46,7 @@ rcsid[] = "$Id: m_bbox.c,v 1.1 1997/02/03 22:45:10 b1 Exp $";
 #include "i_system.h"
 
 
-#include "ch.h"
-#include "hal.h"
+
 
 int	mb_used = 6;
 
@@ -88,7 +87,6 @@ byte* I_ZoneBase (int*	size)
 //
 int  I_GetTime (void)
 {
-#ifdef notdef
     struct timeval	tp;
     struct timezone	tzp;
     int			newtics;
@@ -99,8 +97,6 @@ int  I_GetTime (void)
 	basetime = tp.tv_sec;
     newtics = (tp.tv_sec-basetime)*TICRATE + tp.tv_usec*TICRATE/1000000;
     return newtics;
-#endif
-    return (chVTGetSystemTime () * TICRATE / CH_CFG_ST_FREQUENCY);
 }
 
 

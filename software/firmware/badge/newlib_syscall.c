@@ -56,6 +56,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 #include "ch.h"
 #include "hal.h"
@@ -404,6 +405,31 @@ _isatty (int fd)
 {
 	if (fd >=0 && fd < 3)
 		return (1);
+	return (0);
+}
+
+__attribute__((used))
+int
+_gettimeofday (struct timeval * ptimeval, void * ptimezone)
+{
+	systime_t now;
+	time_t secs;
+	double usecs;
+
+	(void)ptimezone;
+
+	now = chVTGetSystemTimeX();
+
+	secs = now;
+	secs /= CH_CFG_ST_FREQUENCY;
+
+	usecs = now;
+	usecs -= (secs * CH_CFG_ST_FREQUENCY);
+	usecs = (usecs / CH_CFG_ST_FREQUENCY) * 1000000;
+
+	ptimeval->tv_sec = secs;
+	ptimeval->tv_usec = usecs;
+
 	return (0);
 }
 
