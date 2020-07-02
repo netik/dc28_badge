@@ -65,4 +65,4 @@ DOOMSRC+=				\
 DOOMINC+= $(DOOM)
 
 DOOMDEFS+= -DNORMALUNIX
-USE_COPT+= $(DOOMDEFS)
+USE_COPT+= $(DOOMDEFS) -Drcsid="volatile rcsid"
