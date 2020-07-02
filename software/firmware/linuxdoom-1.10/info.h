@@ -167,6 +167,7 @@ typedef enum
     SPR_BRS1,
     SPR_TLMP,
     SPR_TLP2,
+    SPR_DUMMY,
     NUMSPRITES
 
 } spritenum_t;
