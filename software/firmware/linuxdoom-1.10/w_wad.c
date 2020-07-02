@@ -35,7 +35,9 @@ rcsid[] = "$Id: w_wad.c,v 1.5 1997/02/03 16:47:57 b1 Exp $";
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <alloca.h>
+#ifndef O_BINARY
 #define O_BINARY		0
+#endif
 #endif
 
 #include "doomtype.h"
@@ -144,7 +146,7 @@ void W_AddFile (char *filename)
 {
     wadinfo_t		header;
     lumpinfo_t*		lump_p;
-    unsigned		i;
+    int			i;
     int			handle;
     int			length;
     int			startlump;
@@ -240,7 +242,7 @@ void W_Reload (void)
     wadinfo_t		header;
     int			lumpcount;
     lumpinfo_t*		lump_p;
-    unsigned		i;
+    int			i;
     int			handle;
     int			length;
     filelump_t*		fileinfo;
@@ -479,9 +481,7 @@ W_CacheLumpNum
 ( int		lump,
   int		tag )
 {
-    byte*	ptr;
-
-    if ((unsigned)lump >= numlumps)
+    if (lump >= numlumps)
 	I_Error ("W_CacheLumpNum: %i >= numlumps",lump);
 		
     if (!lumpcache[lump])
@@ -489,7 +489,7 @@ W_CacheLumpNum
 	// read the lump in
 	
 	//printf ("cache miss on lump %i\n",lump);
-	ptr = Z_Malloc (W_LumpLength (lump), tag, &lumpcache[lump]);
+	(void) Z_Malloc (W_LumpLength (lump), tag, &lumpcache[lump]);
 	W_ReadLump (lump, lumpcache[lump]);
     }
     else
