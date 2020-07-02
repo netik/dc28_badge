@@ -56,7 +56,7 @@ typedef struct
 typedef struct
 {
     char	name[8];
-    void *	handle;
+    int		handle;
     int		position;
     int		size;
 } lumpinfo_t;
