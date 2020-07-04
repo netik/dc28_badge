@@ -32,6 +32,7 @@ rcsid[] = "$Id: p_tick.c,v 1.4 1997/02/03 16:47:55 b1 Exp $";
 #include "doomstat.h"
 #include "r_state.h"
 
+__attribute__((section(".ram7")))
 byte*		save_p;
 
 

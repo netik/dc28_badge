@@ -43,55 +43,88 @@ rcsid[] = "$Id: r_segs.c,v 1.3 1997/01/29 20:10:19 b1 Exp $";
 // OPTIMIZE: closed two sided lines as single sided
 
 // True if any of the segs textures might be visible.
+__attribute__((section(".ram7")))
 boolean		segtextured;	
 
 // False if the back side is the same plane.
+__attribute__((section(".ram7")))
 boolean		markfloor;	
+__attribute__((section(".ram7")))
 boolean		markceiling;
 
+__attribute__((section(".ram7")))
 boolean		maskedtexture;
+__attribute__((section(".ram7")))
 int		toptexture;
+__attribute__((section(".ram7")))
 int		bottomtexture;
+__attribute__((section(".ram7")))
 int		midtexture;
 
 
+__attribute__((section(".ram7")))
 angle_t		rw_normalangle;
 // angle to line origin
+__attribute__((section(".ram7")))
 int		rw_angle1;	
 
 //
 // regular wall
 //
+__attribute__((section(".ram7")))
 int		rw_x;
+__attribute__((section(".ram7")))
 int		rw_stopx;
+__attribute__((section(".ram7")))
 angle_t		rw_centerangle;
+__attribute__((section(".ram7")))
 fixed_t		rw_offset;
+__attribute__((section(".ram7")))
 fixed_t		rw_distance;
+__attribute__((section(".ram7")))
 fixed_t		rw_scale;
+__attribute__((section(".ram7")))
 fixed_t		rw_scalestep;
+__attribute__((section(".ram7")))
 fixed_t		rw_midtexturemid;
+__attribute__((section(".ram7")))
 fixed_t		rw_toptexturemid;
+__attribute__((section(".ram7")))
 fixed_t		rw_bottomtexturemid;
 
+__attribute__((section(".ram7")))
 int		worldtop;
+__attribute__((section(".ram7")))
 int		worldbottom;
+__attribute__((section(".ram7")))
 int		worldhigh;
+__attribute__((section(".ram7")))
 int		worldlow;
 
+__attribute__((section(".ram7")))
 fixed_t		pixhigh;
+__attribute__((section(".ram7")))
 fixed_t		pixlow;
+__attribute__((section(".ram7")))
 fixed_t		pixhighstep;
+__attribute__((section(".ram7")))
 fixed_t		pixlowstep;
 
+__attribute__((section(".ram7")))
 fixed_t		topfrac;
+__attribute__((section(".ram7")))
 fixed_t		topstep;
 
+__attribute__((section(".ram7")))
 fixed_t		bottomfrac;
+__attribute__((section(".ram7")))
 fixed_t		bottomstep;
 
 
+__attribute__((section(".ram7")))
 lighttable_t**	walllights;
 
+__attribute__((section(".ram7")))
 short*		maskedtexturecol;
 
 

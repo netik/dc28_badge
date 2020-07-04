@@ -41,7 +41,9 @@ rcsid[] = "$Id: r_plane.c,v 1.4 1997/02/03 16:47:55 b1 Exp $";
 
 
 
+__attribute__((section(".ram7")))
 planefunction_t		floorfunc;
+__attribute__((section(".ram7")))
 planefunction_t		ceilingfunc;
 
 //
@@ -52,14 +54,18 @@ planefunction_t		ceilingfunc;
 #define MAXVISPLANES	128
 __attribute__((section(".ram7")))
 visplane_t		visplanes[MAXVISPLANES];
+__attribute__((section(".ram7")))
 visplane_t*		lastvisplane;
+__attribute__((section(".ram7")))
 visplane_t*		floorplane;
+__attribute__((section(".ram7")))
 visplane_t*		ceilingplane;
 
 // ?
 #define MAXOPENINGS	SCREENWIDTH*64
 __attribute__((section(".ram7")))
 short			openings[MAXOPENINGS];
+__attribute__((section(".ram7")))
 short*			lastopening;
 
 
@@ -85,14 +91,18 @@ int			spanstop[SCREENHEIGHT];
 //
 // texture mapping
 //
+__attribute__((section(".ram7")))
 lighttable_t**		planezlight;
+__attribute__((section(".ram7")))
 fixed_t			planeheight;
 
 __attribute__((section(".ram7")))
 fixed_t			yslope[SCREENHEIGHT];
 __attribute__((section(".ram7")))
 fixed_t			distscale[SCREENWIDTH];
+__attribute__((section(".ram7")))
 fixed_t			basexscale;
+__attribute__((section(".ram7")))
 fixed_t			baseyscale;
 
 __attribute__((section(".ram7")))

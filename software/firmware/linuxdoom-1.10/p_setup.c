@@ -53,25 +53,39 @@ void	P_SpawnMapThing (mapthing_t*	mthing);
 // MAP related Lookup tables.
 // Store VERTEXES, LINEDEFS, SIDEDEFS, etc.
 //
+__attribute__((section(".ram7")))
 int		numvertexes;
+__attribute__((section(".ram7")))
 vertex_t*	vertexes;
 
+__attribute__((section(".ram7")))
 int		numsegs;
+__attribute__((section(".ram7")))
 seg_t*		segs;
 
+__attribute__((section(".ram7")))
 int		numsectors;
+__attribute__((section(".ram7")))
 sector_t*	sectors;
 
+__attribute__((section(".ram7")))
 int		numsubsectors;
+__attribute__((section(".ram7")))
 subsector_t*	subsectors;
 
+__attribute__((section(".ram7")))
 int		numnodes;
+__attribute__((section(".ram7")))
 node_t*		nodes;
 
+__attribute__((section(".ram7")))
 int		numlines;
+__attribute__((section(".ram7")))
 line_t*		lines;
 
+__attribute__((section(".ram7")))
 int		numsides;
+__attribute__((section(".ram7")))
 side_t*		sides;
 
 
@@ -83,15 +97,22 @@ side_t*		sides;
 // by spatial subdivision in 2D.
 //
 // Blockmap size.
+__attribute__((section(".ram7")))
 int		bmapwidth;
+__attribute__((section(".ram7")))
 int		bmapheight;	// size in mapblocks
+__attribute__((section(".ram7")))
 short*		blockmap;	// int for larger maps
 // offsets in blockmap are from here
+__attribute__((section(".ram7")))
 short*		blockmaplump;		
 // origin of block map
+__attribute__((section(".ram7")))
 fixed_t		bmaporgx;
+__attribute__((section(".ram7")))
 fixed_t		bmaporgy;
 // for thing chains
+__attribute__((section(".ram7")))
 mobj_t**	blocklinks;		
 
 
@@ -102,14 +123,18 @@ mobj_t**	blocklinks;
 // Without special effect, this could be
 //  used as a PVS lookup as well.
 //
+__attribute__((section(".ram7")))
 byte*		rejectmatrix;
 
 
 // Maintain single and multi player starting spots.
 #define MAX_DEATHMATCH_STARTS	10
 
+__attribute__((section(".ram7")))
 mapthing_t	deathmatchstarts[MAX_DEATHMATCH_STARTS];
+__attribute__((section(".ram7")))
 mapthing_t*	deathmatch_p;
+__attribute__((section(".ram7")))
 mapthing_t	playerstarts[MAXPLAYERS];
 
 

@@ -42,31 +42,42 @@ rcsid[] = "$Id: p_map.c,v 1.5 1997/02/03 22:45:11 b1 Exp $";
 // Data.
 #include "sounds.h"
 
-
+__attribute__((section(".ram7")))
 fixed_t		tmbbox[4];
+__attribute__((section(".ram7")))
 mobj_t*		tmthing;
+__attribute__((section(".ram7")))
 int		tmflags;
+__attribute__((section(".ram7")))
 fixed_t		tmx;
+__attribute__((section(".ram7")))
 fixed_t		tmy;
 
 
 // If "floatok" true, move would be ok
 // if within "tmfloorz - tmceilingz".
+__attribute__((section(".ram7")))
 boolean		floatok;
 
+__attribute__((section(".ram7")))
 fixed_t		tmfloorz;
+__attribute__((section(".ram7")))
 fixed_t		tmceilingz;
+__attribute__((section(".ram7")))
 fixed_t		tmdropoffz;
 
 // keep track of the line that lowers the ceiling,
 // so missiles don't explode against sky hack walls
+__attribute__((section(".ram7")))
 line_t*		ceilingline;
 
 // keep track of special lines as they are hit,
 // but don't process them until the move is proven valid
 #define MAXSPECIALCROSS		8
 
+__attribute__((section(".ram7")))
 line_t*		spechit[MAXSPECIALCROSS];
+__attribute__((section(".ram7")))
 int		numspechit;
 
 

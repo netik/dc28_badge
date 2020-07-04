@@ -40,10 +40,14 @@ static const char rcsid[] = "$Id: f_wipe.c,v 1.2 1997/02/03 22:45:09 b1 Exp $";
 //
 
 // when zero, stop the wipe
+__attribute__((section(".ram7")))
 static boolean	go = 0;
 
+__attribute__((section(".ram7")))
 static byte*	wipe_scr_start;
+__attribute__((section(".ram7")))
 static byte*	wipe_scr_end;
+__attribute__((section(".ram7")))
 static byte*	wipe_scr;
 
 

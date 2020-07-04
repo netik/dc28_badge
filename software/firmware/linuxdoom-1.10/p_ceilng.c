@@ -41,7 +41,7 @@ rcsid[] = "$Id: p_ceilng.c,v 1.4 1997/02/03 16:47:53 b1 Exp $";
 // CEILINGS
 //
 
-
+__attribute__((section(".ram7")))
 ceiling_t*	activeceilings[MAXCEILINGS];
 
 

@@ -54,7 +54,9 @@ static void * d0;
 static void * d1;
 static int layer;
 static int buttontmp;
+static void * screenbuf;
 
+#define        roundup(x, y)   ((((x)+((y)-1))/(y))*(y))
 
 //
 // I_ShutdownGraphics
@@ -80,10 +82,10 @@ void I_ShutdownGraphics (void)
 	ltdcReload (&LTDCD1, FALSE);
 
 	free (palettebuf);
-	free (screens[0]);
+	free (screenbuf);
 	screens[0] = NULL;
 	palettebuf = NULL;
-	screens[0] = NULL;
+	screenbuf = NULL;
 
 	gdispGClear (d0, GFX_BLACK);
 	gdispGClear (d1, GFX_BLACK);
@@ -265,6 +267,9 @@ void I_FinishUpdate (void)
 	int		i;
 	GDisplay *	g;
 
+	if (d0 == NULL || d1 == NULL)
+		return;
+
 	/* draws little dots on the bottom of the screen */
 
 	if (devparm) {
@@ -289,6 +294,8 @@ void I_FinishUpdate (void)
 		ltdcBgDisableI (&LTDCD1);
 	}
 
+        __DSB();
+
 	gdispGBlitArea (g,
 		/* Start position */
 		0, 20,
@@ -300,6 +307,8 @@ void I_FinishUpdate (void)
 		SCREENWIDTH,
 		/* Bitmap buffer */
 		(gPixel *)screens[0]);
+
+        __DSB();
 
 	/* Trigger frame swap on next vertical refresh. */
 
@@ -372,7 +381,10 @@ void I_InitGraphics(void)
 
 	/* Allocate the screen buffer */
 
-	screens[0] = (unsigned char *) malloc (SCREENWIDTH * SCREENHEIGHT);
+	screenbuf = malloc ((SCREENWIDTH * SCREENHEIGHT) + CACHE_LINE_SIZE);
+
+	screens[0] = (unsigned char *)roundup((uintptr_t)screenbuf,
+	    CACHE_LINE_SIZE);
 
 	gdispGClear (d0, GFX_BLACK);
 	gdispGClear (d1, GFX_BLACK);

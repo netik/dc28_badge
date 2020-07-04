@@ -60,9 +60,12 @@ rcsid[] = "$Id: w_wad.c,v 1.5 1997/02/03 16:47:57 b1 Exp $";
 //
 
 // Location of each lump on disk.
+__attribute__((section(".ram7")))
 lumpinfo_t*		lumpinfo;		
+__attribute__((section(".ram7")))
 int			numlumps;
 
+__attribute__((section(".ram7")))
 void**			lumpcache;
 
 

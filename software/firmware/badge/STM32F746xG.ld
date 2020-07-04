@@ -40,7 +40,7 @@ MEMORY
     ram4    : org = 0x00000000, len = 16k       /* ITCM-RAM */
     ram5    : org = 0x40024000, len = 4k        /* BCKP SRAM */
     ram6    : org = 0x00000000, len = 0
-    ram7    : org = 0xC0000000, len = 384K	/* Extra BSS for Doom */
+    ram7    : org = 0xC0000000, len = 336K	/* Extra BSS for Doom */
 }
 
 /* For each data/text section two region are defined, a virtual region

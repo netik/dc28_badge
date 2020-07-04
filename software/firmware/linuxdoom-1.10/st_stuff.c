@@ -275,7 +275,6 @@ __attribute__((section(".ram7")))
 static boolean		st_firsttime;
 
 // used to execute ST_Init() only once
-__attribute__((section(".ram7")))
 static int		veryfirsttime = 1;
 
 // lump number for PLAYPAL
@@ -1507,5 +1506,6 @@ void ST_Init (void)
 {
     veryfirsttime = 0;
     ST_loadData();
+    cht_Init();
     screens[4] = (byte *) Z_Malloc(ST_WIDTH*ST_HEIGHT, PU_STATIC, 0);
 }

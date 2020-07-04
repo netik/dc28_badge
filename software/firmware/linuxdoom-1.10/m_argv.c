@@ -26,7 +26,9 @@ rcsid[] = "$Id: m_argv.c,v 1.1 1997/02/03 22:45:10 b1 Exp $";
 
 #include <string.h>
 
+__attribute__((section(".ram7")))
 int		myargc;
+__attribute__((section(".ram7")))
 char**		myargv;
 
 

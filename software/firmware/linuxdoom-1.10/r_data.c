@@ -124,39 +124,62 @@ typedef struct
 
 
 
+__attribute__((section(".ram7")))
 int		firstflat;
+__attribute__((section(".ram7")))
 int		lastflat;
+__attribute__((section(".ram7")))
 int		numflats;
 
+__attribute__((section(".ram7")))
 int		firstpatch;
+__attribute__((section(".ram7")))
 int		lastpatch;
+__attribute__((section(".ram7")))
 int		numpatches;
 
+__attribute__((section(".ram7")))
 int		firstspritelump;
+__attribute__((section(".ram7")))
 int		lastspritelump;
+__attribute__((section(".ram7")))
 int		numspritelumps;
 
+__attribute__((section(".ram7")))
 int		numtextures;
+__attribute__((section(".ram7")))
 texture_t**	textures;
 
 
+__attribute__((section(".ram7")))
 int*			texturewidthmask;
 // needed for texture pegging
+__attribute__((section(".ram7")))
 fixed_t*		textureheight;		
+__attribute__((section(".ram7")))
 int*			texturecompositesize;
+__attribute__((section(".ram7")))
 short**			texturecolumnlump;
+__attribute__((section(".ram7")))
 unsigned short**	texturecolumnofs;
+__attribute__((section(".ram7")))
 byte**			texturecomposite;
 
 // for global animation
+__attribute__((section(".ram7")))
 int*		flattranslation;
+__attribute__((section(".ram7")))
 int*		texturetranslation;
 
 // needed for pre rendering
+__attribute__((section(".ram7")))
 fixed_t*	spritewidth;	
+__attribute__((section(".ram7")))
 fixed_t*	spriteoffset;
+__attribute__((section(".ram7")))
 fixed_t*	spritetopoffset;
 
+__attribute__((section(".ram7")))
 lighttable_t	*colormaps;
 
 

@@ -302,36 +302,51 @@ static anim_t *anims[NUMEPISODES] =
 
 
 // used to accelerate or skip a stage
+__attribute__((section(".ram7")))
 static int		acceleratestage;
 
 // wbs->pnum
+__attribute__((section(".ram7")))
 static int		me;
 
  // specifies current state
+__attribute__((section(".ram7")))
 static stateenum_t	state;
 
 // contains information passed into intermission
+__attribute__((section(".ram7")))
 static wbstartstruct_t*	wbs;
 
+__attribute__((section(".ram7")))
 static wbplayerstruct_t* plrs;  // wbs->plyr[]
 
 // used for general timing
+__attribute__((section(".ram7")))
 static int 		cnt;  
 
 // used for timing of background animation
+__attribute__((section(".ram7")))
 static int 		bcnt;
 
 // signals to refresh everything for one frame
+__attribute__((section(".ram7")))
 static int 		firstrefresh; 
 
+__attribute__((section(".ram7")))
 static int		cnt_kills[MAXPLAYERS];
+__attribute__((section(".ram7")))
 static int		cnt_items[MAXPLAYERS];
+__attribute__((section(".ram7")))
 static int		cnt_secret[MAXPLAYERS];
+__attribute__((section(".ram7")))
 static int		cnt_time;
+__attribute__((section(".ram7")))
 static int		cnt_par;
+__attribute__((section(".ram7")))
 static int		cnt_pause;
 
 // # of commercial levels
+__attribute__((section(".ram7")))
 static int		NUMCMAPS; 
 
 
@@ -340,60 +355,85 @@ static int		NUMCMAPS;
 //
 
 // background (map of levels).
+__attribute__((section(".ram7")))
 static patch_t*		bg;
 
 // You Are Here graphic
+__attribute__((section(".ram7")))
 static patch_t*		yah[2]; 
 
 // splat
+__attribute__((section(".ram7")))
 static patch_t*		splat;
 
 // %, : graphics
+__attribute__((section(".ram7")))
 static patch_t*		percent;
+__attribute__((section(".ram7")))
 static patch_t*		colon;
 
 // 0-9 graphic
+__attribute__((section(".ram7")))
 static patch_t*		num[10];
 
 // minus sign
+__attribute__((section(".ram7")))
 static patch_t*		wiminus;
 
 // "Finished!" graphics
+__attribute__((section(".ram7")))
 static patch_t*		finished;
 
 // "Entering" graphic
+__attribute__((section(".ram7")))
 static patch_t*		entering; 
 
 // "secret"
+__attribute__((section(".ram7")))
 static patch_t*		sp_secret;
 
  // "Kills", "Scrt", "Items", "Frags"
+__attribute__((section(".ram7")))
 static patch_t*		kills;
+__attribute__((section(".ram7")))
 static patch_t*		secret;
+__attribute__((section(".ram7")))
 static patch_t*		items;
+__attribute__((section(".ram7")))
 static patch_t*		frags;
 
 // Time sucks.
+__attribute__((section(".ram7")))
 static patch_t*		time;
+__attribute__((section(".ram7")))
 static patch_t*		par;
+__attribute__((section(".ram7")))
 static patch_t*		sucks;
 
 // "killers", "victims"
+__attribute__((section(".ram7")))
 static patch_t*		killers;
+__attribute__((section(".ram7")))
 static patch_t*		victims; 
 
 // "Total", your face, your dead face
+__attribute__((section(".ram7")))
 static patch_t*		total;
+__attribute__((section(".ram7")))
 static patch_t*		star;
+__attribute__((section(".ram7")))
 static patch_t*		bstar;
 
 // "red P[1..MAXPLAYERS]"
+__attribute__((section(".ram7")))
 static patch_t*		p[MAXPLAYERS];
 
 // "gray P[1..MAXPLAYERS]"
+__attribute__((section(".ram7")))
 static patch_t*		bp[MAXPLAYERS];
 
  // Name graphics of each level (centered)
+__attribute__((section(".ram7")))
 static patch_t**	lnames;
 
 //

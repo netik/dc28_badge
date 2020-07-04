@@ -57,6 +57,7 @@ typedef struct
 
 
 
+__attribute__((section(".ram7")))
 memzone_t*	mainzone;
 
 

@@ -180,25 +180,42 @@ byte*		savebuffer;
 // 
 // controls (have defaults) 
 // 
+__attribute__((section(".ram7")))
 int             key_right;
+__attribute__((section(".ram7")))
 int		key_left;
 
+__attribute__((section(".ram7")))
 int		key_up;
+__attribute__((section(".ram7")))
 int		key_down; 
+__attribute__((section(".ram7")))
 int             key_strafeleft;
+__attribute__((section(".ram7")))
 int		key_straferight; 
+__attribute__((section(".ram7")))
 int             key_fire;
+__attribute__((section(".ram7")))
 int		key_use;
+__attribute__((section(".ram7")))
 int		key_strafe;
+__attribute__((section(".ram7")))
 int		key_speed; 
  
+__attribute__((section(".ram7")))
 int             mousebfire; 
+__attribute__((section(".ram7")))
 int             mousebstrafe; 
+__attribute__((section(".ram7")))
 int             mousebforward; 
  
+__attribute__((section(".ram7")))
 int             joybfire; 
+__attribute__((section(".ram7")))
 int             joybstrafe; 
+__attribute__((section(".ram7")))
 int             joybuse; 
+__attribute__((section(".ram7")))
 int             joybspeed; 
  
  
@@ -215,38 +232,57 @@ fixed_t		angleturn[3] = {640, 1280, 320};	// + slow turn
  
 #define NUMKEYS		256 
 
+__attribute__((section(".ram7")))
 boolean         gamekeydown[NUMKEYS]; 
+__attribute__((section(".ram7")))
 int             turnheld;				// for accelerative turning 
  
+__attribute__((section(".ram7")))
 boolean		mousearray[4]; 
 boolean*	mousebuttons = &mousearray[1];		// allow [-1]
 
 // mouse values are used once 
+__attribute__((section(".ram7")))
 int             mousex;
+__attribute__((section(".ram7")))
 int		mousey;         
 
+__attribute__((section(".ram7")))
 int             dclicktime;
+__attribute__((section(".ram7")))
 int		dclickstate;
+__attribute__((section(".ram7")))
 int		dclicks; 
+__attribute__((section(".ram7")))
 int             dclicktime2;
+__attribute__((section(".ram7")))
 int		dclickstate2;
+__attribute__((section(".ram7")))
 int		dclicks2;
 
 // joystick values are repeated 
+__attribute__((section(".ram7")))
 int             joyxmove;
+__attribute__((section(".ram7")))
 int		joyymove;
+__attribute__((section(".ram7")))
 boolean         joyarray[5]; 
 boolean*	joybuttons = &joyarray[1];		// allow [-1] 
  
+__attribute__((section(".ram7")))
 int		savegameslot; 
+__attribute__((section(".ram7")))
 char		savedescription[32]; 
  
  
 #define	BODYQUESIZE	32
 
+__attribute__((section(".ram7")))
 mobj_t*		bodyque[BODYQUESIZE]; 
+__attribute__((section(".ram7")))
 int		bodyqueslot; 
  
+__attribute__((section(".ram7")))
 void*		statcopy;				// for statistics driver
  
  

@@ -71,9 +71,12 @@ typedef struct
 //  which increases counter clockwise (protractor).
 // There was a lot of stuff grabbed wrong, so I changed it...
 //
+__attribute__((section(".ram7")))
 fixed_t		pspritescale;
+__attribute__((section(".ram7")))
 fixed_t		pspriteiscale;
 
+__attribute__((section(".ram7")))
 lighttable_t**	spritelights;
 
 // constant arrays
@@ -90,12 +93,16 @@ short		screenheightarray[SCREENWIDTH];
 
 // variables used to look up
 //  and range check thing_t sprites patches
+__attribute__((section(".ram7")))
 spritedef_t*	sprites;
+__attribute__((section(".ram7")))
 int		numsprites;
 
 __attribute__((section(".ram7")))
 spriteframe_t	sprtemp[29];
+__attribute__((section(".ram7")))
 int		maxframe;
+__attribute__((section(".ram7")))
 char*		spritename;
 
 

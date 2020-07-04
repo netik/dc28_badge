@@ -44,8 +44,11 @@ rcsid[] = "$Id: m_bbox.c,v 1.1 1997/02/03 22:45:10 b1 Exp $";
 //
 // sky mapping
 //
+__attribute__((section(".ram7")))
 int			skyflatnum;
+__attribute__((section(".ram7")))
 int			skytexture;
+__attribute__((section(".ram7")))
 int			skytexturemid;
 
 

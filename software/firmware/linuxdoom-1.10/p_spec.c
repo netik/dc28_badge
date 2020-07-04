@@ -133,6 +133,7 @@ animdef_t		animdefs[] =
 
 __attribute__((section(".ram7")))
 anim_t		anims[MAXANIMS];
+__attribute__((section(".ram7")))
 anim_t*		lastanim;
 
 
@@ -142,7 +143,6 @@ anim_t*		lastanim;
 #define MAXLINEANIMS            64
 
 extern  short	numlinespecials;
-__attribute__((section(".ram7")))
 extern  line_t*	linespeciallist[MAXLINEANIMS];
 
 
@@ -1233,7 +1233,9 @@ int EV_DoDonut(line_t*	line)
 // After the map has been loaded, scan for specials
 //  that spawn thinkers
 //
+__attribute__((section(".ram7")))
 short		numlinespecials;
+__attribute__((section(".ram7")))
 line_t*		linespeciallist[MAXLINEANIMS];
 
 

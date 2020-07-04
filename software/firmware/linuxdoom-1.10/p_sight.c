@@ -36,14 +36,21 @@ rcsid[] = "$Id: p_sight.c,v 1.3 1997/01/28 22:08:28 b1 Exp $";
 //
 // P_CheckSight
 //
+__attribute__((section(".ram7")))
 fixed_t		sightzstart;		// eye z of looker
+__attribute__((section(".ram7")))
 fixed_t		topslope;
+__attribute__((section(".ram7")))
 fixed_t		bottomslope;		// slopes to top and bottom of target
 
+__attribute__((section(".ram7")))
 divline_t	strace;			// from t1 to t2
+__attribute__((section(".ram7")))
 fixed_t		t2x;
+__attribute__((section(".ram7")))
 fixed_t		t2y;
 
+__attribute__((section(".ram7")))
 int		sightcounts[2];
 
 

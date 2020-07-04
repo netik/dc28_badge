@@ -60,11 +60,17 @@ rcsid[] = "$Id: r_draw.c,v 1.4 1997/02/03 16:47:55 b1 Exp $";
 //
 
 
+__attribute__((section(".ram7")))
 byte*		viewimage; 
+__attribute__((section(".ram7")))
 int		viewwidth;
+__attribute__((section(".ram7")))
 int		scaledviewwidth;
+__attribute__((section(".ram7")))
 int		viewheight;
+__attribute__((section(".ram7")))
 int		viewwindowx;
+__attribute__((section(".ram7")))
 int		viewwindowy;
 __attribute__((section(".ram7"))) 
 byte*		ylookup[MAXHEIGHT]; 
@@ -85,17 +91,25 @@ byte		translations[3][256];
 // R_DrawColumn
 // Source is the top of the column to scale.
 //
+__attribute__((section(".ram7")))
 lighttable_t*		dc_colormap; 
+__attribute__((section(".ram7")))
 int			dc_x; 
+__attribute__((section(".ram7")))
 int			dc_yl; 
+__attribute__((section(".ram7")))
 int			dc_yh; 
+__attribute__((section(".ram7")))
 fixed_t			dc_iscale; 
+__attribute__((section(".ram7")))
 fixed_t			dc_texturemid;
 
 // first pixel in a column (possibly virtual) 
+__attribute__((section(".ram7")))
 byte*			dc_source;		
 
 // just for profiling 
+__attribute__((section(".ram7")))
 int			dccount;
 
 //

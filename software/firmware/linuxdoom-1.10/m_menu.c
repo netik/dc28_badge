@@ -73,35 +73,48 @@ extern boolean		chat_on;		// in heads-up code
 //
 // defaulted values
 //
+__attribute__((section(".ram7")))
 int			mouseSensitivity;       // has default
 
 // Show messages has default, 0 = off, 1 = on
+__attribute__((section(".ram7")))
 int			showMessages;
 	
 
 // Blocky mode, has default, 0 = high, 1 = normal
+__attribute__((section(".ram7")))
 int			detailLevel;		
+__attribute__((section(".ram7")))
 int			screenblocks;		// has default
 
 // temp for screenblocks (0-9)
+__attribute__((section(".ram7")))
 int			screenSize;		
 
 // -1 = no quicksave slot picked!
+__attribute__((section(".ram7")))
 int			quickSaveSlot;          
 
  // 1 = message to be printed
+__attribute__((section(".ram7")))
 int			messageToPrint;
 // ...and here is the message string!
+__attribute__((section(".ram7")))
 char*			messageString;		
 
 // message x & y
+__attribute__((section(".ram7")))
 int			messx;			
+__attribute__((section(".ram7")))
 int			messy;
+__attribute__((section(".ram7")))
 int			messageLastMenuActive;
 
 // timed message = no input from user
+__attribute__((section(".ram7")))
 boolean			messageNeedsInput;     
 
+__attribute__((section(".ram7")))
 void    (*messageRoutine)(int response);
 
 #define SAVESTRINGSIZE 	24
@@ -116,21 +129,30 @@ char gammamsg[5][26] =
 };
 
 // we are going to be entering a savegame string
+__attribute__((section(".ram7")))
 int			saveStringEnter;              
+__attribute__((section(".ram7")))
 int             	saveSlot;	// which slot to save in
+__attribute__((section(".ram7")))
 int			saveCharIndex;	// which char we're editing
 // old save description before edit
+__attribute__((section(".ram7")))
 char			saveOldString[SAVESTRINGSIZE];  
 
+__attribute__((section(".ram7")))
 boolean			inhelpscreens;
+__attribute__((section(".ram7")))
 boolean			menuactive;
 
 #define SKULLXOFF		-32
 #define LINEHEIGHT		16
 
+__attribute__((section(".ram7")))
 extern boolean		sendpause;
+__attribute__((section(".ram7")))
 char			savegamestrings[10][SAVESTRINGSIZE];
 
+__attribute__((section(".ram7")))
 char	endstring[160];
 
 
@@ -160,14 +182,17 @@ typedef struct menu_s
     short		numitems;	// # of menu items
     struct menu_s*	prevMenu;	// previous menu
     menuitem_t*		menuitems;	// menu items
-    void		(*routine)();	// draw routine
+    void		(*routine)(void);// draw routine
     short		x;
     short		y;		// x,y of menu
     short		lastOn;		// last item user was on in menu
 } menu_t;
 
+__attribute__((section(".ram7")))
 short		itemOn;			// menu item skull is on
+__attribute__((section(".ram7")))
 short		skullAnimCounter;	// skull animation counter
+__attribute__((section(".ram7")))
 short		whichSkull;		// which skull to draw
 
 // graphic name of skulls
@@ -175,6 +200,7 @@ short		whichSkull;		// which skull to draw
 char    skullName[2][/*8*/9] = {"M_SKULL1","M_SKULL2"};
 
 // current menudef
+__attribute__((section(".ram7")))
 menu_t*	currentMenu;                          
 
 //
@@ -355,9 +381,9 @@ menuitem_t OptionsMenu[]=
     {1,"M_MESSG",	M_ChangeMessages,'m'},
     {1,"M_DETAIL",	M_ChangeDetail,'g'},
     {2,"M_SCRNSZ",	M_SizeDisplay,'s'},
-    {-1,"",0},
+    {-1,"",0, '0'},
     {2,"M_MSENS",	M_ChangeSensitivity,'m'},
-    {-1,"",0},
+    {-1,"",0, '0'},
     {1,"M_SVOL",	M_Sound,'s'}
 };
 
@@ -431,9 +457,9 @@ enum
 menuitem_t SoundMenu[]=
 {
     {2,"M_SFXVOL",M_SfxVol,'s'},
-    {-1,"",0},
+    {-1,"",0, '0'},
     {2,"M_MUSVOL",M_MusicVol,'m'},
-    {-1,"",0}
+    {-1,"",0, '0'}
 };
 
 menu_t  SoundDef =
@@ -511,7 +537,6 @@ menu_t  SaveDef =
 void M_ReadSaveStrings(void)
 {
     int             handle;
-    int             count;
     int             i;
     char    name[256];
 	
@@ -529,7 +554,7 @@ void M_ReadSaveStrings(void)
 	    LoadMenu[i].status = 0;
 	    continue;
 	}
-	count = read (handle, &savegamestrings[i], SAVESTRINGSIZE);
+	(void) read (handle, &savegamestrings[i], SAVESTRINGSIZE);
 	close (handle);
 	LoadMenu[i].status = 1;
     }
@@ -593,6 +618,7 @@ void M_LoadSelect(int choice)
 //
 void M_LoadGame (int choice)
 {
+    (void)choice;
     if (netgame)
     {
 	M_StartMessage(LOADNET,NULL,false);
@@ -658,6 +684,7 @@ void M_SaveSelect(int choice)
 //
 void M_SaveGame (int choice)
 {
+    (void)choice;
     if (!usergame)
     {
 	M_StartMessage(SAVEDEAD,NULL,false);
@@ -810,6 +837,7 @@ void M_DrawSound(void)
 
 void M_Sound(int choice)
 {
+    (void)choice;
     M_SetupNextMenu(&SoundDef);
 }
 
@@ -872,6 +900,7 @@ void M_DrawNewGame(void)
 
 void M_NewGame(int choice)
 {
+    (void)choice;
     if (netgame && !demoplayback)
     {
 	M_StartMessage(NEWGAME,NULL,false);
@@ -900,7 +929,7 @@ void M_VerifyNightmare(int ch)
     if (ch != 'y')
 	return;
 		
-    G_DeferedInitNew(nightmare,epi+1,1);
+    G_DeferedInitNew((skill_t)nightmare,epi+1,1);
     M_ClearMenus ();
 }
 
@@ -967,6 +996,7 @@ void M_DrawOptions(void)
 
 void M_Options(int choice)
 {
+    (void)choice;
     M_SetupNextMenu(&OptionsDef);
 }
 
@@ -978,7 +1008,7 @@ void M_Options(int choice)
 void M_ChangeMessages(int choice)
 {
     // warning: unused parameter `int choice'
-    choice = 0;
+    (void)choice;
     showMessages = 1 - showMessages;
 	
     if (!showMessages)
@@ -1005,7 +1035,7 @@ void M_EndGameResponse(int ch)
 
 void M_EndGame(int choice)
 {
-    choice = 0;
+    (void)choice;
     if (!usergame)
     {
 	S_StartSound(NULL,sfx_oof);
@@ -1029,19 +1059,19 @@ void M_EndGame(int choice)
 //
 void M_ReadThis(int choice)
 {
-    choice = 0;
+    (void)choice;
     M_SetupNextMenu(&ReadDef1);
 }
 
 void M_ReadThis2(int choice)
 {
-    choice = 0;
+    (void)choice;
     M_SetupNextMenu(&ReadDef2);
 }
 
 void M_FinishReadThis(int choice)
 {
-    choice = 0;
+    (void)choice;
     M_SetupNextMenu(&MainDef);
 }
 
@@ -1097,6 +1127,7 @@ void M_QuitResponse(int ch)
 
 void M_QuitDOOM(int choice)
 {
+  (void)choice;
   // We pick index 0 which is language sensitive,
   //  or one at random, between 1 and maximum number.
   if (language != english )
@@ -1130,7 +1161,7 @@ void M_ChangeSensitivity(int choice)
 
 void M_ChangeDetail(int choice)
 {
-    choice = 0;
+    (void)choice;
     detailLevel = 1 - detailLevel;
 
     // FIXME - does not work. Remove anyway?
@@ -1254,7 +1285,7 @@ void M_StopMessage(void)
 //
 int M_StringWidth(char* string)
 {
-    int             i;
+    size_t          i;
     int             w = 0;
     int             c;
 	
@@ -1277,7 +1308,7 @@ int M_StringWidth(char* string)
 //
 int M_StringHeight(char* string)
 {
-    int             i;
+    size_t          i;
     int             h;
     int             height = SHORT(hu_font[0]->height);
 	
@@ -1741,8 +1772,8 @@ void M_Drawer (void)
 {
     static short	x;
     static short	y;
-    short		i;
-    short		max;
+    size_t		i;
+    size_t		max;
     char		string[40];
     int			start;
 

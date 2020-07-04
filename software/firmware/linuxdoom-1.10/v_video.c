@@ -134,6 +134,7 @@ byte gammatable[5][256] =
 
 
 
+__attribute__((section(".ram7")))
 int	usegamma;
 			 
 //

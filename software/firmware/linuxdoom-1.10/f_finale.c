@@ -49,8 +49,10 @@ rcsid[] = "$Id: f_finale.c,v 1.5 1997/02/03 21:26:34 b1 Exp $";
 
 // Stage of animation:
 //  0 = text, 1 = art screen, 2 = character cast
+__attribute__((section(".ram7")))
 int		finalestage;
 
+__attribute__((section(".ram7")))
 int		finalecount;
 
 #define	TEXTSPEED	3
@@ -82,7 +84,9 @@ char*	t4text = T4TEXT;
 char*	t5text = T5TEXT;
 char*	t6text = T6TEXT;
 
+__attribute__((section(".ram7")))
 char*	finaletext;
+__attribute__((section(".ram7")))
 char*	finaleflat;
 
 void	F_StartCast (void);

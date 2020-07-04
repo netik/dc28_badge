@@ -83,6 +83,7 @@ void I_SoundDelTimer( void );
 // A quick hack to establish a protocol between
 // synchronous mix buffer updates and asynchronous
 // audio writes. Probably redundant with gametic.
+__attribute__((section(".ram7")))
 static int flag = 0;
 
 // The number of internal mixing channels,
@@ -117,13 +118,17 @@ signed short	mixbuffer[MIXBUFFERSIZE];
 
 
 // The channel step amount...
+__attribute__((section(".ram7")))
 unsigned int	channelstep[NUM_CHANNELS];
 // ... and a 0.16 bit remainder of last step.
+__attribute__((section(".ram7")))
 unsigned int	channelstepremainder[NUM_CHANNELS];
 
 
 // The channel data pointers, start and end.
+__attribute__((section(".ram7")))
 unsigned char*	channels[NUM_CHANNELS];
+__attribute__((section(".ram7")))
 unsigned char*	channelsend[NUM_CHANNELS];
 
 
@@ -132,16 +137,19 @@ unsigned char*	channelsend[NUM_CHANNELS];
 //  has lowest priority.
 // In case number of active sounds exceeds
 //  available channels.
+__attribute__((section(".ram7")))
 int		channelstart[NUM_CHANNELS];
 
 // The sound in channel handles,
 //  determined on registration,
 //  might be used to unregister/stop/modify,
 //  currently unused.
+__attribute__((section(".ram7")))
 int 		channelhandles[NUM_CHANNELS];
 
 // SFX id of the playing sound effect.
 // Used to catch duplicates (like chainsaw).
+__attribute__((section(".ram7")))
 int		channelids[NUM_CHANNELS];			
 
 // Pitch to stepping lookup, unused.
@@ -150,10 +158,13 @@ int		steptable[256];
 
 // Volume lookups.
 __attribute__((section(".ram7")))
-int		vol_lookup[128*256];
+/*int		vol_lookup[128*256];*/
+int*		vol_lookup;
 
 // Hardware left and right channel volume lookup.
+__attribute__((section(".ram7")))
 int*		channelleftvol_lookup[NUM_CHANNELS];
+__attribute__((section(".ram7")))
 int*		channelrightvol_lookup[NUM_CHANNELS];
 
 
@@ -424,6 +435,7 @@ void I_SetChannels(void)
   // Generates volume lookup tables
   //  which also turn the unsigned samples
   //  into signed samples.
+  vol_lookup = (int *)malloc (sizeof(int) * 128 * 256);
   for (i=0 ; i<128 ; i++)
     for (j=0 ; j<256 ; j++)
       vol_lookup[i*256+j] = (i*(j-128)*256)/127;
@@ -734,6 +746,9 @@ void I_ShutdownSound(void)
   close ( audio_fd );
 #endif
 #endif
+
+  free (vol_lookup);
+  vol_lookup = NULL;
 
   // Done.
   return;

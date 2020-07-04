@@ -84,27 +84,43 @@ char*	player_names[] =
     HUSTR_PLRRED
 };
 
-
+__attribute__((section(".ram7")))
 char			chat_char; // remove later.
+__attribute__((section(".ram7")))
 static player_t*	plr;
+__attribute__((section(".ram7")))
 patch_t*		hu_font[HU_FONTSIZE];
+__attribute__((section(".ram7")))
 static hu_textline_t	w_title;
+__attribute__((section(".ram7")))
 boolean			chat_on;
+__attribute__((section(".ram7")))
 static hu_itext_t	w_chat;
+__attribute__((section(".ram7")))
 static boolean		always_off = false;
+__attribute__((section(".ram7")))
 static char		chat_dest[MAXPLAYERS];
+__attribute__((section(".ram7")))
 static hu_itext_t w_inputbuffer[MAXPLAYERS];
 
+__attribute__((section(".ram7")))
 static boolean		message_on;
+__attribute__((section(".ram7")))
 boolean			message_dontfuckwithme;
+__attribute__((section(".ram7")))
 static boolean		message_nottobefuckedwith;
 
+__attribute__((section(".ram7")))
 static hu_stext_t	w_message;
+__attribute__((section(".ram7")))
 static int		message_counter;
 
+__attribute__((section(".ram7")))
 extern int		showMessages;
+__attribute__((section(".ram7")))
 extern boolean		automapactive;
 
+__attribute__((section(".ram7")))
 static boolean		headsupactive = false;
 
 //

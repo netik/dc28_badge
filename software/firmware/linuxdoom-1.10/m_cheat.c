@@ -32,8 +32,15 @@ rcsid[] = "$Id: m_cheat.c,v 1.1 1997/02/03 21:24:34 b1 Exp $";
 //
 
 static int		firsttime = 1;
+__attribute__((section(".ram7")))
 static unsigned char	cheat_xlate_table[256];
 
+void
+cht_Init (void)
+{
+    firsttime = 1;
+    return;
+}
 
 //
 // Called in st_stuff module, which handles the input.

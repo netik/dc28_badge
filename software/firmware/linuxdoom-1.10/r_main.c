@@ -49,46 +49,67 @@ static const char rcsid[] = "$Id: r_main.c,v 1.5 1997/02/03 22:45:12 b1 Exp $";
 
 
 
+__attribute__((section(".ram7")))
 int			viewangleoffset;
 
 // increment every time a check is made
+__attribute__((section(".ram7")))
 int			validcount = 1;		
 
 
+__attribute__((section(".ram7")))
 lighttable_t*		fixedcolormap;
 extern lighttable_t**	walllights;
 
+__attribute__((section(".ram7")))
 int			centerx;
+__attribute__((section(".ram7")))
 int			centery;
 
+__attribute__((section(".ram7")))
 fixed_t			centerxfrac;
+__attribute__((section(".ram7")))
 fixed_t			centeryfrac;
+__attribute__((section(".ram7")))
 fixed_t			projection;
 
 // just for profiling purposes
+__attribute__((section(".ram7")))
 int			framecount;	
 
+__attribute__((section(".ram7")))
 int			sscount;
+__attribute__((section(".ram7")))
 int			linecount;
+__attribute__((section(".ram7")))
 int			loopcount;
 
+__attribute__((section(".ram7")))
 fixed_t			viewx;
+__attribute__((section(".ram7")))
 fixed_t			viewy;
+__attribute__((section(".ram7")))
 fixed_t			viewz;
 
+__attribute__((section(".ram7")))
 angle_t			viewangle;
 
+__attribute__((section(".ram7")))
 fixed_t			viewcos;
+__attribute__((section(".ram7")))
 fixed_t			viewsin;
 
+__attribute__((section(".ram7")))
 player_t*		viewplayer;
 
 // 0 = high, 1 = low
+__attribute__((section(".ram7")))
 int			detailshift;	
 
 //
 // precalculated math tables
 //
+__attribute__((section(".ram7")))
 angle_t			clipangle;
 
 // The viewangletox[viewangle + FINEANGLES/4] lookup
@@ -123,6 +144,7 @@ __attribute__((section(".ram7")))
 lighttable_t*		zlight[LIGHTLEVELS][MAXLIGHTZ];
 
 // bumped light from gun blasts
+__attribute__((section(".ram7")))
 int			extralight;			
 
 

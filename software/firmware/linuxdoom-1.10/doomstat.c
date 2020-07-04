@@ -39,6 +39,7 @@ GameMission_t	gamemission = doom;
 Language_t   language = english;
 
 // Set if homebrew PWAD stuff has been added.
+__attribute__((section(".ram7")))
 boolean	modifiedgame;
 
 

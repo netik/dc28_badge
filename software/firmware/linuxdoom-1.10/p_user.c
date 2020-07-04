@@ -48,6 +48,7 @@ rcsid[] = "$Id: p_user.c,v 1.3 1997/01/28 22:08:29 b1 Exp $";
 // 16 pixels of bob
 #define MAXBOB	0x100000	
 
+__attribute__((section(".ram7")))
 boolean		onground;
 
 

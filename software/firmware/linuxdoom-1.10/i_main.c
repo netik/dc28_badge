@@ -24,12 +24,16 @@
 static const char
 rcsid[] = "$Id: i_main.c,v 1.4 1997/02/03 22:45:10 b1 Exp $";
 
-
+#include <stdlib.h>
 
 #include "doomdef.h"
 
 #include "m_argv.h"
 #include "d_main.h"
+
+#include "i_system.h"
+#include "w_wad.h"
+#include "doomstat.h"
 
 int
 doom_main
@@ -40,6 +44,21 @@ doom_main
     myargv = argv; 
  
     D_DoomMain (); 
+
+    I_ZoneFree ();
+    I_FreeLow ();
+    if (doomcom != NULL) {
+	free (doomcom);
+	doomcom = NULL;
+    }
+    if (lumpinfo != NULL) {
+	free (lumpinfo);
+	lumpinfo = NULL;
+    }
+    if (lumpcache != NULL) {
+	free (lumpcache);
+	lumpcache = NULL;
+    }
 
     return 0;
 } 

@@ -38,6 +38,9 @@ typedef struct
     
 } cheatseq_t;
 
+void
+cht_Init (void);
+
 int
 cht_CheckCheat
 ( cheatseq_t*		cht,

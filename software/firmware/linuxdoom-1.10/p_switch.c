@@ -96,8 +96,11 @@ switchlist_t alphSwitchList[] =
     {"\0",		"\0",		0}
 };
 
+__attribute__((section(".ram7")))
 int		switchlist[MAXSWITCHES * 2];
+__attribute__((section(".ram7")))
 int		numswitches;
+__attribute__((section(".ram7")))
 button_t        buttonlist[MAXBUTTONS];
 
 //

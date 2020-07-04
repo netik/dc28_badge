@@ -118,16 +118,20 @@ int 		snd_MusicVolume = 15;
 
 
 // whether songs are mus_paused
+__attribute__((section(".ram7")))
 static boolean		mus_paused;	
 
 // music currently being played
+__attribute__((section(".ram7")))
 static musicinfo_t*	mus_playing=0;
 
 // following is set
 //  by the defaults code in M_misc:
 // number of channels available
+__attribute__((section(".ram7")))
 int			numChannels;	
 
+__attribute__((section(".ram7")))
 static int		nextcleanup;
 
 
@@ -189,6 +193,12 @@ void S_Init
   // Note that sounds have not been cached (yet).
   for (i=1 ; i<NUMSFX ; i++)
     S_sfx[i].lumpnum = S_sfx[i].usefulness = -1;
+
+  for (i=1 ; i<NUMMUSIC ; i++) {
+    S_music[i].lumpnum = 0;
+    S_music[i].data = NULL;
+    S_music[i].handle = 0;
+  }
 }
 
 

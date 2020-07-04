@@ -31,6 +31,7 @@ rcsid[] = "$Id: p_tick.c,v 1.4 1997/02/03 16:47:55 b1 Exp $";
 #include "doomstat.h"
 
 
+__attribute__((section(".ram7")))
 int	leveltime;
 
 //
@@ -91,6 +92,7 @@ void P_RemoveThinker (thinker_t* thinker)
 //
 void P_AllocateThinker (thinker_t*	thinker)
 {
+    (void)thinker;
 }
 
 

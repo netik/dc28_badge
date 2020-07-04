@@ -44,14 +44,20 @@ rcsid[] = "$Id: r_bsp.c,v 1.4 1997/02/03 22:45:12 b1 Exp $";
 
 
 
+__attribute__((section(".ram7")))
 seg_t*		curline;
+__attribute__((section(".ram7")))
 side_t*		sidedef;
+__attribute__((section(".ram7")))
 line_t*		linedef;
+__attribute__((section(".ram7")))
 sector_t*	frontsector;
+__attribute__((section(".ram7")))
 sector_t*	backsector;
 
 __attribute__((section(".ram7")))
 drawseg_t	drawsegs[MAXDRAWSEGS];
+__attribute__((section(".ram7")))
 drawseg_t*	ds_p;
 
 

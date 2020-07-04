@@ -41,7 +41,7 @@ rcsid[] = "$Id: p_plats.c,v 1.5 1997/02/03 22:45:12 b1 Exp $";
 // Data.
 #include "sounds.h"
 
-
+__attribute__((section(".ram7")))
 plat_t*		activeplats[MAXPLATS];
 
 

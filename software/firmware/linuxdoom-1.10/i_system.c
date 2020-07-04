@@ -137,8 +137,6 @@ void I_Quit (void)
     I_ShutdownMusic();
     M_SaveDefaults ();
     I_ShutdownGraphics();
-    I_ZoneFree ();
-    I_FreeLow ();
     D_DoomQuit = 1;
     return;
 #ifdef notdef
