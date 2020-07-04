@@ -21,8 +21,6 @@
 #include "hal_stm32_ltdc.h"
 #include "stm32sai_lld.h"
 
-#define roundup(x, y)              ((((x)+((y)-1))/(y))*(y))
-
 #define  DEFAULT_SAMPLERATE   15625
 #define  DEFAULT_BPS          16
 #define  DEFAULT_FRAGSIZE     (DEFAULT_SAMPLERATE/NES_REFRESH_RATE)
