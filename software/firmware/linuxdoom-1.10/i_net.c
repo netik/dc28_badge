@@ -90,11 +90,15 @@ boolean NetListen (void);
 // NETWORKING
 //
 
+__attribute__((section(".ram7")))
 int	DOOMPORT =	(IPPORT_USERRESERVED +0x1d );
 
+__attribute__((section(".ram7")))
 int			sendsocket;
+__attribute__((section(".ram7")))
 int			insocket;
 
+__attribute__((section(".ram7")))
 struct	sockaddr_in	sendaddress[MAXNETNODES];
 
 void	(*netget) (void);

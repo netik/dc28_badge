@@ -87,16 +87,23 @@ static const char rcsid[] = "$Id: d_main.c,v 1.8 1997/02/03 22:45:09 b1 Exp $";
 //  calls I_GetTime, I_StartFrame, and I_StartTic
 //
 void D_DoomLoop (void);
+__attribute__((section(".ram7")))
+int D_DoomQuit = 0;
 
-
+__attribute__((section(".ram7")))
 char*		wadfiles[MAXWADFILES];
 
 
+__attribute__((section(".ram7")))
 boolean		devparm;	// started game with -devparm
+__attribute__((section(".ram7")))
 boolean         nomonsters;	// checkparm of -nomonsters
+__attribute__((section(".ram7")))
 boolean         respawnparm;	// checkparm of -respawn
+__attribute__((section(".ram7")))
 boolean         fastparm;	// checkparm of -fast
 
+__attribute__((section(".ram7")))
 boolean         drone;
 
 boolean		singletics = false; // debug flag to cancel adaptiveness
@@ -109,20 +116,29 @@ boolean		singletics = false; // debug flag to cancel adaptiveness
 
 extern  boolean	inhelpscreens;
 
+__attribute__((section(".ram7")))
 skill_t		startskill;
+__attribute__((section(".ram7")))
 int             startepisode;
+__attribute__((section(".ram7")))
 int		startmap;
+__attribute__((section(".ram7")))
 boolean		autostart;
 
+__attribute__((section(".ram7")))
 FILE*		debugfile;
 
+__attribute__((section(".ram7")))
 boolean		advancedemo;
 
 
 
 
+__attribute__((section(".ram7")))
 char		wadfile[1024];		// primary wad file
+__attribute__((section(".ram7")))
 char		mapdir[1024];           // directory of development maps
+__attribute__((section(".ram7")))
 char		basedefault[1024];      // default file
 
 
@@ -353,6 +369,9 @@ extern  boolean         demorecording;
 
 void D_DoomLoop (void)
 {
+    /* Reinitialize this. */
+    wipegamestate = GS_DEMOSCREEN;
+
     if (demorecording)
 	G_BeginRecording ();
 		
@@ -388,7 +407,10 @@ void D_DoomLoop (void)
 	{
 	    TryRunTics (); // will run at least one tic
 	}
-		
+
+	if (D_DoomQuit)
+		return;
+
 	S_UpdateSounds (players[consoleplayer].mo);// move positional sounds
 
 	// Update display, next frame, with current state.
@@ -547,11 +569,13 @@ void D_AddFile (char *file)
 	
     for (numwadfiles = 0 ; wadfiles[numwadfiles] ; numwadfiles++)
 	;
-
+#ifdef notdef
     newfile = malloc (strlen(file)+1);
     strcpy (newfile, file);
 	
     wadfiles[numwadfiles] = newfile;
+#endif
+    wadfiles[numwadfiles] = file;
 }
 
 //
@@ -563,16 +587,16 @@ void D_AddFile (char *file)
 void IdentifyVersion (void)
 {
 
-    char*	doom1wad;
-    char*	doomwad;
-    char*	doomuwad;
-    char*	doom2wad;
+    char*	doom1wad = "/doom/doom1.wad";
+    char*	doomwad = "/doom/doom.wad";
+    char*	doomuwad = "";
+    char*	doom2wad = "";
 
-    char*	doom2fwad;
-    char*	plutoniawad;
-    char*	tntwad;
+    char*	doom2fwad = "";
+    char*	plutoniawad = "";
+    char*	tntwad = "";
 
-#ifdef NORMALUNIX
+#ifdef NORMALUNIX_
     char *home;
     char *doomwaddir;
     doomwaddir = getenv("DOOMWADDIR");

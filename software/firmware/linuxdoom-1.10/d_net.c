@@ -41,7 +41,9 @@ static const char rcsid[] = "$Id: d_net.c,v 1.3 1997/02/03 22:01:47 b1 Exp $";
 #define	NCMD_CHECKSUM	 	0x0fffffff
 
  
+__attribute__((section(".ram7")))
 doomcom_t*	doomcom;	
+__attribute__((section(".ram7")))
 doomdata_t*	netbuffer;		// points inside doomcom
 
 
@@ -57,21 +59,34 @@ doomdata_t*	netbuffer;		// points inside doomcom
 #define	RESENDCOUNT	10
 #define	PL_DRONE	0x80	// bit flag in doomdata->player
 
+__attribute__((section(".ram7")))
 ticcmd_t	localcmds[BACKUPTICS];
 
+__attribute__((section(".ram7")))
 ticcmd_t        netcmds[MAXPLAYERS][BACKUPTICS];
+__attribute__((section(".ram7")))
 int         	nettics[MAXNETNODES];
+__attribute__((section(".ram7")))
 boolean		nodeingame[MAXNETNODES];		// set false as nodes leave game
+__attribute__((section(".ram7")))
 boolean		remoteresend[MAXNETNODES];		// set when local needs tics
+__attribute__((section(".ram7")))
 int		resendto[MAXNETNODES];			// set when remote needs tics
+__attribute__((section(".ram7")))
 int		resendcount[MAXNETNODES];
 
+__attribute__((section(".ram7")))
 int		nodeforplayer[MAXPLAYERS];
 
+__attribute__((section(".ram7")))
 int             maketic;
+__attribute__((section(".ram7")))
 int		lastnettic;
+__attribute__((section(".ram7")))
 int		skiptics;
+__attribute__((section(".ram7")))
 int		ticdup;		
+__attribute__((section(".ram7")))
 int		maxsend;	// BACKUPTICS/(2*ticdup)-1
 
 
@@ -79,7 +94,9 @@ void D_ProcessEvents (void);
 void G_BuildTiccmd (ticcmd_t *cmd); 
 void D_DoAdvanceDemo (void);
  
+__attribute__((section(".ram7")))
 boolean		reboundpacket;
+__attribute__((section(".ram7")))
 doomdata_t	reboundstore;
 
 

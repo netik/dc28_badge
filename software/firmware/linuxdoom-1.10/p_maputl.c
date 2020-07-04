@@ -145,6 +145,10 @@ P_BoxOnLineSide
 	p1 = P_PointOnLineSide (tmbox[BOXRIGHT], tmbox[BOXTOP], ld);
 	p2 = P_PointOnLineSide (tmbox[BOXLEFT], tmbox[BOXBOTTOM], ld);
 	break;
+      default:
+	p1 = 1;
+	p2 = 2;
+	break;
     }
 
     if (p1 == p2)
@@ -541,6 +545,7 @@ P_BlockThingsIterator
 //
 // INTERCEPT ROUTINES
 //
+__attribute__((section(".ram7")))
 intercept_t	intercepts[MAXINTERCEPTS];
 intercept_t*	intercept_p;
 

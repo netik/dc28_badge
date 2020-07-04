@@ -93,6 +93,7 @@ short		screenheightarray[SCREENWIDTH];
 spritedef_t*	sprites;
 int		numsprites;
 
+__attribute__((section(".ram7")))
 spriteframe_t	sprtemp[29];
 int		maxframe;
 char*		spritename;

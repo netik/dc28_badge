@@ -53,6 +53,8 @@ static palette_color_t * palettebuf;
 static void * d0;
 static void * d1;
 static int layer;
+static int buttontmp;
+
 
 //
 // I_ShutdownGraphics
@@ -194,6 +196,27 @@ void I_GetEvent(void)
 //
 void I_StartTic (void)
 {
+	event_t event;
+
+	if (buttontmp) {
+		buttontmp = 0;
+		event.type = ev_keydown;
+		event.data1 = 'y';
+		D_PostEvent(&event);
+		event.type = ev_keyup;
+		D_PostEvent(&event);
+	}
+
+	if (buttontmp == 0 && palReadLine (LINE_BUTTON_USER) == 1) {
+		buttontmp = 1;
+		event.type = ev_keydown;
+		event.data1 = KEY_F10;
+		D_PostEvent(&event);
+		event.type = ev_keyup;
+		D_PostEvent(&event);
+	}
+
+
 #ifdef notdef
     if (!X_display)
 	return;
@@ -345,6 +368,7 @@ void I_InitGraphics(void)
 	dma2dFgSetPixelFormat (&DMA2DD1, DMA2D_FMT_L8);
 
 	layer = 0;
+	buttontmp = 0;
 
 	/* Allocate the screen buffer */
 

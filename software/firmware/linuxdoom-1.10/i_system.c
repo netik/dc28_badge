@@ -40,6 +40,8 @@ rcsid[] = "$Id: m_bbox.c,v 1.1 1997/02/03 22:45:10 b1 Exp $";
 #include "d_net.h"
 #include "g_game.h"
 
+#include "d_main.h"
+
 #ifdef __GNUG__
 #pragma implementation "i_system.h"
 #endif
@@ -48,8 +50,9 @@ rcsid[] = "$Id: m_bbox.c,v 1.1 1997/02/03 22:45:10 b1 Exp $";
 
 
 
-int	mb_used = 6;
-
+static int	mb_used = 6;
+static byte *	zonebase;
+static byte *   lowbase;
 
 void
 I_Tactile
@@ -58,7 +61,9 @@ I_Tactile
   int	total )
 {
   // UNUSED.
-  on = off = total = 0;
+  (void)on;
+  (void)off;
+  (void)total;
 }
 
 ticcmd_t	emptycmd;
@@ -76,10 +81,22 @@ int  I_GetHeapSize (void)
 byte* I_ZoneBase (int*	size)
 {
     *size = mb_used*1024*1024;
-    return (byte *) malloc (*size);
+    zonebase = (byte *) malloc (*size);
+    memset (zonebase, 0, *size);
+    return (zonebase);
 }
 
+void I_ZoneFree (void)
+{
+    free (zonebase);
+    return;
+}
 
+void I_FreeLow (void)
+{
+    free (lowbase);
+    return;
+}
 
 //
 // I_GetTime
@@ -120,7 +137,13 @@ void I_Quit (void)
     I_ShutdownMusic();
     M_SaveDefaults ();
     I_ShutdownGraphics();
+    I_ZoneFree ();
+    I_FreeLow ();
+    D_DoomQuit = 1;
+    return;
+#ifdef notdef
     exit(0);
+#endif
 }
 
 void I_WaitVBL(int count)
@@ -149,10 +172,10 @@ byte*	I_AllocLow(int length)
     byte*	mem;
         
     mem = (byte *)malloc (length);
+    lowbase = mem;
     memset (mem,0,length);
     return mem;
 }
-
 
 //
 // I_Error

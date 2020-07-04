@@ -101,6 +101,7 @@ int			viewangletox[FINEANGLES/2];
 // The xtoviewangleangle[] table maps a screen pixel
 // to the lowest viewangle that maps back to x ranges
 // from clipangle to -clipangle.
+__attribute__((section(".ram7")))
 angle_t			xtoviewangle[SCREENWIDTH+1];
 
 
@@ -114,7 +115,9 @@ angle_t			xtoviewangle[SCREENWIDTH+1];
 fixed_t*		finecosine = &finesine[FINEANGLES/4];
 
 
+__attribute__((section(".ram7")))
 lighttable_t*		scalelight[LIGHTLEVELS][MAXLIGHTSCALE];
+__attribute__((section(".ram7")))
 lighttable_t*		scalelightfixed[MAXLIGHTSCALE];
 __attribute__((section(".ram7")))
 lighttable_t*		zlight[LIGHTLEVELS][MAXLIGHTZ];

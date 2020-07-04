@@ -537,7 +537,9 @@ P_SpawnMobj
 //
 // P_RemoveMobj
 //
+__attribute__((section(".ram7")))
 mapthing_t	itemrespawnque[ITEMQUESIZE];
+__attribute__((section(".ram7")))
 int		itemrespawntime[ITEMQUESIZE];
 int		iquehead;
 int		iquetail;

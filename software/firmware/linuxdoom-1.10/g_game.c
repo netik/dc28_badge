@@ -93,52 +93,87 @@ void	G_DoVictory (void);
 void	G_DoWorldDone (void); 
 void	G_DoSaveGame (void); 
  
- 
+__attribute__((section(".ram7")))
 gameaction_t    gameaction; 
+__attribute__((section(".ram7")))
 gamestate_t     gamestate; 
+__attribute__((section(".ram7")))
 skill_t         gameskill; 
+__attribute__((section(".ram7")))
 boolean		respawnmonsters;
+__attribute__((section(".ram7")))
 int             gameepisode; 
+__attribute__((section(".ram7")))
 int             gamemap; 
  
+__attribute__((section(".ram7")))
 boolean         paused; 
+__attribute__((section(".ram7")))
 boolean         sendpause;             	// send a pause event next tic 
+__attribute__((section(".ram7")))
 boolean         sendsave;             	// send a save event next tic 
+__attribute__((section(".ram7")))
 boolean         usergame;               // ok to save / end game 
  
+__attribute__((section(".ram7")))
 boolean         timingdemo;             // if true, exit with report on completion 
+__attribute__((section(".ram7")))
 boolean         nodrawers;              // for comparative timing purposes 
+__attribute__((section(".ram7")))
 boolean         noblit;                 // for comparative timing purposes 
+__attribute__((section(".ram7")))
 int             starttime;          	// for comparative timing purposes  	 
  
+__attribute__((section(".ram7")))
 boolean         viewactive; 
  
+__attribute__((section(".ram7")))
 boolean         deathmatch;           	// only if started as net death 
+__attribute__((section(".ram7")))
 boolean         netgame;                // only true if packets are broadcast 
+__attribute__((section(".ram7")))
 boolean         playeringame[MAXPLAYERS]; 
+__attribute__((section(".ram7")))
 player_t        players[MAXPLAYERS]; 
  
+__attribute__((section(".ram7")))
 int             consoleplayer;          // player taking events and displaying 
+__attribute__((section(".ram7")))
 int             displayplayer;          // view being displayed 
+__attribute__((section(".ram7")))
 int             gametic; 
+__attribute__((section(".ram7")))
 int             levelstarttic;          // gametic at level start 
+__attribute__((section(".ram7")))
 int             totalkills, totalitems, totalsecret;    // for intermission 
  
+__attribute__((section(".ram7")))
 char            demoname[32]; 
+__attribute__((section(".ram7")))
 boolean         demorecording; 
+__attribute__((section(".ram7")))
 boolean         demoplayback; 
+__attribute__((section(".ram7")))
 boolean		netdemo; 
+__attribute__((section(".ram7")))
 byte*		demobuffer;
+__attribute__((section(".ram7")))
 byte*		demo_p;
+__attribute__((section(".ram7")))
 byte*		demoend; 
+__attribute__((section(".ram7")))
 boolean         singledemo;            	// quit after playing a demo from cmdline 
  
+__attribute__((section(".ram7")))
 boolean         precache = true;        // if true, load all graphics at start 
  
+__attribute__((section(".ram7")))
 wbstartstruct_t wminfo;               	// parms for world map / intermission 
  
+__attribute__((section(".ram7")))
 short		consistancy[MAXPLAYERS][BACKUPTICS]; 
  
+__attribute__((section(".ram7")))
 byte*		savebuffer;
  
  

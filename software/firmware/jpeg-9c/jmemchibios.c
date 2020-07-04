@@ -28,21 +28,13 @@ extern void free JPP((void *ptr));
 
 #include "ch.h"
 
-__attribute__((section(".ram7")))
 static uint8_t b0[84];
-__attribute__((section(".ram7")))
 static uint8_t b1[1784];
-__attribute__((section(".ram7")))
 static uint8_t b2[16280];
-__attribute__((section(".ram7")))
 static uint8_t b3[976];
-__attribute__((section(".ram7")))
 static uint8_t b4[1296];
-__attribute__((section(".ram7")))
 static uint8_t b5[5136];
-__attribute__((section(".ram7")))
 static uint8_t b6[1296];
-__attribute__((section(".ram7")))
 static uint8_t b7[1296];
 
 static uint8_t bcnt = 0;

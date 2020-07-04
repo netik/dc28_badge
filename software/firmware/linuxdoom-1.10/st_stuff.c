@@ -267,129 +267,169 @@ rcsid[] = "$Id: st_stuff.c,v 1.6 1997/02/03 22:45:13 b1 Exp $";
 
 	    
 // main player in game
+__attribute__((section(".ram7")))
 static player_t*	plyr; 
 
 // ST_Start() has just been called
+__attribute__((section(".ram7")))
 static boolean		st_firsttime;
 
 // used to execute ST_Init() only once
+__attribute__((section(".ram7")))
 static int		veryfirsttime = 1;
 
 // lump number for PLAYPAL
+__attribute__((section(".ram7")))
 static int		lu_palette;
 
 // used for timing
+__attribute__((section(".ram7")))
 static unsigned int	st_clock;
 
 // used for making messages go away
+__attribute__((section(".ram7")))
 static int		st_msgcounter=0;
 
 // used when in chat 
+__attribute__((section(".ram7")))
 static st_chatstateenum_t	st_chatstate;
 
 // whether in automap or first-person
+__attribute__((section(".ram7")))
 static st_stateenum_t	st_gamestate;
 
 // whether left-side main status bar is active
+__attribute__((section(".ram7")))
 static boolean		st_statusbaron;
 
 // whether status bar chat is active
+__attribute__((section(".ram7")))
 static boolean		st_chat;
 
 // value of st_chat before message popped up
+__attribute__((section(".ram7")))
 static boolean		st_oldchat;
 
 // whether chat window has the cursor on
+__attribute__((section(".ram7")))
 static boolean		st_cursoron;
 
 // !deathmatch
+__attribute__((section(".ram7")))
 static boolean		st_notdeathmatch; 
 
 // !deathmatch && st_statusbaron
+__attribute__((section(".ram7")))
 static boolean		st_armson;
 
 // !deathmatch
+__attribute__((section(".ram7")))
 static boolean		st_fragson; 
 
 // main bar left
+__attribute__((section(".ram7")))
 static patch_t*		sbar;
 
 // 0-9, tall numbers
+__attribute__((section(".ram7")))
 static patch_t*		tallnum[10];
 
 // tall % sign
+__attribute__((section(".ram7")))
 static patch_t*		tallpercent;
 
 // 0-9, short, yellow (,different!) numbers
+__attribute__((section(".ram7")))
 static patch_t*		shortnum[10];
 
 // 3 key-cards, 3 skulls
+__attribute__((section(".ram7")))
 static patch_t*		keys[NUMCARDS]; 
 
 // face status patches
+__attribute__((section(".ram7")))
 static patch_t*		faces[ST_NUMFACES];
 
 // face background
+__attribute__((section(".ram7")))
 static patch_t*		faceback;
 
  // main bar right
+__attribute__((section(".ram7")))
 static patch_t*		armsbg;
 
 // weapon ownership patches
+__attribute__((section(".ram7")))
 static patch_t*		arms[6][2]; 
 
 // ready-weapon widget
+__attribute__((section(".ram7")))
 static st_number_t	w_ready;
 
  // in deathmatch only, summary of frags stats
+__attribute__((section(".ram7")))
 static st_number_t	w_frags;
 
 // health widget
+__attribute__((section(".ram7")))
 static st_percent_t	w_health;
 
 // arms background
+__attribute__((section(".ram7")))
 static st_binicon_t	w_armsbg; 
 
 
 // weapon ownership widgets
+__attribute__((section(".ram7")))
 static st_multicon_t	w_arms[6];
 
 // face status widget
+__attribute__((section(".ram7")))
 static st_multicon_t	w_faces; 
 
 // keycard widgets
+__attribute__((section(".ram7")))
 static st_multicon_t	w_keyboxes[3];
 
 // armor widget
+__attribute__((section(".ram7")))
 static st_percent_t	w_armor;
 
 // ammo widgets
+__attribute__((section(".ram7")))
 static st_number_t	w_ammo[4];
 
 // max ammo widgets
+__attribute__((section(".ram7")))
 static st_number_t	w_maxammo[4]; 
 
 
 
  // number of frags so far in deathmatch
+__attribute__((section(".ram7")))
 static int	st_fragscount;
 
 // used to use appopriately pained face
+__attribute__((section(".ram7")))
 static int	st_oldhealth = -1;
 
 // used for evil grin
 static boolean	oldweaponsowned[NUMWEAPONS]; 
 
  // count until face changes
+__attribute__((section(".ram7")))
 static int	st_facecount = 0;
 
 // current face index, used by w_faces
+__attribute__((section(".ram7")))
 static int	st_faceindex = 0;
 
 // holds key-type for each key box on bar
+__attribute__((section(".ram7")))
 static int	keyboxes[3]; 
 
 // a random number per tick
+__attribute__((section(".ram7")))
 static int	st_randomnumber;  
 
 
