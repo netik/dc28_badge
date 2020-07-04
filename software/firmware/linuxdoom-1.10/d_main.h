@@ -51,7 +51,7 @@ void D_DoomMain (void);
 // Called by IO functions when input is detected.
 void D_PostEvent (event_t* ev);
 
-extern int D_DoomQuit;
+
 
 //
 // BASE LEVEL

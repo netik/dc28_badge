@@ -87,8 +87,7 @@ static const char rcsid[] = "$Id: d_main.c,v 1.8 1997/02/03 22:45:09 b1 Exp $";
 //  calls I_GetTime, I_StartFrame, and I_StartTic
 //
 void D_DoomLoop (void);
-__attribute__((section(".ram7")))
-int D_DoomQuit = 0;
+
 
 __attribute__((section(".ram7")))
 char*		wadfiles[MAXWADFILES];
@@ -411,16 +410,10 @@ void D_DoomLoop (void)
 	    TryRunTics (); // will run at least one tic
 	}
 
-	if (D_DoomQuit)
-		return;
-
 	S_UpdateSounds (players[consoleplayer].mo);// move positional sounds
 
 	// Update display, next frame, with current state.
 	D_Display ();
-
-	if (D_DoomQuit)
-		return;
 
 #ifndef SNDSERV
 	// Sound mixing for the buffer is snychronous.
@@ -772,6 +765,7 @@ void FindResponseFile (void)
 	    if (!handle)
 	    {
 		printf ("\nNo such response file!");
+		longjmp (exit_env, 1);
 		exit(1);
 	    }
 	    printf("Found response file %s!\n",&myargv[i][1]);

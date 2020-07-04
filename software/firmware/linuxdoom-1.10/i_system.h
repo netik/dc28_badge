@@ -39,8 +39,6 @@ void I_Init (void);
 // for the zone management.
 byte*	I_ZoneBase (int *size);
 
-void	I_ZoneFree (void);
-void	I_FreeLow (void);
 
 // Called by D_DoomLoop,
 // returns current time in tics.
@@ -90,6 +88,8 @@ void I_Tactile (int on, int off, int total);
 
 void I_Error (char *error, ...);
 
+#include <setjmp.h>
+extern jmp_buf exit_env;
 
 #endif
 //-----------------------------------------------------------------------------

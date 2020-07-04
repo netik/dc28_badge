@@ -137,11 +137,12 @@ void I_Quit (void)
     I_ShutdownMusic();
     M_SaveDefaults ();
     I_ShutdownGraphics();
-    D_DoomQuit = 1;
-    return;
-#ifdef notdef
+    I_ZoneFree ();
+    I_FreeLow ();
+
+    longjmp (exit_env, 1);
+
     exit(0);
-#endif
 }
 
 void I_WaitVBL(int count)
@@ -199,6 +200,8 @@ void I_Error (char *error, ...)
 
     D_QuitNetGame ();
     I_ShutdownGraphics();
-    
+
+    longjmp (exit_env, 1);
+
     exit(-1);
 }
