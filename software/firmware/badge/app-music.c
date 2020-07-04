@@ -281,7 +281,7 @@ musicPlay (MusicHandles * p, char * fname)
 	i2sBuf = malloc (((MUSIC_SAMPLES * sizeof(uint16_t)) * 2) +
 	    CACHE_LINE_SIZE);
 
-	buf = (uint16_t *)roundup ((uint32_t)i2sBuf, CACHE_LINE_SIZE);
+	buf = (uint16_t *)roundup ((uintptr_t)i2sBuf, CACHE_LINE_SIZE);
 	p1 = buf;
 	p2 = buf + MUSIC_SAMPLES;
 
