@@ -393,10 +393,10 @@ static int wm8994_hw_params(struct wm8994_priv *priv, int aif_id,
 
 	/* AIFCLK/fs ratio; look for a close match in either direction */
 	best = 0;
-	best_val = abs((fs_ratios[0] * sampling_rate) - priv->aifclk[id]);
+	best_val = abs((fs_ratios[0] * (int)sampling_rate) - priv->aifclk[id]);
 
 	for (i = 1; i < ARRAY_SIZE(fs_ratios); i++) {
-		cur_val = abs(fs_ratios[i] * sampling_rate - priv->aifclk[id]);
+		cur_val = abs(fs_ratios[i] * (int)sampling_rate - priv->aifclk[id]);
 		if (cur_val >= best_val)
 			continue;
 		best = i;
@@ -698,7 +698,9 @@ static int wm8994_init_volume_aif1_dac1(struct wm8994_priv *priv)
  */
 static int wm8994_device_init(struct wm8994_priv *priv)
 {
+#ifdef notdef
 	const char *devname;
+#endif
 	unsigned short reg_data;
 	int ret;
 
@@ -711,7 +713,9 @@ static int wm8994_device_init(struct wm8994_priv *priv)
 	}
 
 	if (reg_data == WM8994_ID) {
+#ifdef notdef
 		devname = "WM8994";
+#endif
 		priv->type = WM8994;
 		debug("Device registered as type %d\n", priv->type);
 	} else {
