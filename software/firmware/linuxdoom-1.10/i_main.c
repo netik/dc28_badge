@@ -25,6 +25,7 @@ static const char
 rcsid[] = "$Id: i_main.c,v 1.4 1997/02/03 22:45:10 b1 Exp $";
 
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "doomdef.h"
 
@@ -42,6 +43,8 @@ doom_main
 ( int		argc,
   char**	argv ) 
 { 
+    int i;
+
     myargc = argc; 
     myargv = argv; 
 
@@ -64,6 +67,9 @@ doom_exit:
 	free (lumpcache);
 	lumpcache = NULL;
     }
+
+    for (i = 3; i < 8; i++)
+	close (i);
 
     return 0;
 } 
