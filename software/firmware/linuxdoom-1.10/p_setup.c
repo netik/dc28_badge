@@ -616,6 +616,8 @@ P_SetupLevel
     char	lumpname[9];
     int		lumpnum;
 	
+    (void)skill;
+    (void)playermask;
     totalkills = totalitems = totalsecret = wminfo.maxfrags = 0;
     wminfo.partime = 180;
     for (i=0 ; i<MAXPLAYERS ; i++)

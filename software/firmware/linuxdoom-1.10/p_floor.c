@@ -316,6 +316,7 @@ EV_DoFloor
 
 	  case raiseFloorCrush:
 	    floor->crush = true;
+	    /* FALLTHROUGH */
 	  case raiseFloor:
 	    floor->direction = 1;
 	    floor->sector = sec;
@@ -467,8 +468,8 @@ EV_BuildStairs
 
     floormove_t*	floor;
     
-    fixed_t		stairsize;
-    fixed_t		speed;
+    fixed_t		stairsize = FRACUNIT;
+    fixed_t		speed = FLOORSPEED;
 
     secnum = -1;
     rtn = 0;

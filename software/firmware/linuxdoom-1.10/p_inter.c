@@ -81,7 +81,12 @@ P_GiveAmmo
     if (ammo == am_noammo)
 	return false;
 		
-    if (ammo < 0 || ammo > NUMAMMO)
+    /*
+     * Since ammo is an enum it can never be less that 0. You
+     * are not supposed to care what underlying type the compiler
+     * uses to represent enums.
+     */
+    if (/*ammo < 0 ||*/ ammo > NUMAMMO)
 	I_Error ("P_GiveAmmo: bad type %i", ammo);
 		
     if ( player->ammo[ammo] == player->maxammo[ammo]  )

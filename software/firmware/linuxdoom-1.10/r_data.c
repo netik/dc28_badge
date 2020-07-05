@@ -212,9 +212,11 @@ R_DrawColumnInCache
     int		count;
     int		position;
     byte*	source;
+#ifdef notdef
     byte*	dest;
 	
     dest = (byte *)cache + 3;
+#endif
 	
     while (patch->topdelta != 0xff)
     {
@@ -848,7 +850,7 @@ void R_PrecacheLevel (void)
     }
 	
     spritememory = 0;
-    for (i=0 ; i<numsprites ; i++)
+    for (i=0 ; i<(int)numsprites ; i++)
     {
 	if (!spritepresent[i])
 	    continue;

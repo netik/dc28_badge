@@ -356,7 +356,9 @@ EV_VerticalDoor
   mobj_t*	thing )
 {
     player_t*	player;
+#ifdef notdef
     int		secnum;
+#endif
     sector_t*	sec;
     vldoor_t*	door;
     int		side;
@@ -411,7 +413,9 @@ EV_VerticalDoor
 	
     // if the sector has an active thinker, use it
     sec = sides[ line->sidenum[side^1]] .sector;
+#ifdef notdef
     secnum = sec-sectors;
+#endif
 
     if (sec->specialdata)
     {
@@ -531,6 +535,8 @@ P_SpawnDoorRaiseIn5Mins
 {
     vldoor_t*	door;
 	
+    (void)secnum;
+
     door = Z_Malloc ( sizeof(*door), PU_LEVSPEC, 0);
     
     P_AddThinker (&door->thinker);

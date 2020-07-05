@@ -53,7 +53,7 @@ __attribute__((section(".ram7")))
 int		finalestage;
 
 __attribute__((section(".ram7")))
-int		finalecount;
+size_t		finalecount;
 
 #define	TEXTSPEED	3
 #define	TEXTWAIT	250

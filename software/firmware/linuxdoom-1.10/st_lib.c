@@ -102,6 +102,8 @@ STlib_drawNum
     
     int		neg;
 
+    (void)refresh;
+
     n->oldnum = *n->num;
 
     neg = num < 0;
