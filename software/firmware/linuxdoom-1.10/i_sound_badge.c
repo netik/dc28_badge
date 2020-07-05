@@ -592,7 +592,7 @@ I_SubmitSound(void)
 #endif
   cacheBufferFlush (mixbuffer, SAMPLECOUNT*BUFMUL);
   i2sSamplesWait ();
-  i2sSamplesPlay (mixbuffer, SAMPLECOUNT);
+  i2sSamplesPlay (mixbuffer, SAMPLECOUNT*2);
 }
 
 
@@ -694,6 +694,8 @@ I_InitSound(void)
   
   // Finished initialization.
   fprintf(stderr, "I_InitSound: sound module ready\n");
+
+  snd_SfxVolume = 127;
 
   return;    
 }
