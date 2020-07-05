@@ -141,7 +141,9 @@ ExtractFileBase
 //  specially to allow map reloads.
 // But: the reload feature is a fragile hack...
 
+__attribute__((section(".ram7")))
 int			reloadlump;
+__attribute__((section(".ram7")))
 char*			reloadname;
 
 
@@ -523,6 +525,7 @@ W_CacheLumpName
 //
 __attribute__((section(".ram7")))
 int		info[2500][10];
+__attribute__((section(".ram7")))
 int		profilecount;
 
 void W_Profile (void)
