@@ -564,7 +564,9 @@ char            title[128];
 void D_AddFile (char *file)
 {
     int     numwadfiles;
+#ifdef notdef
     char    *newfile;
+#endif
 	
     for (numwadfiles = 0 ; wadfiles[numwadfiles] ; numwadfiles++)
 	;

@@ -96,7 +96,7 @@ short		screenheightarray[SCREENWIDTH];
 __attribute__((section(".ram7")))
 spritedef_t*	sprites;
 __attribute__((section(".ram7")))
-int		numsprites;
+unsigned int	numsprites;
 
 __attribute__((section(".ram7")))
 spriteframe_t	sprtemp[29];
@@ -187,7 +187,7 @@ R_InstallSpriteLump
 void R_InitSpriteDefs (char** namelist) 
 { 
     char**	check;
-    int		i;
+    unsigned int	i;
     int		l;
     int		intname;
     int		frame;
@@ -416,6 +416,8 @@ R_DrawVisSprite
     patch_t*		patch;
 	
 	
+    (void)x1;
+    (void)x2;
     patch = W_CacheLumpNum (vis->patch+firstspritelump, PU_CACHE);
 
     dc_colormap = vis->colormap;
@@ -828,6 +830,7 @@ void R_SortVisSprites (void)
     for (i=0 ; i<count ; i++)
     {
 	bestscale = MAXINT;
+	best = NULL;
 	for (ds=unsorted.next ; ds!= &unsorted ; ds=ds->next)
 	{
 	    if (ds->scale < bestscale)

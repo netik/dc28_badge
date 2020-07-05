@@ -661,7 +661,7 @@ S_ChangeMusic
 ( int			musicnum,
   int			looping )
 {
-    musicinfo_t*	music;
+    musicinfo_t*	music = NULL;
     char		namebuf[9];
 
     if ( (musicnum <= mus_None)
@@ -771,6 +771,8 @@ S_AdjustSoundParams
     fixed_t	adx;
     fixed_t	ady;
     angle_t	angle;
+
+    (void)pitch;
 
     // calculate the distance to sound origin
     //  and clip it if necessary

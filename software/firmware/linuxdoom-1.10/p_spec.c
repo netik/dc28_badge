@@ -1186,7 +1186,7 @@ int EV_DoDonut(line_t*	line)
 	s2 = getNextSector(s1->lines[0],s1);
 	for (i = 0;i < s2->linecount;i++)
 	{
-	    if ((!s2->lines[i]->flags & ML_TWOSIDED) ||
+	    if ((!(s2->lines[i]->flags & ML_TWOSIDED)) ||
 		(s2->lines[i]->backsector == s1))
 		continue;
 	    s3 = s2->lines[i]->backsector;
@@ -1244,12 +1244,13 @@ void P_SpawnSpecials (void)
 {
     sector_t*	sector;
     int		i;
+#ifdef notdef
     int		episode;
 
     episode = 1;
     if (W_CheckNumForName("texture2") >= 0)
 	episode = 2;
-
+#endif
     
     // See if -TIMER needs to be used.
     levelTimer = false;

@@ -289,7 +289,7 @@ void*		statcopy;				// for statistics driver
  
 int G_CmdChecksum (ticcmd_t* cmd) 
 { 
-    int		i;
+    size_t	i;
     int		sum = 0; 
 	 
     for (i=0 ; i< sizeof(*cmd)/4 - 1 ; i++) 
@@ -527,8 +527,8 @@ void G_DoLoadLevel (void)
     // DOOM determines the sky texture to be used
     // depending on the current episode, and the game version.
     if ( (gamemode == commercial)
-	 || ( gamemode == pack_tnt )
-	 || ( gamemode == pack_plut ) )
+/*FIXME	 || ( gamemode == pack_tnt )
+	 || ( gamemode == pack_plut )*/ )
     {
 	skytexture = R_TextureNumForName ("SKY3");
 	if (gamemap < 12)
@@ -563,8 +563,8 @@ void G_DoLoadLevel (void)
     joyxmove = joyymove = 0; 
     mousex = mousey = 0; 
     sendpause = sendsave = paused = false; 
-    memset (mousebuttons, 0, sizeof(mousebuttons)); 
-    memset (joybuttons, 0, sizeof(joybuttons)); 
+    memset (mousebuttons, 0, sizeof(*mousebuttons)); 
+    memset (joybuttons, 0, sizeof(*joybuttons)); 
 } 
  
  
@@ -831,11 +831,12 @@ void G_Ticker (void)
 //
 void G_InitPlayer (int player) 
 { 
+#ifdef notdef
     player_t*	p; 
  
     // set up the saved info         
     p = &players[player]; 
-	 
+#endif
     // clear everything else to defaults 
     G_PlayerReborn (player); 
 	 
@@ -1227,12 +1228,17 @@ void G_WorldDone (void)
 	switch (gamemap)
 	{
 	  case 15:
+	    /* FALLTHROUGH */
 	  case 31:
 	    if (!secretexit)
 		break;
+	    /* FALLTHROUGH */
 	  case 6:
+	    /* FALLTHROUGH */
 	  case 11:
+	    /* FALLTHROUGH */
 	  case 20:
+	    /* FALLTHROUGH */
 	  case 30:
 	    F_StartFinale ();
 	    break;
@@ -1279,12 +1285,14 @@ void G_DoLoadGame (void)
     gameaction = ga_nothing; 
 	 
     length = M_ReadFile (savename, &savebuffer); 
+    if (length > SAVEGAMESIZE) 
+	I_Error ("Savegame buffer overrun"); 
     save_p = savebuffer + SAVESTRINGSIZE;
     
     // skip the description field 
     memset (vcheck,0,sizeof(vcheck)); 
     sprintf (vcheck,"version %i",VERSION); 
-    if (strcmp (save_p, vcheck)) 
+    if (strcmp ((char *)save_p, vcheck)) 
 	return;				// bad version 
     save_p += VERSIONSIZE; 
 			 
