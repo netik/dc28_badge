@@ -57,6 +57,7 @@ extern void saiSend (SAIDriver * saip, void * buf, uint32_t size);
 extern void saiStop (SAIDriver * saip);
 extern void saiWait (void);
 extern void saiStereo (SAIDriver * saip, bool enable);
+extern void saiSpeed (SAIDriver * saip, bool enable);
 
 extern void i2sSamplesPlay (void * buf, int cnt);
 extern void i2sSamplesWait (void);
