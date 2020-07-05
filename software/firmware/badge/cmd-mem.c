@@ -59,7 +59,7 @@ cmd_mem (BaseSequentialStream *chp, int argc, char *argv[])
 static void
 cmd_memtest (BaseSequentialStream *chp, int argc, char *argv[])
 {
-	char * p;
+	uint8_t * p;
 	uint32_t i;
 
 	(void)argv;
