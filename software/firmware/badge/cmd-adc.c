@@ -47,7 +47,7 @@ cmd_temp (BaseSequentialStream *chp, int argc, char *argv[])
 	(void)argv;
 	(void)chp;
 	if (argc > 0) {
-		printf ("Usage: bat\n");
+		printf ("Usage: temp\n");
 		return;
 	}
 

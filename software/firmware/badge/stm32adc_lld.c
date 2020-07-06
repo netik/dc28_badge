@@ -84,10 +84,11 @@ static const ADCConversionGroup adcgrpcfg2 = {
 	ADC_SQR3_SQ1_N(ADC_CHANNEL_VREFINT)		/* SQR3  */
 };
 
+static	adcsample_t samples[100];
+
 float
 stm32TempGet (void)
 {
-	adcsample_t samples[100];
 	float avg;
 	float slope;
 	float temp;
@@ -127,7 +128,6 @@ stm32TempGet (void)
 float
 stm32VbatGet (void)
 {
-	adcsample_t samples[100];
 	float avg;
 	float vbat;
 	int i;
@@ -165,7 +165,6 @@ stm32VbatGet (void)
 float
 stm32VrefGet (void)
 {
-	adcsample_t samples[100];
 	float avg;
 	float vref;
 	uint16_t cal1;
