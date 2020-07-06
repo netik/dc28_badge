@@ -65,32 +65,29 @@ rcsid[] = "$Id: i_unix.c,v 1.5 1997/02/03 22:45:10 b1 Exp $";
 
 // The actual lengths of all sound effects.
 __attribute__((section(".ram7")))
-int 		lengths[NUMSFX];
-
-// The actual output device.
-int	audio_fd;
+static int	lengths[NUMSFX];
 
 // The global mixing buffer.
 // Basically, samples from all active internal channels
 //  are modifed and added, and stored in the buffer
 //  that is submitted to the audio device.
 __attribute__((section(".ram7")))
-signed short	mixbuffer[MIXBUFFERSIZE];
+static signed short	mixbuffer[MIXBUFFERSIZE];
 
 
 // The channel step amount...
 __attribute__((section(".ram7")))
-unsigned int	channelstep[NUM_CHANNELS];
+static unsigned int	channelstep[NUM_CHANNELS];
 // ... and a 0.16 bit remainder of last step.
 __attribute__((section(".ram7")))
-unsigned int	channelstepremainder[NUM_CHANNELS];
+static unsigned int	channelstepremainder[NUM_CHANNELS];
 
 
 // The channel data pointers, start and end.
 __attribute__((section(".ram7")))
-unsigned char*	channels[NUM_CHANNELS];
+static unsigned char*	channels[NUM_CHANNELS];
 __attribute__((section(".ram7")))
-unsigned char*	channelsend[NUM_CHANNELS];
+static unsigned char*	channelsend[NUM_CHANNELS];
 
 
 // Time/gametic that the channel started playing,
@@ -99,33 +96,33 @@ unsigned char*	channelsend[NUM_CHANNELS];
 // In case number of active sounds exceeds
 //  available channels.
 __attribute__((section(".ram7")))
-int		channelstart[NUM_CHANNELS];
+static int		channelstart[NUM_CHANNELS];
 
 // The sound in channel handles,
 //  determined on registration,
 //  might be used to unregister/stop/modify,
 //  currently unused.
 __attribute__((section(".ram7")))
-int 		channelhandles[NUM_CHANNELS];
+static int 		channelhandles[NUM_CHANNELS];
 
 // SFX id of the playing sound effect.
 // Used to catch duplicates (like chainsaw).
 __attribute__((section(".ram7")))
-int		channelids[NUM_CHANNELS];			
+static int		channelids[NUM_CHANNELS];			
 
 // Pitch to stepping lookup, unused.
 __attribute__((section(".ram7")))
-int		steptable[256];
+static int		steptable[256];
 
 // Volume lookups.
 __attribute__((section(".ram7")))
-int*		vol_lookup;
+static int*		vol_lookup;
 
 // Hardware left and right channel volume lookup.
 __attribute__((section(".ram7")))
-int*		channelleftvol_lookup[NUM_CHANNELS];
+static int*		channelleftvol_lookup[NUM_CHANNELS];
 __attribute__((section(".ram7")))
-int*		channelrightvol_lookup[NUM_CHANNELS];
+static int*		channelrightvol_lookup[NUM_CHANNELS];
 
 
 
@@ -133,7 +130,7 @@ int*		channelrightvol_lookup[NUM_CHANNELS];
 // This function loads the sound data from the WAD lump,
 //  for single sound.
 //
-void*
+static void*
 getsfx
 ( char*         sfxname,
   int*          len )
@@ -212,7 +209,7 @@ getsfx
 //  (eight, usually) of internal channels.
 // Returns a handle.
 //
-int
+static int
 addsfx
 ( int		sfxid,
   int		volume,
@@ -587,9 +584,6 @@ void
 I_SubmitSound(void)
 {
   // Write it to DSP device.
-#ifdef notdef
-  write(audio_fd, mixbuffer, SAMPLECOUNT*BUFMUL);
-#endif
   cacheBufferFlush (mixbuffer, SAMPLECOUNT*BUFMUL);
   i2sSamplesWait ();
   i2sSamplesPlay (mixbuffer, SAMPLECOUNT*2);
