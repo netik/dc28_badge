@@ -584,9 +584,8 @@ void
 I_SubmitSound(void)
 {
   // Write it to DSP device.
-  cacheBufferFlush (mixbuffer, SAMPLECOUNT*BUFMUL);
   i2sSamplesWait ();
-  i2sSamplesPlay (mixbuffer, SAMPLECOUNT*2);
+  i2sSamplesPlay (mixbuffer, SAMPLECOUNT * 2);
 }
 
 
