@@ -195,7 +195,7 @@ static int wm8994_bic_or(struct wm8994_priv *priv, unsigned int reg,
  *
  * @return -1 for error and 0  Success.
  */
-static int wm8994_set_fmt(struct wm8994_priv *priv, int aif_id, uint fmt)
+static int wm8994_set_fmt(struct wm8994_priv *priv, int aif_id, uint32_t fmt)
 {
 	int ms_reg;
 	int aif_reg;
@@ -321,8 +321,8 @@ static int wm8994_set_fmt(struct wm8994_priv *priv, int aif_id, uint fmt)
  * @return -1 for error  and 0  Success.
  */
 static int wm8994_hw_params(struct wm8994_priv *priv, int aif_id,
-			    uint sampling_rate, uint bits_per_sample,
-			    uint channels)
+			    uint32_t sampling_rate, uint32_t bits_per_sample,
+			    uint32_t channels)
 {
 	int aif1_reg;
 	int aif2_reg;
