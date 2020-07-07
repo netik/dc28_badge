@@ -198,10 +198,10 @@ void I_Error (char *error, ...)
     if (demorecording)
 	G_CheckDemoStatus();
 
+    I_Quit ();
+
     D_QuitNetGame ();
     I_ShutdownGraphics();
-
-    longjmp (exit_env, 1);
 
     exit(-1);
 }
