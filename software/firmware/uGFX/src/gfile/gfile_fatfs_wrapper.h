@@ -18,7 +18,9 @@
 #include "ffconf.h"
 
 // Prevent preprocessor redefinition warnings
+#ifdef notdef
 #include "../../3rdparty/fatfs-0.13/source/integer.h"
+#endif
 #if defined(_T) && !defined(_INC_TCHAR)
 	#define _INC_TCHAR
 #endif
