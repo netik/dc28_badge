@@ -200,7 +200,7 @@ void I_StartTic (void)
 {
 	event_t event;
 
-	if (buttontmp) {
+	if (buttontmp == 5) {
 		buttontmp = 0;
 		event.type = ev_keydown;
 		event.data1 = 'y';
@@ -218,6 +218,8 @@ void I_StartTic (void)
 		D_PostEvent(&event);
 	}
 
+	if (buttontmp)
+		buttontmp++;
 
 #ifdef notdef
     if (!X_display)
@@ -294,8 +296,6 @@ void I_FinishUpdate (void)
 		ltdcBgDisableI (&LTDCD1);
 	}
 
-        __DSB();
-
 	gdispGBlitArea (g,
 		/* Start position */
 		0, 20,
@@ -307,8 +307,6 @@ void I_FinishUpdate (void)
 		SCREENWIDTH,
 		/* Bitmap buffer */
 		(gPixel *)screens[0]);
-
-        __DSB();
 
 	/* Trigger frame swap on next vertical refresh. */
 
