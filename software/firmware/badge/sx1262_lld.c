@@ -245,13 +245,14 @@ sx1262CmdSend (SX1262_Driver * p, void * cmd, uint8_t len)
 		chThdSleepMilliseconds (1);
 	}
 
+	memcpy (p->sx_cmdbuf, cmd, len);
 	c = cmd;
 
 	spiAcquireBus (p->sx_spi);
 
 	spiSelect (p->sx_spi);
 
-	spiSend (p->sx_spi, len, cmd);
+	spiSend (p->sx_spi, len, p->sx_cmdbuf);
 
 	spiUnselect (p->sx_spi);
 
@@ -262,6 +263,8 @@ sx1262CmdSend (SX1262_Driver * p, void * cmd, uint8_t len)
 	}
 
 	spiReleaseBus (p->sx_spi);
+
+	memcpy (cmd, p->sx_cmdbuf, len);
 
 	if (i == SX_DELAY) {
 		printf ("Radio command %x timed out\n", c[0]);
@@ -282,13 +285,14 @@ sx1262CmdExc (SX1262_Driver * p, void * cmd, uint8_t len)
 		chThdSleepMilliseconds (1);
 	}
 
+	memcpy (p->sx_cmdbuf, cmd, len);
 	c = cmd;
 
 	spiAcquireBus (p->sx_spi);
 
 	spiSelect (p->sx_spi);
 
-	spiExchange (p->sx_spi, len, cmd, cmd);
+	spiExchange (p->sx_spi, len, p->sx_cmdbuf, p->sx_cmdbuf);
 
 	spiUnselect (p->sx_spi);
 
@@ -299,6 +303,8 @@ sx1262CmdExc (SX1262_Driver * p, void * cmd, uint8_t len)
 	}
 
 	spiReleaseBus (p->sx_spi);
+
+	memcpy (cmd, p->sx_cmdbuf, len);
 
 	if (i == SX_DELAY) {
 		printf ("Radio command exchange %x timed out\n", c[0]);
@@ -1052,6 +1058,10 @@ sx1262Start (SX1262_Driver * p)
 	palSetLineCallback (LINE_ARD_D10, sx1262Int, p);
 	palEnableLineEvent (LINE_ARD_D10, PAL_EVENT_MODE_RISING_EDGE);
 
+	p->sx_rxbuf_orig = malloc (SX_MAX_PKT + SX_MAX_CMD + SX_ALIGNMENT);
+	p->sx_rxbuf = (uint8_t *)roundup ((uintptr_t)p->sx_rxbuf_orig,
+	    SX_ALIGNMENT);
+	p->sx_cmdbuf = p->sx_rxbuf + SX_MAX_PKT;
 	/* Reset the chip */
 
 	sx1262Reset (p);
@@ -1067,13 +1077,10 @@ sx1262Start (SX1262_Driver * p)
 	if (ocp == SX_OCP_1261_60MA)
 		printf ("SemTech SX1262 radio enabled\n");
 	else {
+		free (p->sx_rxbuf_orig);
 		printf ("No radio detected\n");
 		return;
 	}
-
-	p->sx_rxbuf_orig = malloc (SX_MAX_PKT + SX_ALIGNMENT);
-	p->sx_rxbuf = (uint8_t *)roundup ((uintptr_t)p->sx_rxbuf_orig,
-	    SX_ALIGNMENT);
 
 	p->sx_netif = malloc (sizeof(struct netif));
 
