@@ -35,21 +35,12 @@ rcsid[] = "$Id: m_bbox.c,v 1.1 1997/02/03 22:45:10 b1 Exp $";
 #include <string.h>
 #include <stdio.h>
 
-#define IPPORT_USERRESERVED 1025
-
-#ifdef notdef
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+#ifndef IPPORT_USERRESERVED
+#define IPPORT_USERRESERVED 5000
 #endif
 
 #include <errno.h>
 #include <unistd.h>
-#ifdef notdef
-#include <netdb.h>
-#include <sys/ioctl.h>
-#endif
-
 
 #include "i_system.h"
 #include "d_event.h"
@@ -65,22 +56,6 @@ rcsid[] = "$Id: m_bbox.c,v 1.1 1997/02/03 22:45:10 b1 Exp $";
 
 
 
-
-#ifdef notdef
-// For some odd reason...
-#define ntohl(x) \
-        ((unsigned long int)((((unsigned long int)(x) & 0x000000ffU) << 24) | \
-                             (((unsigned long int)(x) & 0x0000ff00U) <<  8) | \
-                             (((unsigned long int)(x) & 0x00ff0000U) >>  8) | \
-                             (((unsigned long int)(x) & 0xff000000U) >> 24)))
-
-#define ntohs(x) \
-        ((unsigned short int)((((unsigned short int)(x) & 0x00ff) << 8) | \
-                              (((unsigned short int)(x) & 0xff00) >> 8))) \
-	  
-#define htonl(x) ntohl(x)
-#define htons(x) ntohs(x)
-#endif
 
 void	NetSend (void);
 boolean NetListen (void);
