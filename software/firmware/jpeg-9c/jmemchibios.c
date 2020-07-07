@@ -26,19 +26,17 @@ extern void free JPP((void *ptr));
 #define SEEK_SET  0		/* if not, assume 0 is correct */
 #endif
 
-#include "ch.h"
-
-static uint8_t b0[84];
-static uint8_t b1[1784];
-static uint8_t b2[16280];
-static uint8_t b3[976];
-static uint8_t b4[1296];
-static uint8_t b5[5136];
-static uint8_t b6[1296];
-static uint8_t b7[1296];
+static uint32_t b0[84 / 4];
+static uint32_t b1[1784 / 4];
+static uint32_t b2[16280 / 4];
+static uint32_t b3[976 / 4];
+static uint32_t b4[1296 / 4];
+static uint32_t b5[5136 / 4];
+static uint32_t b6[1296 / 4];
+static uint32_t b7[1296 / 4];
 
 static uint8_t bcnt = 0;
-static uint8_t * buffers[] = {
+static uint32_t * buffers[] = {
 	b0, b1, b2, b3, b4, b5, b6, b7
 };
 
