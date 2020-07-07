@@ -9,7 +9,7 @@
 
 #if FF_FS_REENTRANT
 
-static mutex_t fs_mutex __attribute__((section(".fsbss")));
+static mutex_t fs_mutex;
 
 /*------------------------------------------------------------------------*/
 /* Create a Synchronization Object                                        */
