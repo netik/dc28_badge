@@ -234,7 +234,7 @@ tonePlay (GWidgetObject * w, uint8_t b, uint32_t duration)
 		buf[i] = ~(buf[i]) + 1;
 	}
 
-	chThdSetPriority (HIGHPRIO - 5);
+	chThdSetPriority (NORMALPRIO + 1);
 
 	i = 0;
 	while (1) {
