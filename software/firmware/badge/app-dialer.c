@@ -234,11 +234,12 @@ tonePlay (GWidgetObject * w, uint8_t b, uint32_t duration)
 		buf[i] = ~(buf[i]) + 1;
 	}
 
-	chThdSetPriority (NORMALPRIO + 1);
+	chThdSetPriority (HIGHPRIO - 5);
 
 	i = 0;
 	while (1) {
 		i2sSamplesPlay (buf, samples);
+		chThdSleep (1);
 		if (w == NULL) {
 			i += samples;
 			if (i > (duration * (DIALER_SAMPLERATE / 1000)))
