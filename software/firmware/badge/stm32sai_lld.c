@@ -183,17 +183,26 @@ saiStereo (SAIDriver * saip, bool enable)
 }
 
 void
-saiSpeed (SAIDriver * saip, bool enable)
+saiSpeed (SAIDriver * saip, int val)
 {
 	chThdSleepMilliseconds (200);
 
 	osalSysLock ();
-	if (enable == TRUE) {
-		saip->saiblock->CR1 &= ~SAI_xCR1_MCKDIV_Msk;
-		saip->saiblock->CR1 |= 3 << SAI_xCR1_MCKDIV_Pos;
-	} else {
-		saip->saiblock->CR1 &= ~SAI_xCR1_MCKDIV_Msk;
-		saip->saiblock->CR1 |= 2 << SAI_xCR1_MCKDIV_Pos;
+	switch (val) {
+		case 0:
+			saip->saiblock->CR1 &= ~SAI_xCR1_MCKDIV_Msk;
+			saip->saiblock->CR1 |= 2 << SAI_xCR1_MCKDIV_Pos;
+			break;
+		case 1:
+			saip->saiblock->CR1 &= ~SAI_xCR1_MCKDIV_Msk;
+			saip->saiblock->CR1 |= 3 << SAI_xCR1_MCKDIV_Pos;
+			break;
+		case 2:
+			saip->saiblock->CR1 &= ~SAI_xCR1_MCKDIV_Msk;
+			saip->saiblock->CR1 |= 1 << SAI_xCR1_MCKDIV_Pos;
+			break;
+		default:
+			break;
 	}
 	osalSysUnlock ();
 

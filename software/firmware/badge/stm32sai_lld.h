@@ -50,6 +50,10 @@ typedef struct _SAIDriver {
 #define I2S_STATE_IDLE		0
 #define I2S_STATE_BUSY		1
 
+#define I2S_SPEED_NORMAL	0
+#define I2S_SPEED_SLOW		1
+#define I2S_SPEED_FAST		2
+
 extern SAIDriver SAID2;
 
 extern void saiStart (SAIDriver * saip);
@@ -57,7 +61,7 @@ extern void saiSend (SAIDriver * saip, void * buf, uint32_t size);
 extern void saiStop (SAIDriver * saip);
 extern void saiWait (void);
 extern void saiStereo (SAIDriver * saip, bool enable);
-extern void saiSpeed (SAIDriver * saip, bool enable);
+extern void saiSpeed (SAIDriver * saip, int val);
 
 extern void i2sSamplesPlay (void * buf, int cnt);
 extern void i2sSamplesWait (void);

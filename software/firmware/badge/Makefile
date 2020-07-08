@@ -185,6 +185,7 @@ CSRC = $(ALLCSRC) \
        fix_fft.c \
        ides_gfx.c \
        app-badge.c \
+       app-dialer.c \
        app-doomguy.c \
        app-doom.c \
        app-email.c \

@@ -633,7 +633,7 @@ void I_ShutdownSound(void)
   }
   
   // Cleaning up -releasing the DSP device.
-  saiSpeed (&SAID2, FALSE);
+  saiSpeed (&SAID2, I2S_SPEED_NORMAL);
 
   free (vol_lookup);
   vol_lookup = NULL;
@@ -655,7 +655,7 @@ I_InitSound(void)
   // Secure and configure sound device first.
   fprintf( stderr, "I_InitSound: ");
 
-  saiSpeed (&SAID2, TRUE);
+  saiSpeed (&SAID2, I2S_SPEED_SLOW);
 
   fprintf(stderr, " configured audio device\n" );
 
