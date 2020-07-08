@@ -193,7 +193,7 @@ dialer_i2s_restore (void)
 }
 
 static void
-tonePlay (GWidgetObject * w, DHandles * p, uint8_t b, uint32_t duration)
+tonePlay (GWidgetObject * w, uint8_t b, uint32_t duration)
 {
 	uint32_t i;
 	double fract1;
@@ -244,7 +244,6 @@ tonePlay (GWidgetObject * w, DHandles * p, uint8_t b, uint32_t duration)
 			if (i > (duration * (DIALER_SAMPLERATE / 1000)))
 				break;
 		} else {
-			(void) geventEventWait (&p->glDListener, 0);
 			if ((w->g.flags & GBUTTON_FLG_PRESSED) == 0)
 				break;
 		}
@@ -411,7 +410,12 @@ dialer_event(OrchardAppContext *context, const OrchardAppEvent *event)
 				if (p->mode)
 					b += DIALER_MAXBUTTONS;
 #endif
-				tonePlay (w, p, b, 0);
+				geventRegisterCallback (&p->glDListener,
+				    NULL, NULL);
+				tonePlay (w, b, 0);
+				geventRegisterCallback (&p->glDListener,
+				    orchardAppUgfxCallback, &p->glDListener);
+
 			}
 		}
 	}
