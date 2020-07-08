@@ -192,8 +192,8 @@ dialer_i2s_restore (void)
 	return;
 }
 
-void
-tonePlay (GWidgetObject * w, uint8_t b, uint32_t duration)
+static void
+tonePlay (GWidgetObject * w, DHandles * p, uint8_t b, uint32_t duration)
 {
 	uint32_t i;
 	double fract1;
@@ -239,12 +239,12 @@ tonePlay (GWidgetObject * w, uint8_t b, uint32_t duration)
 	i = 0;
 	while (1) {
 		i2sSamplesPlay (buf, samples);
-		chThdSleep (1);
 		if (w == NULL) {
 			i += samples;
 			if (i > (duration * (DIALER_SAMPLERATE / 1000)))
 				break;
 		} else {
+			(void) geventEventWait (&p->glDListener, 0);
 			if ((w->g.flags & GBUTTON_FLG_PRESSED) == 0)
 				break;
 		}
@@ -276,7 +276,7 @@ dialer_init(OrchardAppContext *context)
 static void
 draw_keypad(OrchardAppContext *context)
 {
-	DHandles *p;
+	DHandles * p;
 	GWidgetInit wi;
 	const DIALER_BUTTON * b;
 	int i;
@@ -411,7 +411,7 @@ dialer_event(OrchardAppContext *context, const OrchardAppEvent *event)
 				if (p->mode)
 					b += DIALER_MAXBUTTONS;
 #endif
-				tonePlay (w, b, 0);
+				tonePlay (w, p, b, 0);
 			}
 		}
 	}
