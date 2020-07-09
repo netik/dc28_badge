@@ -262,6 +262,27 @@ _close (int file)
 
 __attribute__((used))
 int
+_unlink (char * path)
+{
+	FRESULT r;
+
+	r = f_unlink (path);
+
+	if (r == FR_OK)
+		return (0);
+
+	if (r == FR_NO_FILE)
+		errno = ENOENT;
+	else if (r == FR_DENIED)
+		errno = EPERM;
+	else
+		errno = EIO;
+
+	return (-1);
+}
+
+__attribute__((used))
+int
 _lseek (int file, int ptr, int dir)
 {
 	int i;
