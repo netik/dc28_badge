@@ -597,8 +597,9 @@ void IdentifyVersion (void)
     char*	plutoniawad = "";
     char*	tntwad = "";
 
-#ifdef NORMALUNIX_
+#ifdef NORMALUNIX
     char *home;
+#ifdef notdef
     char *doomwaddir;
     doomwaddir = getenv("DOOMWADDIR");
     if (!doomwaddir)
@@ -632,6 +633,7 @@ void IdentifyVersion (void)
     // French stuff.
     doom2fwad = malloc(strlen(doomwaddir)+1+10+1);
     sprintf(doom2fwad, "%s/doom2f.wad", doomwaddir);
+#endif
 
     home = getenv("HOME");
     if (!home)
