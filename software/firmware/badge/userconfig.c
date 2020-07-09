@@ -72,23 +72,23 @@
 #include "userconfig.h"
 
 /*
- * Handle for userconfig structure. We will allocate this from
- * RAM and then hold onto it for the life of the system.
+ * Handle for userconfig structure. We allocate this from
+ * the BSS and then hold onto it for the life of the system.
  */
 
-static userconfig * u;
-mutex_t config_mutex;
+static userconfig u;
+static mutex_t config_mutex;
 
 /*
  * Create a brand new configuration structure with default settings.
  */
 
-static userconfig *
+static void
 init_config (void)
 {
 	userconfig * new;
 
-	new = malloc (sizeof (userconfig));
+	new = &u;
 	memset (new, 0, sizeof (userconfig));
 
 	new->cfg_signature = CONFIG_SIGNATURE;
@@ -96,8 +96,10 @@ init_config (void)
 	new->cfg_sound = CONFIG_SOUND_ON;
 	new->cfg_airplane = CONFIG_RADIO_ON;
 
-	return (new);
+	return;
 }
+
+/* Load the configuration from storage and check its signature */
 
 static int
 load_config (void)
@@ -114,25 +116,37 @@ load_config (void)
 		return (-1);
 	}
 
-	len = read (fd, u, sizeof(userconfig));
+	len = read (fd, &u, sizeof (userconfig));
 
 	close (fd);
 
 	if (len != sizeof (userconfig))
 		return (-1);
 
-	if (u->cfg_version != CONFIG_VERSION) {
-		printf ("config version mismatch (expected %lu got %lu)\n",
-		    CONFIG_VERSION, u->cfg_version);
+	/* Check for a valid signature */
+
+	if (u.cfg_signature != CONFIG_SIGNATURE) {
+		printf ("invalid config signature (expected %lx got %lx)\n",
+		    CONFIG_SIGNATURE, u.cfg_signature);
 		return (-1);
 	}
 
+	/* Check for a version mismatch. */
+
+	if (u.cfg_version != CONFIG_VERSION) {
+		printf ("config version mismatch (expected %lu got %lu)\n",
+		    CONFIG_VERSION, u.cfg_version);
+		return (-1);
+	}
+
+	/* Now validate the checksum */
+
 	pId = (STM32_ID *)UID_BASE;
 	crc = crc32_le ((uint8_t *)pId, sizeof(STM32_ID), 0);
-	crc = crc32_le ((uint8_t *)u,
+	crc = crc32_le ((uint8_t *)&u,
 	    sizeof(userconfig) - sizeof(uint32_t), crc);
 
-	if (crc != u->cfg_csum) {
+	if (crc != u.cfg_csum) {
 		printf ("config CRC mismatch\n");
 		return (-1);
 	}
@@ -170,7 +184,7 @@ save_config (void)
 	 *
 	 * Of course if you are able to recompile and reflash the
 	 * firmware you can just delete the checksum validation from
-	 * the load_config() in the first place.
+	 * the load_config() function in the first place.
 	 *
 	 * There's no way to completely block the user from hacking
 	 * the config since we deliberately want the badge and its
@@ -180,7 +194,7 @@ save_config (void)
 
 	pId = (STM32_ID *)UID_BASE;
 	crc = crc32_le ((uint8_t *)pId, sizeof(STM32_ID), 0);
-	u->cfg_csum = crc32_le ((uint8_t *)u,
+	u.cfg_csum = crc32_le ((uint8_t *)&u,
 	    sizeof(userconfig) - sizeof(uint32_t), crc);
 
 	fd = open (CONFIG_FILE_NAME, O_WRONLY|O_CREAT, 0);
@@ -188,7 +202,7 @@ save_config (void)
 	if (fd == -1)
 		return (-1);
 
-	len = write (fd, u, sizeof(userconfig));
+	len = write (fd, &u, sizeof(userconfig));
 
 	close (fd);
 
@@ -203,7 +217,7 @@ configStart (int op)
 {
 	osalMutexObjectInit (&config_mutex);
 
-	u = init_config ();
+	init_config ();
 
 	/* check for SD card */
 
@@ -217,8 +231,7 @@ configStart (int op)
 			if (load_config () != 0) {
 				printf ("loading config failed -- "
 				    "using defaults\n");
-				free (u);
-				u = init_config ();
+				init_config ();
 				(void) save_config ();
 			} else
 				printf ("Config OK!\n");
@@ -239,20 +252,22 @@ configStart (int op)
 userconfig *
 configGet (void)
 {
-	return (u);
+	if (u.cfg_signature != CONFIG_SIGNATURE)
+		return (NULL);
+
+	return (&u);
 }
 
 void
 configLoad (void)
 {
-	if (u == NULL)
+	if (u.cfg_signature != CONFIG_SIGNATURE)
 		return;
 
 	osalMutexLock (&config_mutex);
 	if (load_config () != 0) {
 		printf ("loading config failed -- using defaults");
-		free (u);
-		u = init_config ();
+		init_config ();
 	}
 	osalMutexUnlock (&config_mutex);
 
@@ -260,10 +275,12 @@ configLoad (void)
 }
 
 void
-configSave (userconfig * new)
+configSave (void)
 {
+	if (u.cfg_signature != CONFIG_SIGNATURE)
+		return;
+
 	osalMutexLock (&config_mutex);
-	memcpy (u, new, sizeof (userconfig));
 	save_config ();
 	osalMutexUnlock (&config_mutex);
 

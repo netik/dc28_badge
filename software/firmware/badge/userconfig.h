@@ -33,8 +33,8 @@
 #ifndef _USERCONFIGH_
 #define _USERCONFIGH_
 
-#define CONFIG_SIGNATURE	0xdeadbeef  // duh
-#define CONFIG_END_SIGNATURE	0xdeadfa11
+#define CONFIG_SIGNATURE	0xdeadbeefUL  // duh
+#define CONFIG_END_SIGNATURE	0xdeadfa11UL
 #define CONFIG_VERSION		1UL
 #define CONFIG_NAME_MAXLEN	20
 
@@ -70,7 +70,7 @@ typedef struct _userconfig {
 
 extern void configStart (int);
 extern userconfig * configGet (void);
-extern void configSave (userconfig *);
+extern void configSave (void);
 extern void configLoad (void);
 
 #endif /* _USERCONFIGH_ */
