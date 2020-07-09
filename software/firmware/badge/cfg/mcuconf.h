@@ -103,10 +103,10 @@
 #define STM32_PLLSAIP_VALUE                 4
 #define STM32_PLLSAIQ_VALUE                 4
 #define STM32_PLLSAIR_VALUE                 5
-#define STM32_PLLSAIDIVQ_VALUE              2
+#define STM32_PLLSAIDIVQ_VALUE              3
 #define STM32_PLLSAIDIVR_VALUE              4
 #define STM32_SAI1SEL                       STM32_SAI1SEL_OFF
-#define STM32_SAI2SEL                       STM32_SAI2SEL_I2SPLL
+#define STM32_SAI2SEL                       STM32_SAI2SEL_SAIPLL
 #define STM32_LCDTFT_REQUIRED               TRUE
 #define STM32_USART1SEL                     STM32_USART1SEL_PCLK2
 #define STM32_USART2SEL                     STM32_USART2SEL_PCLK1
