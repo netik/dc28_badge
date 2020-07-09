@@ -285,7 +285,6 @@ typedef struct ltdc_window_t ltdc_window_t;
 typedef struct ltdc_frame_t ltdc_frame_t;
 typedef struct ltdc_laycfg_t ltdc_laycfg_t;
 typedef struct LTDCConfig LTDCConfig;
-typedef enum ltdc_state_t ltdc_state_t;
 typedef struct LTDCDriver LTDCDriver;
 
 /**

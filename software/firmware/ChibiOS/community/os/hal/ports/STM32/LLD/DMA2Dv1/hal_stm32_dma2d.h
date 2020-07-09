@@ -243,9 +243,8 @@
 /* Complex types forwarding.*/
 typedef union dma2d_coloralias_t dma2d_coloralias_t;
 typedef struct dma2d_palcfg_t dma2d_palcfg_t;
-typedef struct dma2d_laycfg_t dma2d_layercfg_t;
+typedef struct dma2d_layercfg_t dma2d_laycfg_t;
 typedef struct DMA2DConfig DMA2DConfig;
-typedef enum dma2d_state_t dma2d_state_t;
 typedef struct DMA2DDriver DMA2DDriver;
 
 /**
