@@ -36,6 +36,8 @@
 
 #include "gfx.h"
 
+#include "userconfig.h"
+
 #include "sddetect_lld.h"
 
 /*
@@ -79,6 +81,7 @@ sdCheck (void)
 			goto skip;
 		sdcConnect (&SDCD1);
 		gfileMount ('F', "0:");
+		configLoad ();
 		sdMounted = TRUE;
 	}
 

@@ -44,6 +44,8 @@
 
 #include "crc32.h"
 
+#include "userconfig.h"
+
 #include <lwip/opt.h>
 #include <lwip/def.h>
 #include <lwip/mem.h>
@@ -684,6 +686,15 @@ main (void)
 	/* Initialize radio (and lwIP network interface) */
 
 	sx1262Start (&SX1262D1);
+
+	/* Load user configuration */
+
+	if (palReadLine (LINE_BUTTON_USER) == 1) {
+		configStart (CONFIG_INIT);
+		i2sPlay ("sound/wilhelm.snd");
+		i2sWait ();
+	} else
+		configStart (CONFIG_LOAD);
 
 	/*
 	 * Initialize orchard subsystem

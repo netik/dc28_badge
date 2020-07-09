@@ -196,6 +196,7 @@ CSRC = $(ALLCSRC) \
        app-ledsign.c \
        app-nes.c \
        app-intro.c \
+       userconfig.c \
        ui-keyboard.c \
        ui-list.c
 
