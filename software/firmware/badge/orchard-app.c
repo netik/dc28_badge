@@ -56,9 +56,23 @@ static uint8_t queue_cnt;
 static OrchardAppRadioEvent * radio_evt[RADIO_QUEUE_LEN];
 static uint8_t * radio_pkt[RADIO_QUEUE_LEN];
 
-void orchardAppUgfxCallback (void * arg, GEvent * pe)
+void orchardAppUgfxNonBlockCallback (void * arg, GEvent * pe)
 {
   GListener * gl;
+
+  gl = (GListener *)arg;
+
+  ugfx_evt.type = ugfxEvent;
+  ugfx_evt.ugfx.pListener = gl;
+  ugfx_evt.ugfx.pEvent = pe;
+
+  chEvtBroadcast (&orchard_app_gfx);
+
+  return;
+}
+
+void orchardAppUgfxCallback (void * arg, GEvent * pe)
+{
 
   /*
    * If there's currently an event being processed, wait
@@ -74,13 +88,7 @@ void orchardAppUgfxCallback (void * arg, GEvent * pe)
     ugfxPend = 1;
   osalSysUnlock ();
 
-  gl = (GListener *)arg;
-
-  ugfx_evt.type = ugfxEvent;
-  ugfx_evt.ugfx.pListener = gl;
-  ugfx_evt.ugfx.pEvent = pe;
-
-  chEvtBroadcast (&orchard_app_gfx);
+  orchardAppUgfxNonBlockCallback (arg, pe);
 
   return;
 }
