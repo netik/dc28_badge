@@ -25,9 +25,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// WidgetStyle: GFX_REDButton, the only button we really use
+// WidgetStyle: RedButton, the only button we really use
 
-const GWidgetStyle GFX_REDButtonStyle = {
+const GWidgetStyle RedButtonStyle = {
   HTML2COLOR(0xff0000),              // background
   HTML2COLOR(0xff6666),              // focus
 
