@@ -35,7 +35,7 @@
  *
  * In previous badge designs, the user configuration data was saved
  * in the CPU's on-board flash. Unfortunately that'd a little difficult
- * to do with the STM32F746's flash design. I the Kinetis KW01 and
+ * to do with the STM32F746's flash design. In the Kinetis KW01 and
  * Nordic nRF52840 chips, the flash was divided up into equal sized
  * sectors (1024 bytes per sector for the KW01 and 4096 bytes for the
  * nRF52840). The ST Micro chip has 1MB of flash, but it's divided
