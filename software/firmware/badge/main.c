@@ -25,6 +25,7 @@
 #include "badge.h"
 #include "nullprot_lld.h"
 
+#include "hal_fsmc_sram.h"
 #include "hal_fsmc_sdram.h"
 #include "hal_stm32_ltdc.h"
 #include "hal_stm32_dma2d.h"
@@ -97,6 +98,14 @@ static const SDCConfig sdccfg =
 	sd_scratchpad,
 	SDC_MODE_4BIT
 };
+
+/*
+ * SRAM configuration
+ * Not actually used -- we just need a dummy structure to help turn
+ * SRAM bank 1 off.
+ */
+
+static const SRAMConfig sram_cfg;
 
 /*
  * SDRAM configuration
@@ -430,12 +439,6 @@ main (void)
 	    SCB_SHCSR_BUSFAULTENA_Msk |
 	    SCB_SHCSR_MEMFAULTENA_Msk;
 
-#ifdef notdef
-	/* Enable deep sleep mode when we execute a WFI */
-
-	SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
-#endif
-
 	/*
 	 * Enable FPU interrupts. These signal events like underflow and
 	 * overflow. Technically it's safe to ignore them, but we really
@@ -444,8 +447,7 @@ main (void)
 	 * enter low power sleep mode.
 	 */
 
-	NVIC_SetPriority (FPU_IRQn, 6);
-	NVIC_EnableIRQ (FPU_IRQn);
+	nvicEnableVector (FPU_IRQn, 6);
 
 	/*
 	 * Activates the serial driver 1 using the driver default
@@ -460,40 +462,64 @@ main (void)
 	fsmcSdramInit ();
 	fsmcSdramStart (&SDRAMD, &sdram_cfg);
 
-	/* Configure memory mappings. */
-
-	__disable_irq ();
-
 	/*
-	 * This is a hack. I noticed that Doom and the dialer app
-	 * would exhibit glitchy graphics behavior. It's hard to
-	 * explain, but basically if we're using graphics and sound
+	 * Per the manual, SRAM/PSRAM/NOR bank 1 is always enabled
+	 * after reset. Presumably this is done so that executable
+	 * code in NOR flash can be available as soon as the chip
+	 * comes up. However we aren't using this bank, so we really
+	 * should shut it off. Ideally the FSMC driver should do this
+	 * for us, but it doesn't. So we pretend to have SRAM bank 1
+	 * present just so that we can use the FSMC driver to shut
+	 * it off.
+	 *
+	 * Why does this matter? I noticed that Doom and the touch tone
+	 * dialer app would exhibit glitchy graphics behavior. It's hard
+	 * to explain, but basically if we're using graphics and sound
 	 * at about the same time (and possibly also in conjunction
 	 * with heavy CPU activity), the screen would sometimes
 	 * appear jumpy. A good way to see this is to take out the line
-	 * below, then run the tone dialer app and randombly press some
+	 * below, then run the tone dialer app and randomly press some
 	 * buttons very quickly. You may notice the screen become
-	 * distorted for a split second when a button is tapped.
+	 * distorted for a split second as soon as a button is tapped.
+	 * It looks like the LCD controller basically paints a garbled
+	 * version of the screen for a frame or two, but eventually
+	 * redraws it correctly.
+	 *
+	 * With Doom, you could see this effect while the Demo is
+	 * running. Every so often the display would appear "jumpy,"
+	 * again only for a few frames at a time. This effect would go
+	 * away if sound was disabled.
 	 *
 	 * I discovered that completely disabling the data cache
 	 * seemed to mitigate this, but at the cost of reduced
 	 * performance (which was mainly noticeably when running
 	 * the Nintendo emulator; the sound was too slow).
 	 *
-	 * After some experimentation, I arrived at the workaround
-	 * below. This creates a mapping for bank 1 of the FSMC
-	 * memory controller. This bank is supposed to be used for
-	 * NOR/PSRAM/SRAM memories. However on both the Discovery
-	 * reference board and our design, it's not used. The mapping
-	 * below disables access to it and marks it uncached. I don't
-	 * know why this seems to make a difference, but it does.
-	 * What really confuses me is that I would expect the CPU
-	 * to treat it as uncached/inaccessible already.
+	 * After further experimentation, I discovered I could also
+	 * work around the problem by using the MPU to map the region at
+	 * 0x60000000 as uncached. Per the manual, this corresponds to
+	 * SRAM/PSRAM/NOR Bank 1 in the FSMC controller. From there I
+	 * tracked down the part of the manual that says that this
+	 * bank is enabled by default at POR.
+	 *
+	 * Exactly what goes wrong if you don't turn it off isn't clear,
+	 * but note that we are using external SDRAM via the FSMC
+	 * controller for the graphics frame buffer memory. It's possible
+	 * that having the SRAM bank enabled when there isn't really
+	 * any SRAM connected somehow causes glitchy behavior inside
+	 * the FSMC memory controller during heavy SDRAM usage.
+	 *
+ 	 * In any case, disabling the SRAM bank seems to correct the
+	 * problem at the source.
 	 */
 
- 	mpuConfigureRegion (MPU_REGION_2, FSMC_Bank1_MAP_BASE,
-	    MPU_RASR_ATTR_AP_NA_NA | MPU_RASR_ATTR_NON_CACHEABLE |
-            MPU_RASR_SIZE_512M | MPU_RASR_ENABLE);
+	fsmcSramInit ();
+	fsmcSramStart (&SRAMD1, &sram_cfg);
+	fsmcSramStop (&SRAMD1);
+
+	/* Configure memory mappings. */
+
+	__disable_irq ();
 
 	/*
 	 * By default, the SDRAM region won't be cached. We want

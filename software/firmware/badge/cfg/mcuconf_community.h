@@ -20,8 +20,8 @@
 /*
  * FSMC SRAM driver system settings.
  */
-#define STM32_USE_FSMC_SRAM                 FALSE
-#define STM32_SRAM_USE_FSMC_SRAM1           FALSE
+#define STM32_USE_FSMC_SRAM                 TRUE
+#define STM32_SRAM_USE_FSMC_SRAM1           TRUE
 #define STM32_SRAM_USE_FSMC_SRAM2           FALSE
 #define STM32_SRAM_USE_FSMC_SRAM3           FALSE
 #define STM32_SRAM_USE_FSMC_SRAM4           FALSE
