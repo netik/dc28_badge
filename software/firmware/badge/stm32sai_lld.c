@@ -190,13 +190,13 @@ saiSpeed (SAIDriver * saip, int val)
 	osalSysLock ();
 	saip->saiblock->CR1 &= ~SAI_xCR1_MCKDIV_Msk;
 	switch (val) {
-		case 0:
+		case I2S_SPEED_NORMAL:
 			saip->saiblock->CR1 |= 2 << SAI_xCR1_MCKDIV_Pos;
 			break;
-		case 1:
+		case I2S_SPEED_SLOW:
 			saip->saiblock->CR1 |= 3 << SAI_xCR1_MCKDIV_Pos;
 			break;
-		case 2:
+		case I2S_SPEED_FAST:
 			saip->saiblock->CR1 |= 1 << SAI_xCR1_MCKDIV_Pos;
 			break;
 		default:
