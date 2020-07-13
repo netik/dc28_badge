@@ -47,6 +47,7 @@
 typedef struct fbInfo {
 	void *	pixels;		/* The pixel buffer */
 	gCoord	linelen;	/* The number of bytes per display line */
+	mutex_t	mutex;		/* Display mutex */
 } fbInfo;
 
 #include "board_STM32FB.h"
@@ -69,6 +70,20 @@ typedef struct fbPriv {
 /* Driver exported functions.                                                */
 /*===========================================================================*/
 
+void
+gdisp_lld_acquire_bus (GDisplay *g)
+{
+	osalMutexLock (&((fbPriv *)g->priv)->fbi.mutex);
+	return;
+}
+
+void
+gdisp_lld_release_bus (GDisplay *g)
+{
+	osalMutexUnlock (&((fbPriv *)g->priv)->fbi.mutex);
+	return;
+}
+
 LLDSPEC gBool
 gdisp_lld_init (GDisplay *g)
 {
@@ -81,6 +96,7 @@ gdisp_lld_init (GDisplay *g)
 
 	((fbPriv *)g->priv)->fbi.pixels = NULL;
 	((fbPriv *)g->priv)->fbi.linelen = 0;
+	osalMutexObjectInit (&((fbPriv *)g->priv)->fbi.mutex);
 
 	/* Initialize the GDISP structure */
 
@@ -175,6 +191,8 @@ gdisp_lld_fill_area (GDisplay* g)
 	gU32 pos;
 	gU32 lineadd;
 
+	gdisp_lld_acquire_bus (g);
+
 #if GDISP_NEED_CONTROL
 	switch(g->g.Orientation) {
 	case gOrientation0:
@@ -216,6 +234,8 @@ gdisp_lld_fill_area (GDisplay* g)
 #endif
 	dma2dJobSetModeI (&DMA2DD1, DMA2D_JOB_CONST);
 	dma2dJobExecute (&DMA2DD1);
+
+	gdisp_lld_release_bus (g);
 
 	return;
 }
@@ -270,6 +290,8 @@ gdisp_lld_blit_area (GDisplay* g)
 standard:
 #endif
 
+	gdisp_lld_acquire_bus (g);
+
 	srcstart = LLDCOLOR_BYTES * ((gU32)g->p.x2 * g->p.y1 * + g->p.x1) +
 	    (gU32)g->p.ptr;
 	dststart = (gU32)PIXEL_ADDR(g, PIXEL_POS(g, g->p.x, g->p.y));
@@ -288,6 +310,8 @@ standard:
 	dma2dJobSetSizeI (&DMA2DD1, g->p.cx, g->p.cy);
 	dma2dJobSetModeI (&DMA2DD1, DMA2D_JOB_CONVERT);
 	dma2dJobExecute (&DMA2DD1);
+
+	gdisp_lld_release_bus (g);
 
 	return;
 }
