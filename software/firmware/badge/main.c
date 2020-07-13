@@ -460,6 +460,41 @@ main (void)
 	fsmcSdramInit ();
 	fsmcSdramStart (&SDRAMD, &sdram_cfg);
 
+	/* Configure memory mappings. */
+
+	__disable_irq ();
+
+	/*
+	 * This is a hack. I noticed that Doom and the dialer app
+	 * would exhibit glitchy graphics behavior. It's hard to
+	 * explain, but basically if we're using graphics and sound
+	 * at about the same time (and possibly also in conjunction
+	 * with heavy CPU activity), the screen would sometimes
+	 * appear jumpy. A good way to see this is to take out the line
+	 * below, then run the tone dialer app and randombly press some
+	 * buttons very quickly. You may notice the screen become
+	 * distorted for a split second when a button is tapped.
+	 *
+	 * I discovered that completely disabling the data cache
+	 * seemed to mitigate this, but at the cost of reduced
+	 * performance (which was mainly noticeably when running
+	 * the Nintendo emulator; the sound was too slow).
+	 *
+	 * After some experimentation, I arrived at the workaround
+	 * below. This creates a mapping for bank 1 of the FSMC
+	 * memory controller. This bank is supposed to be used for
+	 * NOR/PSRAM/SRAM memories. However on both the Discovery
+	 * reference board and our design, it's not used. The mapping
+	 * below disables access to it and marks it uncached. I don't
+	 * know why this seems to make a difference, but it does.
+	 * What really confuses me is that I would expect the CPU
+	 * to treat it as uncached/inaccessible already.
+	 */
+
+ 	mpuConfigureRegion (MPU_REGION_2, FSMC_Bank1_MAP_BASE,
+	    MPU_RASR_ATTR_AP_NA_NA | MPU_RASR_ATTR_NON_CACHEABLE |
+            MPU_RASR_SIZE_512M | MPU_RASR_ENABLE);
+
 	/*
 	 * By default, the SDRAM region won't be cached. We want
 	 * it to be because this improves performance.
@@ -473,16 +508,31 @@ main (void)
 	 * The portion of the SDRAM that's used for the
 	 * graphics frame buffer should be uncached. (Per the
 	 * Cortex-M7 manual, when two MPU regions overlap, the
-	 * one with the highest number takes precedence.)
+	 * one with the highest number takes precedence, so the
+	 * two entries below will override the one above.)
+	 *
+	 * To try to gain maybe a little bit of performance,
+	 * we map the graphics frame buffers as write-through
+	 * cached. This means that writes to the frame buffer
+	 * will be written out immediately, and reads will be
+	 * cached.
 	 */
 
  	mpuConfigureRegion (MPU_REGION_4, FB_BASE,
-	    MPU_RASR_ATTR_AP_RW_RW | MPU_RASR_ATTR_SHARED_DEVICE |
+	    MPU_RASR_ATTR_AP_RW_RW | MPU_RASR_ATTR_CACHEABLE_WT_NWA |
             MPU_RASR_SIZE_64K | MPU_RASR_ENABLE);
 
  	mpuConfigureRegion (MPU_REGION_5, FB_BASE + 0x10000,
-	    MPU_RASR_ATTR_AP_RW_RW | MPU_RASR_ATTR_SHARED_DEVICE |
+	    MPU_RASR_ATTR_AP_RW_RW | MPU_RASR_ATTR_CACHEABLE_WT_NWA |
             MPU_RASR_SIZE_256K | MPU_RASR_ENABLE);
+
+	SCB_CleanInvalidateDCache ();
+
+	/* If guard pages aren't turned on, we need to do this ourselves. */
+
+	mpuEnable (MPU_CTRL_PRIVDEFENA);
+
+	__enable_irq ();
 
 	/* Initialize newlib (libc) facilities. */
 
