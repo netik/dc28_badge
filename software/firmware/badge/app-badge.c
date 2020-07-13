@@ -76,7 +76,7 @@ default_event (OrchardAppContext *context, const OrchardAppEvent *event)
 		 * Wait a short while before switching the CPU speed
 		 * otherwise there may be a minor glitch in the graphics.
 	  	 */
-		chThdSleepMilliseconds (50);
+		i2sWait ();
 		badge_cpu_speed (BADGE_CPU_SPEED_SLOW);
 	}
 
