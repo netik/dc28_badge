@@ -609,11 +609,11 @@ main (void)
 
 	printf ("Flash size: %d KB\n", *(uint16_t *)FLASHSIZE_BASE);
 
+	printf ("CPU speed: %luMHz\n", badge_cpu_speed_get ());
+
 	printf ("Debugger: %s\n",
 	    CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk ?
 	    "connected" : "disconnected");
-
-	_orchard_cmd_list_cmd_cpu.sc_function (NULL, 0, NULL);
 
 	/* Enable timer */
 

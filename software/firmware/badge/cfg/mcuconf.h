@@ -108,7 +108,7 @@
 #define STM32_SAI1SEL                       STM32_SAI1SEL_OFF
 #define STM32_SAI2SEL                       STM32_SAI2SEL_I2SPLL
 #define STM32_LCDTFT_REQUIRED               TRUE
-#define STM32_USART1SEL                     STM32_USART1SEL_PCLK2
+#define STM32_USART1SEL                     STM32_USART1SEL_HSI
 #define STM32_USART2SEL                     STM32_USART2SEL_PCLK1
 #define STM32_USART3SEL                     STM32_USART3SEL_PCLK1
 #define STM32_UART4SEL                      STM32_UART4SEL_PCLK1

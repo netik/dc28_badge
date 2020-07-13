@@ -35,6 +35,8 @@
 #include "stm32sai_lld.h"
 #include "ides_gfx.h"
 
+#include "badge.h"
+
 static GListener gl;
 
 static uint32_t
@@ -69,7 +71,11 @@ default_event (OrchardAppContext *context, const OrchardAppEvent *event)
 
 	(void) context;
 
+	if (event->type == appEvent && event->app.event == appStart)
+		badge_cpu_speed (BADGE_CPU_SPEED_SLOW);
+
 	if (event->type == ugfxEvent) {
+		badge_cpu_speed (BADGE_CPU_SPEED_NORMAL);
 		me = (GEventMouse *)event->ugfx.pEvent;
 		if (me->buttons & GMETA_MOUSE_DOWN) {
 			i2sPlay ("sound/click.snd");

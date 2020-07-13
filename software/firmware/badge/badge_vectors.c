@@ -35,6 +35,8 @@
 
 #include "hal_fsmc_sdram.h"
 
+#include "badge.h"
+
 #include <stdio.h>
 #include <stdint.h>
 
@@ -405,6 +407,248 @@ void
 badge_deepsleep_enable (void)
 {
 	osalThreadResumeS (&badge_power_thread_reference, MSG_OK);
+	return;
+}
+
+void
+badge_cpu_show (void)
+{
+	uint32_t freq;
+	uint32_t pll_pll_divisor;
+	uint32_t pll_multiplier;
+	uint32_t pll_sysclk_divisor;
+
+	/*
+	 * The external crystal frequency is defined in board.h.
+	 * For the Discovery reference board, it's 25MHz. (The low
+	 * speed crystal (STM32_LSECLK) is 32.768KHz.)
+	 */
+
+	freq = STM32_HSECLK / 1000000;
+
+	printf ("System clock source is: ");
+	switch (RCC->CFGR & RCC_CFGR_SW_Msk) {
+		case RCC_CFGR_SW_HSI:
+			printf ("High speed internal 16MHz oscillator\n");
+			break;
+		case RCC_CFGR_SW_HSE:
+			printf ("High speed external %luMHz clock\n",
+			    freq);
+			break;
+		case RCC_CFGR_SW_PLL:
+			printf ("PLL output\n");
+			break;
+		default:
+			printf ("<unknown>\n");
+			return;
+			/* NOTREACHED */
+			break;
+	}
+
+	if ((RCC->CFGR & RCC_CFGR_SW_Msk) == RCC_CFGR_SW_PLL) {
+		printf ("PLL source: ");
+		switch (RCC->PLLCFGR & RCC_PLLCFGR_PLLSRC_Msk) {
+			case RCC_PLLCFGR_PLLSRC_HSE:
+				printf ("High speed external %luMHz clock\n",
+				    freq);
+				break;
+			case RCC_PLLCFGR_PLLSRC_HSI:
+				printf ("High speed internal "
+				    "16MHz oscillator\n");
+				freq = 16;
+				break;
+			default:
+				break;
+		}
+
+		printf ("PLL configuration: 0x%lX\n", RCC->PLLCFGR);
+
+		/* Get PLL input divisor */
+
+		pll_pll_divisor = RCC->PLLCFGR & RCC_PLLCFGR_PLLM_Msk;
+		pll_pll_divisor >>= RCC_PLLCFGR_PLLM_Pos;
+
+		printf ("PLL input divisor: %ld\n", pll_pll_divisor);
+
+		/* Get PLL multiplier */
+
+		pll_multiplier = RCC->PLLCFGR & RCC_PLLCFGR_PLLN_Msk;
+		pll_multiplier >>= RCC_PLLCFGR_PLLN_Pos;
+
+		printf ("PLL multiplier: %ld\n", pll_multiplier);
+
+		/* Get system clock divisor */
+
+		pll_sysclk_divisor = RCC->PLLCFGR & RCC_PLLCFGR_PLLP_Msk;
+		pll_sysclk_divisor >>= RCC_PLLCFGR_PLLP_Pos;
+
+		pll_sysclk_divisor += 1;
+		pll_sysclk_divisor *= 2;
+
+		printf ("PLL system clock divisor: %ld\n", pll_sysclk_divisor);
+
+		freq *= 1000000;
+		freq /= pll_pll_divisor;
+		freq *= pll_multiplier;
+		freq /= pll_sysclk_divisor;
+		freq /= 1000000;
+
+		printf ("CPU speed: %ldMHz\n", freq);
+	}
+
+	return;
+}
+
+uint32_t
+badge_cpu_speed_get (void)
+{
+	uint32_t freq;
+	uint32_t pll_pll_divisor;
+	uint32_t pll_multiplier;
+	uint32_t pll_sysclk_divisor;
+
+	/*
+	 * The external crystal frequency is defined in board.h.
+	 * For the Discovery reference board, it's 25MHz. (The low
+	 * speed crystal (STM32_LSECLK) is 32.768KHz.)
+	 */
+
+	freq = STM32_HSECLK / 1000000;
+
+	switch (RCC->CFGR & RCC_CFGR_SW_Msk) {
+		case RCC_CFGR_SW_HSI:
+			freq = 16;
+			break;
+		case RCC_CFGR_SW_HSE:
+			break;
+		case RCC_CFGR_SW_PLL:
+			break;
+		default:
+			return (0);
+			/* NOTREACHED */
+			break;
+	}
+
+	if ((RCC->CFGR & RCC_CFGR_SW_Msk) == RCC_CFGR_SW_PLL) {
+		switch (RCC->PLLCFGR & RCC_PLLCFGR_PLLSRC_Msk) {
+			case RCC_PLLCFGR_PLLSRC_HSE:
+				break;
+			case RCC_PLLCFGR_PLLSRC_HSI:
+				freq = 16;
+				break;
+			default:
+				break;
+		}
+
+		/* Get PLL input divisor */
+
+		pll_pll_divisor = RCC->PLLCFGR & RCC_PLLCFGR_PLLM_Msk;
+		pll_pll_divisor >>= RCC_PLLCFGR_PLLM_Pos;
+
+		/* Get PLL multiplier */
+
+		pll_multiplier = RCC->PLLCFGR & RCC_PLLCFGR_PLLN_Msk;
+		pll_multiplier >>= RCC_PLLCFGR_PLLN_Pos;
+
+		/* Get system clock divisor */
+
+		pll_sysclk_divisor = RCC->PLLCFGR & RCC_PLLCFGR_PLLP_Msk;
+		pll_sysclk_divisor >>= RCC_PLLCFGR_PLLP_Pos;
+
+		pll_sysclk_divisor += 1;
+		pll_sysclk_divisor *= 2;
+
+		freq *= 1000000;
+		freq /= pll_pll_divisor;
+		freq *= pll_multiplier;
+		freq /= pll_sysclk_divisor;
+		freq /= 1000000;
+	}
+
+	return (freq);
+}
+
+void
+badge_cpu_dcache (bool on)
+{
+
+	__disable_irq ();
+
+       	SCB_CleanInvalidateDCache ();
+
+	if (on == TRUE)
+		SCB_EnableDCache();
+	else
+		SCB_DisableDCache();
+
+	__enable_irq ();
+
+	return;
+}
+
+void
+badge_cpu_speed (int speed)
+{
+	__disable_irq ();
+
+	/*
+	 * First, temporarily set the system clock to the
+	 * internal high speed oscillator (16MHz).
+	 */
+
+	RCC->CFGR &= ~RCC_CFGR_SW;
+	while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI)
+		;
+
+	/* Now turn off the PLL */
+
+	RCC->CR &= ~RCC_CR_PLLON;
+
+	/*
+	 * Now set the system clock divisor. The three choices are:
+	 *
+	 * Divide by 2: 216MHz
+	 * Divide by 4: 108MHz
+	 * Divide by 8: 54MHz
+	 *
+	 * Note that the slow speed will impact the SD card
+	 * controller. It really will only work correctly at normal
+	 * and medium speeds.
+	 */
+
+	switch (speed) {
+		case BADGE_CPU_SPEED_SLOW:
+			RCC->PLLCFGR = STM32_PLLQ | STM32_PLLSRC |
+			    STM32_PLLP_DIV8 | STM32_PLLN | STM32_PLLM;
+			break;
+		case BADGE_CPU_SPEED_MEDIUM:
+			RCC->PLLCFGR = STM32_PLLQ | STM32_PLLSRC |
+			    STM32_PLLP_DIV4 | STM32_PLLN | STM32_PLLM;
+			break;
+		case BADGE_CPU_SPEED_NORMAL:
+		default:
+			RCC->PLLCFGR = STM32_PLLQ | STM32_PLLSRC |
+			    STM32_PLLP | STM32_PLLN | STM32_PLLM;
+			break;
+	}
+
+	/*
+	 * Now switch the PLL back on and wait for the
+	 * voltage regulator to stabilize.
+	 */
+
+	RCC->CR |= RCC_CR_PLLON;
+	while ((PWR->CSR1 & PWR_CSR1_VOSRDY) == 0)
+		;
+
+	/* Now switch the system clock source back to the CPU */
+
+	RCC->CFGR |= STM32_SW;
+  	while ((RCC->CFGR & RCC_CFGR_SWS) != (STM32_SW << 2))
+    		;
+
+	__enable_irq ();
+
 	return;
 }
 

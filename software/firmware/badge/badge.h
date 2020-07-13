@@ -81,10 +81,18 @@ typedef struct _ble_evt_t {
 
 extern uint8_t badge_addr[BADGE_ADDR_LEN];
 
+#define BADGE_CPU_SPEED_SLOW	1
+#define BADGE_CPU_SPEED_MEDIUM	2
+#define BADGE_CPU_SPEED_NORMAL	3
+
 extern void badge_sleep_enable (void);
 extern void badge_sleep_disable (void);
 extern void badge_deepsleep_init (void);
 extern void badge_deepsleep_enable (void);
+extern void badge_cpu_show (void);
+extern uint32_t badge_cpu_speed_get (void);
+extern void badge_cpu_dcache (bool);
+extern void badge_cpu_speed (int);
 
 extern BaseSequentialStream * console;
 extern thread_reference_t shell_ref_usb;

@@ -32,6 +32,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "ch.h"
 #include "hal.h"
@@ -42,11 +43,6 @@
 static void
 cmd_cpu (BaseSequentialStream *chp, int argc, char *argv[])
 {
-	uint32_t freq;
-	uint32_t pll_pll_divisor;
-	uint32_t pll_multiplier;
-	uint32_t pll_sysclk_divisor;
-
 	(void)argv;
 	(void)chp;
 
@@ -55,85 +51,53 @@ cmd_cpu (BaseSequentialStream *chp, int argc, char *argv[])
 		return;
 	}
 
-	/*
-	 * The external crystal frequency is defined in board.h.
-	 * For the Discovery reference board, it's 25MHz. (The low
-	 * speed crystal (STM32_LSECLK) is 32.768KHz.)
-	 */
-
-	freq = STM32_HSECLK / 1000000;
-
-	printf ("System clock source is: ");
-	switch (RCC->CFGR & RCC_CFGR_SW_Msk) {
-		case RCC_CFGR_SW_HSI:
-			printf ("High speed internal 16MHz oscillator\n");
-			break;
-		case RCC_CFGR_SW_HSE:
-			printf ("High speed external %luMHz clock\n",
-			    freq);
-			break;
-		case RCC_CFGR_SW_PLL:
-			printf ("PLL output\n");
-			break;
-		default:
-			printf ("<unknown>\n");
-			return;
-			/* NOTREACHED */
-			break;
-	}
-
-	if ((RCC->CFGR & RCC_CFGR_SW_Msk) == RCC_CFGR_SW_PLL) {
-		printf ("PLL source: ");
-		switch (RCC->PLLCFGR & RCC_PLLCFGR_PLLSRC_Msk) {
-			case RCC_PLLCFGR_PLLSRC_HSE:
-				printf ("High speed external %luMHz clock\n",
-				    freq);
-				break;
-			case RCC_PLLCFGR_PLLSRC_HSI:
-				printf ("High speed internal "
-				    "16MHz oscillator\n");
-				freq = 16;
-				break;
-			default:
-				break;
-		}
-
-		printf ("PLL configuration: 0x%lX\n", RCC->PLLCFGR);
-
-		/* Get PLL input divisor */
-
-		pll_pll_divisor = RCC->PLLCFGR & RCC_PLLCFGR_PLLM_Msk;
-		pll_pll_divisor >>= RCC_PLLCFGR_PLLM_Pos;
-
-		printf ("PLL input divisor: %ld\n", pll_pll_divisor);
-
-		/* Get PLL multiplier */
-
-		pll_multiplier = RCC->PLLCFGR & RCC_PLLCFGR_PLLN_Msk;
-		pll_multiplier >>= RCC_PLLCFGR_PLLN_Pos;
-
-		printf ("PLL multiplier: %ld\n", pll_multiplier);
-
-		/* Get system clock divisor */
-
-		pll_sysclk_divisor = RCC->PLLCFGR & RCC_PLLCFGR_PLLP_Msk;
-		pll_sysclk_divisor >>= RCC_PLLCFGR_PLLP_Pos;
-
-		pll_sysclk_divisor += 1;
-		pll_sysclk_divisor *= 2;
-
-		printf ("PLL system clock divisor: %ld\n", pll_sysclk_divisor);
-
-		freq *= 1000000;
-		freq /= pll_pll_divisor;
-		freq *= pll_multiplier;
-		freq /= pll_sysclk_divisor;
-		freq /= 1000000;
-
-		printf ("CPU speed: %ldMHz\n", freq);
-	}
+	badge_cpu_show ();
 
 	return;
 }
 
+static void
+cmd_dcache (BaseSequentialStream *chp, int argc, char *argv[])
+{
+	(void)chp;
+
+	if (argc != 1) {
+		printf ("Usage: dcache [on|off]\n");
+		return;
+	}
+
+	if (strcmp (argv[0], "on") == 0) {
+		badge_cpu_dcache (TRUE);
+	} else if (strcmp (argv[0], "off") == 0) {
+		badge_cpu_dcache (FALSE);
+	} else
+		printf ("Command [%s] not recognized\n", argv[1]);
+
+	return;
+}
+
+static void
+cmd_speed (BaseSequentialStream *chp, int argc, char *argv[])
+{
+	(void)chp;
+
+	if (argc != 1) {
+		printf ("Usage: speed [slow|medium|normal]\n");
+		return;
+	}
+
+	if (strcmp (argv[0], "slow") == 0) {
+		badge_cpu_speed (BADGE_CPU_SPEED_SLOW);
+	} else if (strcmp (argv[0], "medium") == 0) {
+		badge_cpu_speed (BADGE_CPU_SPEED_MEDIUM);
+	} else if (strcmp (argv[0], "normal") == 0) {
+		badge_cpu_speed (BADGE_CPU_SPEED_NORMAL);
+	} else
+		printf ("Command [%s] not recognized\n", argv[1]);
+
+	return;
+}
+
+orchard_command("dcache", cmd_dcache);
+orchard_command("speed", cmd_speed);
 orchard_command("cpu", cmd_cpu);
