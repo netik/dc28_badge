@@ -44,9 +44,9 @@ extern char   __heap_end__; /* Set by linker */
  */
 #define FB_SIZE 0x50000
 #define FB_BASE0 0xC07B0000
-#define FB_BASE1 0xC07D5800
+#define FB_BASE1 0xC07D6000
 #define FB_BASE FB_BASE0
-#define EXTRA_BSS 0x60000
+#define EXTRA_BSS 0x54000
 #define HEAP_BASE ((char *)(FSMC_Bank5_MAP_BASE + EXTRA_BSS))
 #define HEAP_END (HEAP_BASE + (0x7AFFFF - EXTRA_BSS))
 #endif
