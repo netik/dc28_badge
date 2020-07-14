@@ -28,7 +28,7 @@
 #define  DEFAULT_WIDTH        256
 #define  DEFAULT_HEIGHT       NES_VISIBLE_HEIGHT
 
-#define GPT_FREQ              4000000
+#define  GPT_FREQ             2000000
 
 static gptcallback_t timer_func;
 
@@ -58,7 +58,7 @@ osd_installtimer (int frequency, void *func, int funcsize,
 	(void)counter;
 	(void)countersize;
 	timer_func = (gptcallback_t)func;
-	gptStartContinuous (&GPTD5, (4000000 / frequency) + 1);
+	gptStartContinuous (&GPTD5, (GPT_FREQ / frequency) + 1);
 	return 0;
 }
 
