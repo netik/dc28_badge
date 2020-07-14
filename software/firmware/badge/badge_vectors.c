@@ -587,7 +587,7 @@ badge_cpu_dcache (bool on)
 }
 
 void
-badge_cpu_speed (int speed)
+badge_cpu_speed_set (int speed)
 {
 	__disable_irq ();
 
@@ -605,6 +605,17 @@ badge_cpu_speed (int speed)
 	RCC->CR &= ~RCC_CR_PLLON;
 
 	/*
+	 * Clear the ABP1 and APB2 pre-scaler values. We'll
+	 * reset them below. We do this so that we can adjust the
+	 * timer and peripheral clock frequencies so that they
+	 * seem the same even after the CPU clock speed switch.
+	 * This keeps the system clock timer from slowing down
+	 * when we reduce CPU speed.
+	 */
+
+	RCC->CFGR &= ~(STM32_PPRE1_MASK | STM32_PPRE2_MASK);
+
+	/*
 	 * Now set the system clock divisor. The three choices are:
 	 *
 	 * Divide by 2: 216MHz
@@ -620,15 +631,18 @@ badge_cpu_speed (int speed)
 		case BADGE_CPU_SPEED_SLOW:
 			RCC->PLLCFGR = STM32_PLLQ | STM32_PLLSRC |
 			    STM32_PLLP_DIV8 | STM32_PLLN | STM32_PLLM;
+			RCC->CFGR |= STM32_PPRE1_DIV2 | STM32_PPRE2_DIV1;
 			break;
 		case BADGE_CPU_SPEED_MEDIUM:
 			RCC->PLLCFGR = STM32_PLLQ | STM32_PLLSRC |
 			    STM32_PLLP_DIV4 | STM32_PLLN | STM32_PLLM;
+			RCC->CFGR |= STM32_PPRE1_DIV4 | STM32_PPRE2_DIV2;
 			break;
 		case BADGE_CPU_SPEED_NORMAL:
 		default:
 			RCC->PLLCFGR = STM32_PLLQ | STM32_PLLSRC |
 			    STM32_PLLP | STM32_PLLN | STM32_PLLM;
+			RCC->CFGR |= STM32_PPRE1 | STM32_PPRE2;
 			break;
 	}
 

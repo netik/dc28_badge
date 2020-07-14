@@ -77,11 +77,11 @@ default_event (OrchardAppContext *context, const OrchardAppEvent *event)
 		 * otherwise there may be a minor glitch in the graphics.
 	  	 */
 		i2sWait ();
-		badge_cpu_speed (BADGE_CPU_SPEED_SLOW);
+		badge_cpu_speed_set (BADGE_CPU_SPEED_SLOW);
 	}
 
 	if (event->type == ugfxEvent) {
-		badge_cpu_speed (BADGE_CPU_SPEED_NORMAL);
+		badge_cpu_speed_set (BADGE_CPU_SPEED_NORMAL);
 		me = (GEventMouse *)event->ugfx.pEvent;
 		if (me->buttons & GMETA_MOUSE_DOWN) {
 			i2sPlay ("sound/click.snd");

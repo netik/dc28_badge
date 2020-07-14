@@ -87,11 +87,11 @@ cmd_speed (BaseSequentialStream *chp, int argc, char *argv[])
 	}
 
 	if (strcmp (argv[0], "slow") == 0) {
-		badge_cpu_speed (BADGE_CPU_SPEED_SLOW);
+		badge_cpu_speed_set (BADGE_CPU_SPEED_SLOW);
 	} else if (strcmp (argv[0], "medium") == 0) {
-		badge_cpu_speed (BADGE_CPU_SPEED_MEDIUM);
+		badge_cpu_speed_set (BADGE_CPU_SPEED_MEDIUM);
 	} else if (strcmp (argv[0], "normal") == 0) {
-		badge_cpu_speed (BADGE_CPU_SPEED_NORMAL);
+		badge_cpu_speed_set (BADGE_CPU_SPEED_NORMAL);
 	} else
 		printf ("Command [%s] not recognized\n", argv[1]);
 

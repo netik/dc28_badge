@@ -92,7 +92,7 @@ extern void badge_deepsleep_enable (void);
 extern void badge_cpu_show (void);
 extern uint32_t badge_cpu_speed_get (void);
 extern void badge_cpu_dcache (bool);
-extern void badge_cpu_speed (int);
+extern void badge_cpu_speed_set (int);
 
 extern BaseSequentialStream * console;
 extern thread_reference_t shell_ref_usb;

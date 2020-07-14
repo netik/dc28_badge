@@ -158,11 +158,11 @@ static const SDRAMConfig sdram_cfg =
 /*
  * Maximum speed SPI configuration (13.5MHz, CPHA=0, CPOL=0, MSB first).
  *
- * The SPI controller uses the APB2 clock, which is 108MHz, to drive
+ * The SPI controller uses the APB2 clock, which is 54MHz, to drive
  * its baud rate generator. The BR divisor bits in the CR1 register
  * control the baud rate (SCK) output. There are 8 divisor values available,
- * from 2 (BR == 0) to 256 (BR == 7). We default BR to 2, which yields
- * a divisor of 8, for an output SCK of 13.5MHz.
+ * from 2 (BR == 0) to 256 (BR == 7). We default BR to 1, which yields
+ * a divisor of 2, for an output SCK of 13.5MHz.
  *
  * (The speed of 13.5MHz was chosen because the SemTech SX1262's SPI
  * interface supports a maximum speed of 16MHz, so any of the settings
@@ -188,7 +188,7 @@ static const SPIConfig hs_spicfg =
 	NULL,
 	GPIOI,
 	GPIOI_ARD_D7,
-	SPI_CR1_BR_1 | SPI_CR1_SSM | SPI_CR1_SSI,
+	SPI_CR1_BR_0 | SPI_CR1_SSM | SPI_CR1_SSI,
 	SPI_CR2_DS_2 | SPI_CR2_DS_1 | SPI_CR2_DS_0
 };
 
@@ -200,7 +200,7 @@ static const SPIConfig hs_spicfg =
  * all of which have to be calculated based on the I2C clock source.
  *
  * We configre the I2C controller to use PCLK1 (AHB1) which is the
- * low speed bus clock, running at 54MHz.
+ * low speed bus clock, running at 27MHz.
  *
  * The critical values we need to choose depend on the I2C output clock
  * speed that we want. There are four choices: 10KHz, 100KHz, 400KHz
@@ -215,15 +215,15 @@ static const SPIConfig hs_spicfg =
  * tSDADEL	500nS		500nS		250nS		0nS
  * tSCLDEL	1250nS		1250nS		500nS		187.5nS
  *
- * We also have a prescaler we can use to divide the 54MHz clock down
- * to something more managable. We use a prescaler value of 1, which yields
+ * We also have a prescaler we can use to divide the 27MHz clock down
+ * to something more managable. We use a prescaler value of 0, which yields
  * a clock of 27MHz. The period is 37.037 nanoseconds. When programming
  * the values, we have to subtract 1 (these are all divisors, so a value
  * of 0 represents 'divide by 1').
  *
  * The values we get are:
  *
- * Prescaler: divide by 2, minus 1 == 1
+ * Prescaler: divide by 1, minus 1 == 0
  * SCLL: 1250/37.037 == 33.75, rounded up == 34, minus 1 == 33
  * SCLH: 500/37.037 == 13.5, rounded up == 14, minus 1 == 13
  * SDADEL: 250/37.037 == 6.76, rounded up == 7, minus 1 == 6
@@ -232,7 +232,7 @@ static const SPIConfig hs_spicfg =
 
 static const I2CConfig i2cconfig =
 {
-	STM32_TIMINGR_PRESC(1U) |
+	STM32_TIMINGR_PRESC(0U) |
 	STM32_TIMINGR_SCLDEL(13U) | STM32_TIMINGR_SDADEL(6U) |
 	STM32_TIMINGR_SCLH(13U)  | STM32_TIMINGR_SCLL(33U),
 	0,
