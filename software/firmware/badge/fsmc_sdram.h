@@ -1,3 +1,6 @@
+#ifndef _FSMC_SDRAMH_
+#define _FSMC_SDRAMH_
+
 /*
  *  FMC SDRAM Mode definition register defines
  */
@@ -77,3 +80,4 @@
 #define FMC_Write_Protection_Disable       ((uint32_t)0x00000000)
 #define FMC_Write_Protection_Enable        ((uint32_t)0x00000200)
 
+#endif /* _FSMC_SDRAMH_ */
