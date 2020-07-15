@@ -34,8 +34,7 @@
 #define _USERCONFIGH_
 
 #define CONFIG_SIGNATURE	0xdeadbeefUL  // duh
-#define CONFIG_END_SIGNATURE	0xdeadfa11UL
-#define CONFIG_VERSION		1UL
+#define CONFIG_VERSION		2UL
 #define CONFIG_NAME_MAXLEN	20
 
 #define CONFIG_FILE_NAME	"/userconf.bin"
@@ -64,6 +63,7 @@ typedef struct _userconfig {
 
 	uint32_t	cfg_unlocks;			/* unlock bits */
 
+	uint32_t	cfg_salt;
 	uint32_t	cfg_csum;
 } userconfig;
 #pragma pack()
