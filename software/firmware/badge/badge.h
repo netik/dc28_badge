@@ -81,9 +81,9 @@ typedef struct _ble_evt_t {
 
 extern uint8_t badge_addr[BADGE_ADDR_LEN];
 
-#define BADGE_CPU_SPEED_SLOW	1
-#define BADGE_CPU_SPEED_MEDIUM	2
-#define BADGE_CPU_SPEED_NORMAL	3
+#define BADGE_CPU_SPEED_SLOW	54
+#define BADGE_CPU_SPEED_MEDIUM	108
+#define BADGE_CPU_SPEED_NORMAL	216
 
 extern void badge_sleep_enable (void);
 extern void badge_sleep_disable (void);
