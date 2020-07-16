@@ -71,7 +71,7 @@ cmd_scroll_right (BaseSequentialStream *chp, int argc, char *argv[])
 
 	dma2dFgSetWrapOffsetI (&DMA2DD1, 1);
 	dma2dOutSetWrapOffsetI (&DMA2DD1, 1);
-	dma2dJobSetSizeI (&DMA2DD1, (gdispGetWidth () - 1), gdispGetHeight ());
+	dma2dJobSetSizeI (&DMA2DD1, gdispGetWidth () - 1, gdispGetHeight ());
 	dma2dFgSetAddressI (&DMA2DD1, src);
 	dma2dOutSetAddressI (&DMA2DD1, dst);
 	dma2dJobSetModeI (&DMA2DD1, DMA2D_JOB_COPY);
@@ -106,7 +106,7 @@ cmd_scroll_left (BaseSequentialStream *chp, int argc, char *argv[])
 
 	dma2dFgSetWrapOffsetI (&DMA2DD1, 1);
 	dma2dOutSetWrapOffsetI (&DMA2DD1, 1);
-	dma2dJobSetSizeI (&DMA2DD1, (gdispGetWidth () - 1), gdispGetHeight ());
+	dma2dJobSetSizeI (&DMA2DD1, gdispGetWidth () - 1, gdispGetHeight ());
 	dma2dFgSetAddressI (&DMA2DD1, src);
 	dma2dOutSetAddressI (&DMA2DD1, dst);
 	dma2dJobSetModeI (&DMA2DD1, DMA2D_JOB_COPY);
@@ -141,7 +141,7 @@ cmd_scroll_up (BaseSequentialStream *chp, int argc, char *argv[])
 
 	dma2dFgSetWrapOffsetI (&DMA2DD1, 0);
 	dma2dOutSetWrapOffsetI (&DMA2DD1, 0);
-	dma2dJobSetSizeI (&DMA2DD1, (gdispGetWidth () - 1), gdispGetHeight ());
+	dma2dJobSetSizeI (&DMA2DD1, gdispGetWidth (), gdispGetHeight () - 1);
 	dma2dFgSetAddressI (&DMA2DD1, src);
 	dma2dOutSetAddressI (&DMA2DD1, dst);
 	dma2dJobSetModeI (&DMA2DD1, DMA2D_JOB_COPY);
