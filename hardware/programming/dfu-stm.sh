@@ -41,4 +41,4 @@
 #
 
 dfu-util -l
-dfu-util -a 0 -R -s 0x08000000 -D build/badge.bin
+dfu-util -a 0 -s 0x08000000:leave -D build/badge.bin
