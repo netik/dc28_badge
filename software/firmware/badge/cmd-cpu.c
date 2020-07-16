@@ -71,7 +71,7 @@ cmd_dcache (BaseSequentialStream *chp, int argc, char *argv[])
 	} else if (strcmp (argv[0], "off") == 0) {
 		badge_cpu_dcache (FALSE);
 	} else
-		printf ("Command [%s] not recognized\n", argv[1]);
+		printf ("Command [%s] not recognized\n", argv[0]);
 
 	return;
 }
