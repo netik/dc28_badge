@@ -73,7 +73,8 @@ name_start (OrchardAppContext *context)
 	return;
 }
 
-static void name_event(OrchardAppContext *context,
+static void
+name_event (OrchardAppContext *context,
 	const OrchardAppEvent *event)
 {
 	const OrchardUi * keyboardUi;
@@ -85,8 +86,15 @@ static void name_event(OrchardAppContext *context,
 	if (event->type == ugfxEvent)
 		keyboardUi->event (context, event);
 
-	if (event->type == appEvent && event->app.event == appTerminate)
-		return;
+	if (event->type == appEvent) {
+		if (event->app.event == appStart)
+			badge_cpu_speed_set (BADGE_CPU_SPEED_SLOW);
+
+		if (event->app.event == appTerminate) {
+			badge_cpu_speed_set (BADGE_CPU_SPEED_NORMAL);
+			return;
+		}
+	}
 
 	if (event->type == uiEvent) {
 		if ((event->ui.code == uiComplete) &&

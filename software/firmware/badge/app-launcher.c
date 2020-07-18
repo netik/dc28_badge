@@ -358,6 +358,9 @@ launcher_event (OrchardAppContext *context, const OrchardAppEvent *event)
 	if (event->type == radioEvent)
 		return;
 
+	if (event->type == appEvent && event->app.event == appStart)
+		badge_cpu_speed_set (BADGE_CPU_SPEED_SLOW);
+
 	/*
 	 * Timer events trigger once a second. If we get ten timer
 	 * events with no other events in between, then we time out
@@ -518,6 +521,8 @@ launcher_exit (OrchardAppContext *context)
 {
 	struct launcher_list *list;
 	unsigned int i;
+
+	badge_cpu_speed_set (BADGE_CPU_SPEED_NORMAL);
 
 	gdispClear (GFX_BLACK);
 

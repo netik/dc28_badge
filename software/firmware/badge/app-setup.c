@@ -234,6 +234,9 @@ setup_event(OrchardAppContext *context,
 
 	p = context->priv;
 
+	if (event->type == appEvent && event->app.event == appStart)
+		badge_cpu_speed_set (BADGE_CPU_SPEED_SLOW);
+
 	/* handle events */
 	if (event->type == radioEvent) {
 		/* Ignore radio events */
@@ -276,9 +279,11 @@ setup_event(OrchardAppContext *context,
 }
 
 static void
-setup_exit(OrchardAppContext *context)
+setup_exit (OrchardAppContext *context)
 {
 	SetupHandles * p;
+
+	badge_cpu_speed_set (BADGE_CPU_SPEED_NORMAL);
 
 	p = context->priv;
 
