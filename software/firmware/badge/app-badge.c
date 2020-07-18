@@ -71,20 +71,25 @@ default_event (OrchardAppContext *context, const OrchardAppEvent *event)
 
 	(void) context;
 
-	if (event->type == appEvent && event->app.event == appStart) {
-		/*
-		 * Wait a short while before switching the CPU speed
-		 * otherwise there may be a minor glitch in the graphics.
-	  	 */
-		i2sWait ();
-		badge_cpu_speed_set (BADGE_CPU_SPEED_SLOW);
+	/*
+	 * Put the CPU into slow speed mode when we enter
+	 * the idle screen, and put it back in fast mode
+	 * when we exit.
+	 */
+
+	if (event->type == appEvent) {
+		if (event->app.event == appStart)
+			badge_cpu_speed_set (BADGE_CPU_SPEED_SLOW);
+
+		if (event->app.event == appTerminate) {
+			badge_cpu_speed_set (BADGE_CPU_SPEED_NORMAL);
+			i2sPlay ("sound/click.snd");
+		}
 	}
 
 	if (event->type == ugfxEvent) {
-		badge_cpu_speed_set (BADGE_CPU_SPEED_NORMAL);
 		me = (GEventMouse *)event->ugfx.pEvent;
 		if (me->buttons & GMETA_MOUSE_DOWN) {
-			i2sPlay ("sound/click.snd");
 			orchardAppExit ();
 			return;
 		}

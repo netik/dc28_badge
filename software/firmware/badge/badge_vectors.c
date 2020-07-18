@@ -256,7 +256,7 @@ badge_wakeup (void)
 	/*
 	 * If we entered an ISR and the deepsleep bit is set,
 	 * then it means we're waking up from deepsleep mode.
-	 * Then it off and re-enable all the clocks.
+	 * Turn it off and re-enable all the clocks.
 	 */
 
 	if (badge_deep_sleep == TRUE && SCB->SCR & SCB_SCR_SLEEPDEEP_Msk) {
@@ -329,6 +329,8 @@ badge_sleep_disable (void)
 static
 THD_FUNCTION(badge_power_loop, arg)
 {
+	uint32_t cpuspeed;
+
 	(void)arg;
 
 	while (1) {
@@ -346,10 +348,13 @@ THD_FUNCTION(badge_power_loop, arg)
 		 * - Disable backup domain write protection
 	 	 * - Flash power down in stop mode
 		 * - Low power regulator in stop mode.
+		 * - Main regulator in under drive mode and flash
+		 *   memory power down when in stop mode
+		 * - Underdrive when in stop mode
 		 */
 
-	        PWR->CR1 |= PWR_CR1_DBP_Msk | PWR_CR1_FPDS_Msk |
-		    PWR_CR1_LPDS_Msk;
+	        PWR->CR1 |= PWR_CR1_DBP | PWR_CR1_FPDS | PWR_CR1_LPDS |
+		    PWR_CR1_MRUDS | PWR_CR1_UDEN_0 | PWR_CR1_UDEN_1;
 
 		/* Put the SDRAM into self-refresh mode. */
 
@@ -376,7 +381,11 @@ THD_FUNCTION(badge_power_loop, arg)
 		 * should have re-enabled all of the clocks.
 		 */
 
+		cpuspeed = badge_cpu_speed_get ();
+
 		__WFI();
+
+		badge_cpu_speed_set (cpuspeed);
 
 		/*
 		 * Once we get here, we know we're awake again. Turn the
@@ -398,7 +407,7 @@ void badge_deepsleep_init (void)
 {
 	badge_power_thread = chThdCreateFromHeap (NULL,
 	    THD_WORKING_AREA_SIZE(128), "PowerEvent",
-	HIGHPRIO, badge_power_loop, NULL);
+	    HIGHPRIO, badge_power_loop, NULL);
 
 	return;
 }
@@ -592,17 +601,28 @@ badge_cpu_speed_set (int speed)
 	__disable_irq ();
 
 	/*
+	 * Disable some of the peripheral clocks so they don't glitch
+	 * while we're changing frequencies.
+	 */
+
+	rccDisableSDMMC1 ();
+	rccDisableLTDC ();
+	rccDisableAPB2 (RCC_APB2ENR_SAI2EN);
+
+	/*
 	 * First, temporarily set the system clock to the
 	 * internal high speed oscillator (16MHz).
 	 */
 
 	RCC->CFGR &= ~RCC_CFGR_SW;
+	__ISB();
 	while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI)
 		;
 
 	/* Now turn off the PLL */
 
 	RCC->CR &= ~RCC_CR_PLLON;
+	__ISB();
 
 	/*
 	 * Clear the ABP1 and APB2 pre-scaler values. We'll
@@ -614,6 +634,14 @@ badge_cpu_speed_set (int speed)
 	 */
 
 	RCC->CFGR &= ~(STM32_PPRE1_MASK | STM32_PPRE2_MASK);
+	__ISB();
+
+	/* Clear voltage scaling selection. */
+
+	PWR->CR1 &= ~(PWR_CR1_VOS_Msk);
+	__ISB();
+	while (PWR->CSR1 & PWR_CSR1_VOSRDY)
+		;
 
 	/*
 	 * Now set the system clock divisor. The three choices are:
@@ -621,6 +649,10 @@ badge_cpu_speed_set (int speed)
 	 * Divide by 2: 216MHz
 	 * Divide by 4: 108MHz
 	 * Divide by 8: 54MHz
+	 *
+	 * We also change the voltage scaling and overdive settings.
+	 * For 216MHz, we want voltage scale 1 and overdrive enabled.
+	 * For other speeds, we want scale 3 and overdrive disabled.
 	 *
 	 * Note that the slow speed will impact the SD card
 	 * controller. It really will only work correctly at normal
@@ -631,18 +663,52 @@ badge_cpu_speed_set (int speed)
 		case BADGE_CPU_SPEED_SLOW:
 			RCC->PLLCFGR = STM32_PLLQ | STM32_PLLSRC |
 			    STM32_PLLP_DIV8 | STM32_PLLN | STM32_PLLM;
+			__ISB();
 			RCC->CFGR |= STM32_PPRE1_DIV2 | STM32_PPRE2_DIV1;
+			__ISB();
+			/* Disable overdrive */
+			PWR->CR1 &= ~(PWR_CR1_ODEN|PWR_CR1_ODSWEN);
+			__ISB();
+			while (PWR->CSR1 & PWR_CSR1_ODSWRDY)
+				;
+			/* Set voltage scale 3 */
+			PWR->CR1 |= PWR_CR1_VOS_0;
+			__ISB();
 			break;
 		case BADGE_CPU_SPEED_MEDIUM:
 			RCC->PLLCFGR = STM32_PLLQ | STM32_PLLSRC |
 			    STM32_PLLP_DIV4 | STM32_PLLN | STM32_PLLM;
+			__ISB();
 			RCC->CFGR |= STM32_PPRE1_DIV4 | STM32_PPRE2_DIV2;
+			__ISB();
+			PWR->CR1 &= ~(PWR_CR1_ODEN|PWR_CR1_ODSWEN);
+			__ISB();
+			/* Disable overdrive */
+			while (PWR->CSR1 & PWR_CSR1_ODSWRDY)
+				;
+			/* Set voltage scale 3 */
+			PWR->CR1 |= PWR_CR1_VOS_0;
+			__ISB();
 			break;
 		case BADGE_CPU_SPEED_NORMAL:
 		default:
 			RCC->PLLCFGR = STM32_PLLQ | STM32_PLLSRC |
 			    STM32_PLLP | STM32_PLLN | STM32_PLLM;
+			__ISB();
 			RCC->CFGR |= STM32_PPRE1 | STM32_PPRE2;
+			__ISB();
+			/* Re-enable overdrive */
+			PWR->CR1 |= PWR_CR1_ODEN;
+			__ISB();
+			while ((PWR->CSR1 & PWR_CSR1_ODRDY) == 0)
+				;
+			PWR->CR1 |= PWR_CR1_ODSWEN;
+			__ISB();
+			while ((PWR->CSR1 & PWR_CSR1_ODSWRDY) == 0)
+				;
+			/* Restore voltage scale 1 */
+			PWR->CR1 |= PWR_CR1_VOS_0 | PWR_CR1_VOS_1;
+			__ISB();
 			break;
 	}
 
@@ -652,14 +718,20 @@ badge_cpu_speed_set (int speed)
 	 */
 
 	RCC->CR |= RCC_CR_PLLON;
+	__ISB();
 	while ((PWR->CSR1 & PWR_CSR1_VOSRDY) == 0)
 		;
 
 	/* Now switch the system clock source back to the CPU */
 
 	RCC->CFGR |= STM32_SW;
+	__ISB();
   	while ((RCC->CFGR & RCC_CFGR_SWS) != (STM32_SW << 2))
     		;
+
+	rccEnableSDMMC1 (TRUE);
+	rccEnableLTDC (TRUE);
+	rccEnableAPB2 (RCC_APB2ENR_SAI2EN, TRUE);
 
 	__enable_irq ();
 
