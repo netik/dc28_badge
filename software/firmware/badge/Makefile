@@ -190,12 +190,14 @@ CSRC = $(ALLCSRC) \
        app-doom.c \
        app-email.c \
        app-info.c \
-       app-video.c \
-       app-music.c \
+       app-intro.c \
        app-launcher.c \
        app-ledsign.c \
+       app-music.c \
+       app-name.c \
        app-nes.c \
-       app-intro.c \
+       app-setup.c \
+       app-video.c \
        userconfig.c \
        ui-keyboard.c \
        ui-list.c

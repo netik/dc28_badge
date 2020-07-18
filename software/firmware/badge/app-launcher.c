@@ -8,9 +8,7 @@
 #include "src/gdisp/gdisp_driver.h"
 #include "src/gwin/gwin_class.h"
 #include "stm32sai_lld.h"
-#ifdef notdef
 #include "userconfig.h"
-#endif
 
 #include <stdlib.h>
 
@@ -56,9 +54,10 @@ draw_launcher_buttons(struct launcher_list * list)
 	GWidgetInit wi;
 	unsigned int i,j;
 	char tmp[20];
-#ifdef notdef
-	userconfig *config = getConfig();
-#endif
+	userconfig * config;
+
+	config = configGet ();
+
 	gwinWidgetClearInit (&wi);
 
 	/* Create label widget: ghTitleL */
@@ -67,11 +66,7 @@ draw_launcher_buttons(struct launcher_list * list)
 	wi.g.y = 0;
 	wi.g.width = 140;
 	wi.g.height = gdispGetFontMetric (list->fontSM, gFontHeight),
-#ifdef notdef
-	wi.text = config->name;
-#else
-	wi.text = "BETA";
-#endif
+	wi.text = config->cfg_name;
 	wi.customDraw = gwinLabelDrawJustifiedLeft;
 	wi.customParam = 0;
 	wi.customStyle = &DarkPurpleStyle;
@@ -278,9 +273,9 @@ launcher_start (OrchardAppContext *context)
 	struct launcher_list *list;
 	const OrchardApp *current;
 	unsigned int total_apps = 0;
-#ifdef notdef
-	userconfig *config = getConfig();
-#endif
+	userconfig * config;
+
+	config = configGet ();
 
 	/*
 	 * How many apps do we have?
@@ -333,12 +328,10 @@ launcher_start (OrchardAppContext *context)
 
 	/* forcibly run the name app if our name is blank. Sorry. */
 
-#ifdef notdef
-	if (strlen(config->name) == 0) {
+	if (strlen (config->cfg_name) == 0) {
 		orchardAppRun (orchardAppByName ("Set your name"));
 		return;
 	}
-#endif
 
 #ifdef notdef
 	/* if you don't have a type set, force that too. */

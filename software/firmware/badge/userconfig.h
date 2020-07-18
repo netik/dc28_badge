@@ -34,19 +34,19 @@
 #define _USERCONFIGH_
 
 #define CONFIG_SIGNATURE	0xdeadbeefUL  // duh
-#define CONFIG_VERSION		2UL
+#define CONFIG_VERSION		3UL
 #define CONFIG_NAME_MAXLEN	20
 
 #define CONFIG_FILE_NAME	"/userconf.bin"
 
 #define CONFIG_SOUND_ON		1
-#define CONFIG_SOUND_OFF	2
+#define CONFIG_SOUND_OFF	0
 
-#define CONFIG_RADIO_ON		1
-#define CONFIG_RADIO_OFF	2
+#define CONFIG_RADIO_ON		0
+#define CONFIG_RADIO_OFF	1
 
 #define CONFIG_ORIENT_PORTAIT	1
-#define CONFIG_ORIENT_LANDSCAPE	2
+#define CONFIG_ORIENT_LANDSCAPE	0
 
 #define CONFIG_INIT		1
 #define CONFIG_LOAD		2
@@ -62,6 +62,9 @@ typedef struct _userconfig {
 	uint8_t		cfg_orientation;
 
 	uint32_t	cfg_unlocks;			/* unlock bits */
+
+	uint8_t		cfg_touch_data_present;
+	float		cfg_touch_data[8];		/* touch cal data */
 
 	uint32_t	cfg_salt;
 	uint32_t	cfg_csum;
