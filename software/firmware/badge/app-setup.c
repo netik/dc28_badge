@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "ch.h"
 #include "hal.h"
@@ -10,9 +11,6 @@
 
 #include "userconfig.h"
 #include "gfx.h"
-
-#include <string.h>
-#include <stdlib.h>
 
 #include "ides_gfx.h"
 #ifdef notyet
@@ -149,7 +147,10 @@ setup_checkbox_event (SetupHandles * p, GEvent * pe, userconfig * c)
 	/* handle checkbox state changes */
 
 	if (((GEventGWinCheckbox*)pe)->gwin == p->ghCheckSound) {
-		c->cfg_sound = ((GEventGWinCheckbox*)pe)->isChecked;
+		if (((GEventGWinCheckbox*)pe)->isChecked == gTrue)
+			c->cfg_sound = CONFIG_SOUND_ON;
+		else
+			c->cfg_sound = CONFIG_SOUND_OFF;
 		if (c->cfg_sound)
 			i2sEnabled = TRUE;
 		else
@@ -157,7 +158,10 @@ setup_checkbox_event (SetupHandles * p, GEvent * pe, userconfig * c)
       	}
 
 	if (((GEventGWinCheckbox*)pe)->gwin == p->ghCheckAirplane) {
-		c->cfg_airplane = ((GEventGWinCheckbox*)pe)->isChecked;
+		if (((GEventGWinCheckbox*)pe)->isChecked == gTrue)
+			c->cfg_airplane = CONFIG_RADIO_OFF;
+		else
+			c->cfg_airplane = CONFIG_RADIO_ON;
 #ifdef notyet
 		if (c->cfg_airplane)
 			/* disable radio */
@@ -168,7 +172,10 @@ setup_checkbox_event (SetupHandles * p, GEvent * pe, userconfig * c)
 
 
 	if (((GEventGWinCheckbox*)pe)->gwin == p->ghCheckRotate) {
-		c->cfg_orientation = ((GEventGWinCheckbox*)pe)->isChecked;
+		if (((GEventGWinCheckbox*)pe)->isChecked == gTrue)
+			c->cfg_orientation = CONFIG_ORIENT_PORTRAIT;
+		else
+			c->cfg_orientation = CONFIG_ORIENT_LANDSCAPE;
  	}
 
 	return;

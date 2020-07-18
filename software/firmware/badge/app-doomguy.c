@@ -33,9 +33,7 @@
 #include "orchard-app.h"
 #include "orchard-ui.h"
 
-#ifdef notdef
 #include "userconfig.h"
-#endif
 #include "stm32sai_lld.h"
 
 #include <stdio.h>
@@ -65,9 +63,7 @@ doomguy_start (OrchardAppContext *context)
 {
 	DoomHandles * p;
 	GSourceHandle gs;
-#ifdef notdef
 	userconfig * config;
-#endif
 
 	p = malloc (sizeof(DoomHandles));
 
@@ -77,12 +73,10 @@ doomguy_start (OrchardAppContext *context)
 
 	gdispClear (HTML2COLOR(0xBAC5BA));
 
-#ifdef notdef
-	config = getConfig ();
+	config = configGet ();
 
-	if (config->rotate)
-		gdispSetOrientation (GDISP_ROTATE_0);
-#endif
+	if (config->cfg_orientation == CONFIG_ORIENT_PORTRAIT)
+		gdispSetOrientation (gOrientation90);
 
 	gs = ginputGetMouse (0);
 	geventListenerInit (&p->gl);
