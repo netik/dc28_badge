@@ -41,6 +41,7 @@
 
 typedef struct _DoomHandles {
 	GListener	gl;
+	gOrientation	o;
 	gdispImage 	img;
 	int		idx;
 } DoomHandles;
@@ -75,6 +76,7 @@ doomguy_start (OrchardAppContext *context)
 
 	config = configGet ();
 
+	p->o = gdispGetOrientation ();
 	if (config->cfg_orientation == CONFIG_ORIENT_PORTRAIT)
 		gdispSetOrientation (gOrientation90);
 
@@ -148,9 +150,7 @@ doomguy_exit (OrchardAppContext *context)
 
 	p = context->priv;
 
-#ifdef notdef
-	gdispSetOrientation (GDISP_DEFAULT_ORIENTATION);
-#endif
+	gdispSetOrientation (p->o);
 
 	geventRegisterCallback (&p->gl, NULL, NULL);
 	geventDetachSource (&p->gl, NULL);
