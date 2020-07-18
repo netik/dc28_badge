@@ -263,7 +263,7 @@ videoPlay (char * path)
 
 	max = (ch->cur_vid_size + ch->cur_aud_size) + sizeof(CHUNK_HEADER);
 
-	btmp = chHeapAlloc (NULL, (max * 2) + CACHE_LINE_SIZE);
+	btmp = malloc ((max * 2) + CACHE_LINE_SIZE);
 	buf = (uint8_t *)roundup ((uintptr_t)btmp, CACHE_LINE_SIZE);
 
 	p1 = buf;
@@ -371,7 +371,7 @@ videoPlay (char * path)
 
 	/* Free memory */
 
-	chHeapFree (btmp);
+	free (btmp);
 
 	/* Restore the DMA2D input pixel format. */
 
