@@ -131,9 +131,9 @@ setup_start (OrchardAppContext *context)
 	draw_setup_buttons(p);
 	context->priv = p;
 
-	/* idle ui timer (10s) */
+	/* idle ui timer (30s) */
 	last_ui_time = chVTGetSystemTime();
-	orchardAppTimer (context, 10000000, true);
+	orchardAppTimer (context, 30000000, true);
 
 	geventListenerInit (&p->glSetup);
 	gwinAttachListener (&p->glSetup);
