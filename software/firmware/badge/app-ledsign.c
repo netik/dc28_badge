@@ -36,16 +36,11 @@
 #include "scroll_lld.h"
 #include "stm32sai_lld.h"
 
-#ifdef notdef
 #include "userconfig.h"
-#endif
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
-#define MESSAGELEN	128
-static char msgbuf[MESSAGELEN];
 
 static uint32_t
 ledsign_init(OrchardAppContext *context)
@@ -59,25 +54,18 @@ static void
 ledsign_start(OrchardAppContext *context)
 {
 	OrchardUiContext * keyboardUiContext;
-#ifdef notdef
 	userconfig * config;
 
-	config = getConfig();
-#endif
+	config = configGet ();
+
 	keyboardUiContext = malloc (sizeof(OrchardUiContext));
 	keyboardUiContext->itemlist =
 	    (const char **)malloc (sizeof(char *) * 2); 
 	keyboardUiContext->itemlist[0] =
 		"Type a message,\npress ENTER when done.";
 
-#ifdef notdef
-	keyboardUiContext->itemlist[1] = config->led_string;
+	keyboardUiContext->itemlist[1] = config->cfg_led;
 	keyboardUiContext->total = CONFIG_LEDSIGN_MAXLEN - 1;
-#else
-	memset (msgbuf, 0, MESSAGELEN);
-	keyboardUiContext->itemlist[1] = msgbuf;
-	keyboardUiContext->total = MESSAGELEN;
-#endif
 
 	context->instance->ui = getUiByName("keyboard");
 	context->instance->uicontext = keyboardUiContext;
@@ -92,9 +80,7 @@ ledsign_event(OrchardAppContext *context, const OrchardAppEvent *event)
 	uint8_t i;
 	const OrchardUi * keyboardUi;
 	OrchardUiContext * keyboardUiContext;
-#ifdef notdef
 	userconfig * config;
-#endif
 	const char * str;
 	char fname[48];
 	int sts = 1;
@@ -111,10 +97,7 @@ ledsign_event(OrchardAppContext *context, const OrchardAppEvent *event)
 			keyboardUi->exit (context);
 			context->instance->ui = NULL;
 			gdispClear (GFX_BLACK);
-#ifdef notdef
-			config = getConfig();
-			configSave (config);
-#endif
+			configSave ();
 			orchardAppTimer (context, 1, FALSE);
 		}
 	}
@@ -125,19 +108,16 @@ ledsign_event(OrchardAppContext *context, const OrchardAppEvent *event)
 	}
 
         if (event->type == timerEvent) {
-#ifdef notdef
-		config = getConfig();
-#endif
+		config = configGet ();
 		scrollAreaSet (0, 0);
 		str = keyboardUiContext->itemlist[1];
 		do {
 			for (i = 0; i < strlen (str); i++) {
-#ifdef notdef
-				if (config->rotate)
+				if (config->cfg_orientation ==
+				    CONFIG_ORIENT_PORTRAIT)
 					snprintf (fname, 47,
 					    "font/led_90/%02X.rgb", str[i]);
 				else
-#endif
 					snprintf (fname, 47,
 					    "font/led/%02X.rgb", str[i]);
 				sts = scrollImage (fname, 2);

@@ -34,8 +34,9 @@
 #define _USERCONFIGH_
 
 #define CONFIG_SIGNATURE	0xdeadbeefUL  // duh
-#define CONFIG_VERSION		3UL
+#define CONFIG_VERSION		4UL
 #define CONFIG_NAME_MAXLEN	20
+#define CONFIG_LEDSIGN_MAXLEN	124
 
 #define CONFIG_FILE_NAME	"/userconf.bin"
 
@@ -57,6 +58,7 @@ typedef struct _userconfig {
 	uint32_t	cfg_version;
 
 	char		cfg_name[CONFIG_NAME_MAXLEN];	/* User/badge name */
+	char		cfg_led[CONFIG_LEDSIGN_MAXLEN];	/* LEDsign string */
 	uint8_t		cfg_sound;			/* Sound on or off */
 	uint8_t		cfg_airplane;			/* Radio on or off */
 	uint8_t		cfg_orientation;
