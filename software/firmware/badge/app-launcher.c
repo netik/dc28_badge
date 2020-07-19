@@ -359,7 +359,7 @@ launcher_event (OrchardAppContext *context, const OrchardAppEvent *event)
 		return;
 
 	if (event->type == appEvent && event->app.event == appStart)
-		badge_cpu_speed_set (BADGE_CPU_SPEED_SLOW);
+		badge_cpu_speed_set (BADGE_CPU_SPEED_MEDIUM);
 
 	/*
 	 * Timer events trigger once a second. If we get ten timer
