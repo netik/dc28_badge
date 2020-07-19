@@ -646,7 +646,6 @@ badge_cpu_speed_set (int speed)
 	rccDisableLTDC ();
 	rccDisableDMA2D ();
 	rccDisableAPB2 (RCC_APB2ENR_SAI2EN);
-	rccDisableFSMC ();
 
 	/*
 	 * First, temporarily set the system clock to the
@@ -687,13 +686,6 @@ badge_cpu_speed_set (int speed)
 	RCC->CFGR &= ~(STM32_PPRE1_MASK | STM32_PPRE2_MASK);
 	__ISB();
 
-	/* Clear voltage scaling selection. */
-
-	PWR->CR1 &= ~(PWR_CR1_VOS_Msk);
-	__ISB();
-	while (PWR->CSR1 & PWR_CSR1_VOSRDY)
-		;
-
 	/*
 	 * Now set the system clock divisor. The three choices are:
 	 *
@@ -718,7 +710,7 @@ badge_cpu_speed_set (int speed)
 			RCC->CFGR |= STM32_PPRE1_DIV2 | STM32_PPRE2_DIV2;
 			__ISB();
 			/* Set voltage scale 3 */
-			PWR->CR1 |= PWR_CR1_VOS_0;
+			PWR->CR1 = STM32_VOS_SCALE3;
 			__ISB();
 			break;
 		case BADGE_CPU_SPEED_MEDIUM:
@@ -728,7 +720,7 @@ badge_cpu_speed_set (int speed)
 			RCC->CFGR |= STM32_PPRE1_DIV4 | STM32_PPRE2_DIV4;
 			__ISB();
 			/* Set voltage scale 3 */
-			PWR->CR1 |= PWR_CR1_VOS_0;
+			PWR->CR1 = STM32_VOS_SCALE3;
 			__ISB();
 			break;
 		case BADGE_CPU_SPEED_NORMAL:
@@ -739,7 +731,7 @@ badge_cpu_speed_set (int speed)
 			RCC->CFGR |= STM32_PPRE1 | STM32_PPRE2;
 			__ISB();
 			/* Restore voltage scale 1 */
-			PWR->CR1 |= PWR_CR1_VOS_0 | PWR_CR1_VOS_1;
+			PWR->CR1 = STM32_VOS;
 			__ISB();
 			break;
 	}
@@ -780,7 +772,6 @@ badge_cpu_speed_set (int speed)
   	while ((RCC->CFGR & RCC_CFGR_SWS) != (STM32_SW << 2))
     		;
 
-	rccEnableFSMC (TRUE);
 	rccEnableSPI2 (TRUE);
 	rccEnableDMA1 (TRUE);
 	rccEnableDMA2 (TRUE);
