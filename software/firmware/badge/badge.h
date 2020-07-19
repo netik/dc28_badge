@@ -94,7 +94,9 @@ extern uint32_t badge_cpu_speed_get (void);
 extern void badge_cpu_dcache (bool);
 extern void badge_cpu_speed_set (int);
 
-extern BaseSequentialStream * console;
+extern BaseSequentialStream * conin;
+extern BaseSequentialStream * conout;
+extern mutex_t conmutex;
 extern thread_reference_t shell_ref_usb;
 
 extern void newlibStart (void);

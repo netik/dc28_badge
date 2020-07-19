@@ -171,6 +171,7 @@ CSRC = $(ALLCSRC) \
        crc32.c \
        newlib_syscall.c \
        nullprot_lld.c \
+       badge_console.c \
        badge_vectors.c \
        async_io_lld.c \
        video_lld.c \

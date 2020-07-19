@@ -291,6 +291,8 @@ badge_wakeup (void)
 		rccEnableSDMMC1 (TRUE);
 		rccEnableLTDC (TRUE);
 		rccEnableDMA2D (TRUE);
+		rccEnableDMA1 (TRUE);
+		rccEnableDMA2 (TRUE);
 		rccEnableOTG_FS (TRUE);
 		rccEnableRNG (TRUE);
 		rccEnableAPB2 (RCC_APB2ENR_SAI2EN, TRUE);
@@ -600,13 +602,52 @@ badge_cpu_speed_set (int speed)
 {
 	__disable_irq ();
 
+	badge_deep_sleep = TRUE;
+	SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
+	badge_wakeup ();
+
+	/*
+	 * As a hack, when we're in slow speed mode, we divide the
+	 * SPI bus clock by a factor of instead of 4. This reduces
+	 * the bus SPI clock speed from 6.75MHz to 3.375MHz. This
+	 * is to compensate for the fact that while we're able to
+	 * maintain the same APB bus speed for the SPI controller,
+	 * we proportionally reduce the AHB bus clock for the DMA
+	 * DMA controller, and at the slow CPU speed (54MHz) the
+	 * DMA controller seems too slow to keep up with the
+	 * required SPI signalling rate, and we end up triggering
+	 * DMA errors. This causes problems using the radio when
+	 * operating in slow CPU mode.
+	 *
+	 * It might have been possible to avoid this if only
+	 * ST Micro had used SPI bus 1 for the Arduino headers
+	 * on the STM32F746 Discovery board, since that controller
+	 * is on ABP2 instead of ABP1. *sigh*
+	 *
+	 * Note that we have to do this before we turn off the
+	 * SPI2 clock below, since the controller won't respond to
+	 * any register accesses if its clock is disabled.
+	 */
+
+	SPI2->CR1 &= ~(SPI_CR1_SPE | SPI_CR1_BR);
+	if (speed == BADGE_CPU_SPEED_SLOW)
+		SPI2->CR1 |= SPI_CR1_BR_1;
+	else
+		SPI2->CR1 |= SPI_CR1_BR_0;
+	SPI2->CR1 |= SPI_CR1_SPE;
+	__ISB();
+
 	/*
 	 * Disable some of the peripheral clocks so they don't glitch
 	 * while we're changing frequencies.
 	 */
 
+	rccDisableSPI2 ();
+	rccDisableDMA1 ();
+	rccDisableDMA2 ();
 	rccDisableSDMMC1 ();
 	rccDisableLTDC ();
+	rccDisableDMA2D ();
 	rccDisableAPB2 (RCC_APB2ENR_SAI2EN);
 
 	/*
@@ -664,7 +705,7 @@ badge_cpu_speed_set (int speed)
 			RCC->PLLCFGR = STM32_PLLQ | STM32_PLLSRC |
 			    STM32_PLLP_DIV8 | STM32_PLLN | STM32_PLLM;
 			__ISB();
-			RCC->CFGR |= STM32_PPRE1_DIV2 | STM32_PPRE2_DIV1;
+			RCC->CFGR |= STM32_PPRE1_DIV2 | STM32_PPRE2_DIV2;
 			__ISB();
 			/* Disable overdrive */
 			PWR->CR1 &= ~(PWR_CR1_ODEN|PWR_CR1_ODSWEN);
@@ -679,11 +720,11 @@ badge_cpu_speed_set (int speed)
 			RCC->PLLCFGR = STM32_PLLQ | STM32_PLLSRC |
 			    STM32_PLLP_DIV4 | STM32_PLLN | STM32_PLLM;
 			__ISB();
-			RCC->CFGR |= STM32_PPRE1_DIV4 | STM32_PPRE2_DIV2;
-			__ISB();
-			PWR->CR1 &= ~(PWR_CR1_ODEN|PWR_CR1_ODSWEN);
+			RCC->CFGR |= STM32_PPRE1_DIV4 | STM32_PPRE2_DIV4;
 			__ISB();
 			/* Disable overdrive */
+			PWR->CR1 &= ~(PWR_CR1_ODEN|PWR_CR1_ODSWEN);
+			__ISB();
 			while (PWR->CSR1 & PWR_CSR1_ODSWRDY)
 				;
 			/* Set voltage scale 3 */
@@ -729,8 +770,15 @@ badge_cpu_speed_set (int speed)
   	while ((RCC->CFGR & RCC_CFGR_SWS) != (STM32_SW << 2))
     		;
 
+       	SCB_CleanInvalidateDCache ();
+       	SCB_InvalidateICache ();
+
+	rccEnableSPI2 (TRUE);
+	rccEnableDMA1 (TRUE);
+	rccEnableDMA2 (TRUE);
 	rccEnableSDMMC1 (TRUE);
 	rccEnableLTDC (TRUE);
+	rccEnableDMA2D (TRUE);
 	rccEnableAPB2 (RCC_APB2ENR_SAI2EN, TRUE);
 
 	__enable_irq ();

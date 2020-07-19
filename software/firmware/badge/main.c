@@ -23,6 +23,7 @@
 #include "portab.h"
 #include "usbcfg.h"
 #include "badge.h"
+#include "badge_console.h"
 #include "nullprot_lld.h"
 
 #include "hal_fsmc_sram.h"
@@ -55,7 +56,9 @@
 
 uint8_t badge_addr[BADGE_ADDR_LEN];
 
-BaseSequentialStream * console;
+BaseSequentialStream * conin;
+BaseSequentialStream * conout;
+mutex_t conmutex;
 
 /* linker set for command objects */
 orchard_command_start();
@@ -158,28 +161,36 @@ static const SDRAMConfig sdram_cfg =
 /*
  * Maximum speed SPI configuration (13.5MHz, CPHA=0, CPOL=0, MSB first).
  *
- * The SPI controller uses the APB2 clock, which is 54MHz, to drive
+ * The SPI2 controller uses the APB1 clock, which is 27MHz, to drive
  * its baud rate generator. The BR divisor bits in the CR1 register
  * control the baud rate (SCK) output. There are 8 divisor values available,
  * from 2 (BR == 0) to 256 (BR == 7). We default BR to 1, which yields
- * a divisor of 2, for an output SCK of 13.5MHz.
+ * a divisor of 4, for an output SCK of 6.75MHz.
  *
- * (The speed of 13.5MHz was chosen because the SemTech SX1262's SPI
- * interface supports a maximum speed of 16MHz, so any of the settings
- * above 13.5MHz would be too fast for reliable data transfer.)
+ * We select the speed based on the maxium that the SemTech SX1262
+ * radio's SPI interface can handle. According to the manual, the
+ * minimum SCK period is 62.5nS, which works out to 16MHz. In theory
+ * that means a speed of 13.5MHz should work. However experimentation
+ * experimentation has shown that communication with the chip is not
+ * stable at that frequency. Looking at the sample LoRaWAN code from
+ * SemTech, they always program the SPI bus clock for 10MHz instead,
+ * which suggests that the datasheets may be a little overzealous.
+ * Unfortunately the ST Micro SPI controller doesn't provide enough
+ * granularity to select a 10MHz clock, so we have to settle for
+ * 6.75MHz, which is the next increment down.
  *
  * The complete list of SCK values is:
  *
  * BR    freq
  * --    ----
- * 000   54MHz
- * 001   27MHz
- * 010   13.5MHz
- * 011   6.75MHz
- * 100   3.375MHz
- * 101   1.6875MHz
- * 110   843.75KHz
- * 111   421.875KHz
+ * 000   13.5MHz
+ * 001   6.75MHz
+ * 010   3.375MHz
+ * 011   1.6875MHz
+ * 100   843.75KHz
+ * 101   421.875KHz
+ * 110   210.9375KHz
+ * 111   105.46875KHz  
  */
 
 static const SPIConfig hs_spicfg =
@@ -199,7 +210,7 @@ static const SPIConfig hs_spicfg =
  * to the system designer to choose a number of critical timing values,
  * all of which have to be calculated based on the I2C clock source.
  *
- * We configre the I2C controller to use PCLK1 (AHB1) which is the
+ * We configre the I2C controller to use PCLK1 (APB1) which is the
  * low speed bus clock, running at 27MHz.
  *
  * The critical values we need to choose depend on the I2C output clock
@@ -216,14 +227,14 @@ static const SPIConfig hs_spicfg =
  * tSCLDEL	1250nS		1250nS		500nS		187.5nS
  *
  * We also have a prescaler we can use to divide the 27MHz clock down
- * to something more managable. We use a prescaler value of 0, which yields
+ * to something more managable. We use a prescaler value of 1, which yields
  * a clock of 27MHz. The period is 37.037 nanoseconds. When programming
  * the values, we have to subtract 1 (these are all divisors, so a value
  * of 0 represents 'divide by 1').
  *
  * The values we get are:
  *
- * Prescaler: divide by 1, minus 1 == 0
+ * Prescaler: divide by 1, minus 0 == 1
  * SCLL: 1250/37.037 == 33.75, rounded up == 34, minus 1 == 33
  * SCLH: 500/37.037 == 13.5, rounded up == 14, minus 1 == 13
  * SDADEL: 250/37.037 == 6.76, rounded up == 7, minus 1 == 6
@@ -383,7 +394,10 @@ THD_FUNCTION(shellUsbThreadStub, p)
 		}
 	}
 
-	console = (BaseSequentialStream *)&SDU1;
+	osalMutexLock (&conmutex);
+	conin = (BaseSequentialStream *)&SDU1;
+	conout = (BaseSequentialStream *)&SDU1;
+	osalMutexUnlock (&conmutex);
 
 	shellThread (p);
 }
@@ -455,7 +469,9 @@ main (void)
 	 */
 
 	sdStart (&SD1, NULL);
-	console = (BaseSequentialStream *)&SD1;
+	conin = (BaseSequentialStream *)&SD1;
+	conout = (BaseSequentialStream *)&SD1;
+	osalMutexObjectInit (&conmutex);
 
 	/* Enable SDRAM */
 
@@ -772,6 +788,8 @@ main (void)
 	} else
 		configStart (CONFIG_LOAD);
 
+	badge_coninit ();
+
 	/*
 	 * Initialize orchard subsystem
 	 * Note that at boot time, we temporarily set the default
@@ -822,7 +840,10 @@ main (void)
 		if (chThdTerminatedX (shell_tp_usb)) {
 			chThdRelease (shell_tp_usb);
 			shell_tp_usb = NULL;
-			console = (BaseSequentialStream *)&SD1;
+			osalMutexLock (&conmutex);
+			conin = (BaseSequentialStream *)&SD1;
+			conout = (BaseSequentialStream *)&SD1;
+			osalMutexUnlock (&conmutex);
 		}
 	}
 

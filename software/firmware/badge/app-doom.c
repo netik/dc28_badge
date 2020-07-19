@@ -34,6 +34,8 @@
 #include "orchard-ui.h"
 #include "stm32sai_lld.h"
 
+#include "badge_console.h"
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -73,7 +75,9 @@ doom_event (OrchardAppContext *context, const OrchardAppEvent *event)
 		bsslen = (uintptr_t)&__ram7_end__ - (uintptr_t)&__ram7_start__;
 		memset (&__ram7_start__, 0, bsslen);
 
+		badge_concreate (BADGE_CONSOLE_SHARE);
         	doom_main (1, args);
+		badge_condestroy ();
 	}
 
 	return;

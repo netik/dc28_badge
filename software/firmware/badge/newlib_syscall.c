@@ -93,7 +93,7 @@ _read (int file, char * ptr, int len)
 	/* descriptor 0 is always stdin */
 
 	if (file == 0) {
-		streamRead (console, (uint8_t *)&ptr[0], 1);
+		streamRead (conin, (uint8_t *)&ptr[0], 1);
 		return (1);
 	}
 
@@ -131,8 +131,8 @@ _write (int file, char * ptr, int len)
 	if (file == 1 || file == 2) {
 		for (i = 0; i < len; i++) {
 			if (ptr[i] == '\n')
-				streamPut (console, '\r');
-			streamPut (console, ptr[i]);
+				streamPut (conout, '\r');
+			streamPut (conout, ptr[i]);
 		}
 		return (len);
 	}

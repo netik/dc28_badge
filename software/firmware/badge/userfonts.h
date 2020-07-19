@@ -10,4 +10,4 @@
 #include "font-futura-medium-12.h" // anti aliased, small
 #include "font-manteka20.h"        // fixed font, might replace.
 #include "font-octin-stencil-24.h" // non-anti-alaised, game font
-
+#include "tom-thumb.h"
