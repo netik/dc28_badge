@@ -299,6 +299,7 @@ badge_wakeup (void)
 		rccEnableI2C1 (TRUE);
 		rccEnableI2C3 (TRUE);
 		rccEnableADC1 (TRUE);
+		rccEnableFSMC (TRUE);
 
 		/* Put the SDRAM into normal mode. */
 
@@ -602,10 +603,6 @@ badge_cpu_speed_set (int speed)
 {
 	__disable_irq ();
 
-	badge_deep_sleep = TRUE;
-	SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
-	badge_wakeup ();
-
 	/*
 	 * As a hack, when we're in slow speed mode, we divide the
 	 * SPI bus clock by a factor of instead of 4. This reduces
@@ -649,6 +646,7 @@ badge_cpu_speed_set (int speed)
 	rccDisableLTDC ();
 	rccDisableDMA2D ();
 	rccDisableAPB2 (RCC_APB2ENR_SAI2EN);
+	rccDisableFSMC ();
 
 	/*
 	 * First, temporarily set the system clock to the
@@ -660,10 +658,22 @@ badge_cpu_speed_set (int speed)
 	while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI)
 		;
 
+	/* If we're not targeting normal speed, turn off overdrive mode */
+
+	if (speed != BADGE_CPU_SPEED_NORMAL) {
+		/* Disable overdrive */
+		PWR->CR1 &= ~(PWR_CR1_ODEN|PWR_CR1_ODSWEN);
+		__ISB();
+		while (PWR->CSR1 & PWR_CSR1_ODSWRDY)
+			;
+	}
+
 	/* Now turn off the PLL */
 
 	RCC->CR &= ~RCC_CR_PLLON;
 	__ISB();
+	while (RCC->CR & RCC_CR_PLLRDY)
+		;
 
 	/*
 	 * Clear the ABP1 and APB2 pre-scaler values. We'll
@@ -707,11 +717,6 @@ badge_cpu_speed_set (int speed)
 			__ISB();
 			RCC->CFGR |= STM32_PPRE1_DIV2 | STM32_PPRE2_DIV2;
 			__ISB();
-			/* Disable overdrive */
-			PWR->CR1 &= ~(PWR_CR1_ODEN|PWR_CR1_ODSWEN);
-			__ISB();
-			while (PWR->CSR1 & PWR_CSR1_ODSWRDY)
-				;
 			/* Set voltage scale 3 */
 			PWR->CR1 |= PWR_CR1_VOS_0;
 			__ISB();
@@ -722,11 +727,6 @@ badge_cpu_speed_set (int speed)
 			__ISB();
 			RCC->CFGR |= STM32_PPRE1_DIV4 | STM32_PPRE2_DIV4;
 			__ISB();
-			/* Disable overdrive */
-			PWR->CR1 &= ~(PWR_CR1_ODEN|PWR_CR1_ODSWEN);
-			__ISB();
-			while (PWR->CSR1 & PWR_CSR1_ODSWRDY)
-				;
 			/* Set voltage scale 3 */
 			PWR->CR1 |= PWR_CR1_VOS_0;
 			__ISB();
@@ -738,15 +738,6 @@ badge_cpu_speed_set (int speed)
 			__ISB();
 			RCC->CFGR |= STM32_PPRE1 | STM32_PPRE2;
 			__ISB();
-			/* Re-enable overdrive */
-			PWR->CR1 |= PWR_CR1_ODEN;
-			__ISB();
-			while ((PWR->CSR1 & PWR_CSR1_ODRDY) == 0)
-				;
-			PWR->CR1 |= PWR_CR1_ODSWEN;
-			__ISB();
-			while ((PWR->CSR1 & PWR_CSR1_ODSWRDY) == 0)
-				;
 			/* Restore voltage scale 1 */
 			PWR->CR1 |= PWR_CR1_VOS_0 | PWR_CR1_VOS_1;
 			__ISB();
@@ -763,6 +754,25 @@ badge_cpu_speed_set (int speed)
 	while ((PWR->CSR1 & PWR_CSR1_VOSRDY) == 0)
 		;
 
+	/* Now wait for PLL to lock */
+
+	while ((RCC->CR & RCC_CR_PLLRDY) == 0)
+		;
+
+	/* If we're targeting normal speed, turn on overdrive mode. */
+
+	if (speed == BADGE_CPU_SPEED_NORMAL) {
+		/* Re-enable overdrive */
+		PWR->CR1 |= PWR_CR1_ODEN;
+		__ISB();
+		while ((PWR->CSR1 & PWR_CSR1_ODRDY) == 0)
+			;
+		PWR->CR1 |= PWR_CR1_ODSWEN;
+		__ISB();
+		while ((PWR->CSR1 & PWR_CSR1_ODSWRDY) == 0)
+			;
+	}
+
 	/* Now switch the system clock source back to the CPU */
 
 	RCC->CFGR |= STM32_SW;
@@ -770,9 +780,7 @@ badge_cpu_speed_set (int speed)
   	while ((RCC->CFGR & RCC_CFGR_SWS) != (STM32_SW << 2))
     		;
 
-       	SCB_CleanInvalidateDCache ();
-       	SCB_InvalidateICache ();
-
+	rccEnableFSMC (TRUE);
 	rccEnableSPI2 (TRUE);
 	rccEnableDMA1 (TRUE);
 	rccEnableDMA2 (TRUE);
