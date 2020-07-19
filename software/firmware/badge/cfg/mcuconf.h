@@ -122,7 +122,7 @@
 #define STM32_I2C4SEL                       STM32_I2C4SEL_PCLK1
 #define STM32_LPTIM1SEL                     STM32_LPTIM1SEL_PCLK1
 #define STM32_CECSEL                        STM32_CECSEL_LSE
-#define STM32_CK48MSEL                      STM32_CK48MSEL_PLL
+#define STM32_CK48MSEL                      STM32_CK48MSEL_PLLSAI
 #define STM32_SDMMC1SEL                     STM32_SDMMC1SEL_PLL48CLK
 #define STM32_SRAM2_NOCACHE                 FALSE
 
