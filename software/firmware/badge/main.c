@@ -637,6 +637,12 @@ main (void)
 
 	printf ("Timer TIM5 enabled\n");
 
+	/* Enable RTC */
+
+	rtcInit ();
+
+	printf ("RTC enabled\n");
+
 	/* Enable SPI */
 
 	palSetLineMode (LINE_ARD_D11, PAL_MODE_ALTERNATE(5) |
@@ -752,17 +758,17 @@ main (void)
 
 	printf ("uGFX graphics enabled\n");
 
-	/* Initialize touch controller event thread */
-
-	touchStart ();
-
-	printf ("LCD touch panel enabled\n");
-
 	/* Initialize SD card sensor */
 
 	sdDetectStart ();
 
 	printf ("SD card detect enabled\n");
+
+	/* Initialize touch controller event thread */
+
+	touchStart ();
+
+	printf ("LCD touch panel enabled\n");
 
 	badge_deepsleep_init ();
 	badge_sleep_enable ();

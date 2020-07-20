@@ -274,7 +274,7 @@ badge_wakeup (void)
 		 * be able to access the RTC registers again.
 		 */
 
-	        PWR->CR1 |= PWR_CR1_DBP_Msk;
+	        PWR->CR1 |= PWR_CR1_DBP;
 
 		/*
 	 	 * Now restart the clocks on all the peripherals.
@@ -710,7 +710,7 @@ badge_cpu_speed_set (int speed)
 			RCC->CFGR |= STM32_PPRE1_DIV2 | STM32_PPRE2_DIV2;
 			__ISB();
 			/* Set voltage scale 3 */
-			PWR->CR1 = STM32_VOS_SCALE3;
+			PWR->CR1 = STM32_VOS_SCALE3 | PWR_CR1_DBP;
 			__ISB();
 			break;
 		case BADGE_CPU_SPEED_MEDIUM:
@@ -720,7 +720,7 @@ badge_cpu_speed_set (int speed)
 			RCC->CFGR |= STM32_PPRE1_DIV4 | STM32_PPRE2_DIV4;
 			__ISB();
 			/* Set voltage scale 3 */
-			PWR->CR1 = STM32_VOS_SCALE3;
+			PWR->CR1 = STM32_VOS_SCALE3 | PWR_CR1_DBP;
 			__ISB();
 			break;
 		case BADGE_CPU_SPEED_NORMAL:
@@ -731,7 +731,7 @@ badge_cpu_speed_set (int speed)
 			RCC->CFGR |= STM32_PPRE1 | STM32_PPRE2;
 			__ISB();
 			/* Restore voltage scale 1 */
-			PWR->CR1 = STM32_VOS;
+			PWR->CR1 = STM32_VOS | PWR_CR1_DBP;
 			__ISB();
 			break;
 	}
