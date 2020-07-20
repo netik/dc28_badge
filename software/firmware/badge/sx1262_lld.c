@@ -1099,7 +1099,7 @@ sx1262Start (SX1262_Driver * p)
 	IP4_ADDR(&netmask, 255, 0, 0, 0);
 	IP4_ADDR(&ip, 10, badge_addr[3], badge_addr[4], badge_addr[5]);
 
-	netifapi_netif_add (p->sx_netif, &ip, &netmask, &gateway,
+	netif_add (p->sx_netif, &ip, &netmask, &gateway,
 	    p, sx1262EthernetInit, tcpip_input);
 	netif_set_default (p->sx_netif);
 	netif_set_up (p->sx_netif);
