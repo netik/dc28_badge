@@ -109,21 +109,10 @@ static char exc_msgbuf[80];
 /*
  * This global controls whether or not the idle thread will execute
  * a WFI instruction to put the CPU to sleep when we're idle. This
- * is generally a good idea for power saving. However, it takes a
- * certain amount of time for the CPU to begin executing instructions
- * again after you wake it up, and that can be bad for certain places
- * where we need low latency. For example, the music player app has
- * to read data from the SD card, draw the spectrograph on the screen,
- * update the LED array, and send audio samples through the I2S
- * controller. We need to keep writing samples into the I2S controller
- * on a regular basis in order to avoid the audio sounding warbly.
- * Sometimes it takes the CPU too long to wake up after sleeping and
- * we can't meet the deadline, so in those cases, we can set this
- * variable to false temporarily in order to prevent the CPU from
- * sleeping.
+ * is generally a good idea for power saving.
  */
 
-static volatile uint8_t badge_sleep = TRUE;
+static volatile uint8_t badge_sleep = FALSE;
 
 /*
  * A few notes on deep sleep power management.
@@ -245,8 +234,42 @@ OSAL_IRQ_HANDLER(Vector184)
 void
 badge_idle (void)
 {
-	if (badge_sleep == TRUE)
+	if (badge_sleep == TRUE) {
+
+		/*
+		 * If I understand correctly, when going into STOP
+		 * mode (deep sleep), the CPU will automatically
+		 * issue a self-refresh command to the SDRAM before
+		 * the memory controller clock is stopped. But when
+		 * going into SLEEP mode (low power idle), and we
+		 * have enabled automatic clock gating for the memory
+		 * controller, the CPU will turn off the memory
+		 * controller clock when we execute a WFI, but it will
+		 * not send the self-refresh command.
+		 *
+		 * This is a problem because a) it means the SDRAM
+		 * chip contents might degrade if the chip is idle
+		 * for a long time, and b) we want to put the chip
+		 * in self-refresh when idle since then it will only
+		 * draw about 2mA, as opposed to about 100mA when
+	 	 * in normal operation.
+		 *
+		 * So we manually issue the self-refresh command
+		 * here.
+		 *
+		 * Note that since we have the LCD frame buffers
+		 * stored in SDRAM, this means we really need to
+		 * also turn off the LCD controller clock since
+		 * screen updates won't work correctly while the
+		 * SDRAM controller clock is shut down.
+		 */
+
+		__disable_irq ();
+		fsmcSdramSelfRefresh (&SDRAMD);
 		__WFI();
+		fsmcSdramNormal (&SDRAMD);
+		__enable_irq ();
+	}
 	return;
 }
 
@@ -289,7 +312,7 @@ badge_wakeup (void)
 
 		rccEnableUSART1 (TRUE);
 		rccEnableSDMMC1 (TRUE);
-		rccEnableLTDC (TRUE);
+		RCC->APB2ENR |= RCC_APB2ENR_LTDCEN;
 		rccEnableDMA2D (TRUE);
 		rccEnableDMA1 (TRUE);
 		rccEnableDMA2 (TRUE);
@@ -299,11 +322,6 @@ badge_wakeup (void)
 		rccEnableI2C1 (TRUE);
 		rccEnableI2C3 (TRUE);
 		rccEnableADC1 (TRUE);
-		rccEnableFSMC (TRUE);
-
-		/* Put the SDRAM into normal mode. */
-
-		fsmcSdramNormal (&SDRAMD);
 
 		osalSysUnlockFromISR ();
 	}
@@ -359,10 +377,6 @@ THD_FUNCTION(badge_power_loop, arg)
 	        PWR->CR1 |= PWR_CR1_DBP | PWR_CR1_FPDS | PWR_CR1_LPDS |
 		    PWR_CR1_MRUDS | PWR_CR1_UDEN_0 | PWR_CR1_UDEN_1;
 
-		/* Put the SDRAM into self-refresh mode. */
-
-		fsmcSdramSelfRefresh (&SDRAMD);
-
 		/*
 		 * When the CPU enters deep sleep mode, it will
 		 * turn off the clock to the LCD controller, which
@@ -377,6 +391,8 @@ THD_FUNCTION(badge_power_loop, arg)
 
 		osalSysUnlock ();
 
+		cpuspeed = badge_cpu_speed_get ();
+
 		/*
 		 * Executing a WFI here will immediately put us to sleep.
 		 * This instruction shouldn't complete until a wakeup event
@@ -384,19 +400,21 @@ THD_FUNCTION(badge_power_loop, arg)
 		 * should have re-enabled all of the clocks.
 		 */
 
-		cpuspeed = badge_cpu_speed_get ();
-
+		__disable_irq ();
+		fsmcSdramSelfRefresh (&SDRAMD);
 		__WFI();
-
-		badge_cpu_speed_set (cpuspeed);
+		fsmcSdramNormal (&SDRAMD);
+		__enable_irq ();
 
 		/*
 		 * Once we get here, we know we're awake again. Turn the
 		 * screen back on. We pause very briefly between the time
 		 * we reactivate the display and the time we turn the
-		 * backlight on, otherwise the user will briefly see a
-		 * white flash.
+		 * backlight on, otherwise the user will see a white
+		 * flash.
 		 */
+
+		badge_cpu_speed_set (cpuspeed);
 
 		palSetPad (GPIOI, GPIOI_LCD_DISP);
 		chThdSleepMilliseconds (180);
@@ -643,7 +661,7 @@ badge_cpu_speed_set (int speed)
 	rccDisableDMA1 ();
 	rccDisableDMA2 ();
 	rccDisableSDMMC1 ();
-	rccDisableLTDC ();
+	RCC->APB2ENR &= ~RCC_APB2ENR_LTDCEN;
 	rccDisableDMA2D ();
 	rccDisableAPB2 (RCC_APB2ENR_SAI2EN);
 
@@ -776,7 +794,7 @@ badge_cpu_speed_set (int speed)
 	rccEnableDMA1 (TRUE);
 	rccEnableDMA2 (TRUE);
 	rccEnableSDMMC1 (TRUE);
-	rccEnableLTDC (TRUE);
+	RCC->APB2ENR |= RCC_APB2ENR_LTDCEN;
 	rccEnableDMA2D (TRUE);
 	rccEnableAPB2 (RCC_APB2ENR_SAI2EN, TRUE);
 
