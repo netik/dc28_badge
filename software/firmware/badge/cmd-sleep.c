@@ -64,7 +64,7 @@ cmd_sleep (BaseSequentialStream * chp, int argc, char * argv[])
 	(void)argv;
 	(void)chp;
 	if (argc > 1) {
-		printf ("Usage: sleep [seconds]\r\n");
+		printf ("Usage: sleep [seconds]\n");
 		return;
 	}
 
@@ -109,4 +109,27 @@ cmd_sleep (BaseSequentialStream * chp, int argc, char * argv[])
 	return;
 }
 
+static void
+cmd_hibernate (BaseSequentialStream * chp, int argc, char * argv[])
+{
+	(void)argv;
+	(void)chp;
+
+	if (argc > 0) {
+		printf ("Usage: hibernate\n");
+		return;
+	}
+
+	/* Wait a little while for the serial port to go idle. */
+
+	chThdSleepMilliseconds (10);
+
+	/* Sleep until there's an interrupt */
+
+	badge_deepsleep_enable ();
+
+	return;
+}
+
 orchard_command("sleep", cmd_sleep);
+orchard_command("hibernate", cmd_hibernate);
