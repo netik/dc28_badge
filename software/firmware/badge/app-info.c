@@ -145,6 +145,12 @@ info_start (OrchardAppContext *context)
 	    CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk ?
 	    "connected" : "disconnected");
 
+        gwinPrintf (p->ghConsole, "Flash size: %d KB\n",
+	    *(uint16_t *)FLASHSIZE_BASE);
+
+        gwinPrintf (p->ghConsole, "CPU speed: %lu MHz\n",
+	    badge_cpu_speed_get ());
+
 	/* Firmware info */
 
 	gwinPrintf (p->ghConsole, "ChibiOS kernel version: %s\n",
