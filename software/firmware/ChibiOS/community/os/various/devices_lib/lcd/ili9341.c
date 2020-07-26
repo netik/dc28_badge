@@ -120,7 +120,7 @@ void ili9341Start(ILI9341Driver *driverp, const ILI9341Config *configp) {
   osalDbgCheck(configp->spi != NULL);
   osalDbgAssert(driverp->state == ILI9341_STOP, "invalid state");
 
-  spiSelectI(configp->spi);
+  palSetPad(driverp->config->dcx_port, driverp->config->dcx_pad);  /* Data */
   spiUnselectI(configp->spi);
   driverp->config = configp;
   driverp->state = ILI9341_READY;
@@ -320,6 +320,7 @@ void ili9341WriteCommand(ILI9341Driver *driverp, uint8_t cmd) {
   driverp->value = cmd;
   palClearPad(driverp->config->dcx_port, driverp->config->dcx_pad);  /* !Cmd */
   spiSend(driverp->config->spi, 1, &driverp->value);
+  palSetPad(driverp->config->dcx_port, driverp->config->dcx_pad);  /* Data */
 }
 
 /**
@@ -337,7 +338,6 @@ void ili9341WriteByte(ILI9341Driver *driverp, uint8_t value) {
   osalDbgAssert(driverp->state == ILI9341_ACTIVE, "invalid state");
 
   driverp->value = value;
-  palSetPad(driverp->config->dcx_port, driverp->config->dcx_pad);  /* Data */
   spiSend(driverp->config->spi, 1, &driverp->value);
 }
 
@@ -358,7 +358,6 @@ uint8_t ili9341ReadByte(ILI9341Driver *driverp) {
   osalDbgCheck(driverp != NULL);
   osalDbgAssert(driverp->state == ILI9341_ACTIVE, "invalid state");
 
-  palSetPad(driverp->config->dcx_port, driverp->config->dcx_pad);  /* Data */
   spiReceive(driverp->config->spi, 1, &driverp->value);
   return driverp->value;
 }
@@ -382,7 +381,6 @@ void ili9341WriteChunk(ILI9341Driver *driverp, const uint8_t chunk[],
   osalDbgAssert(driverp->state == ILI9341_ACTIVE, "invalid state");
 
   if (length != 0) {
-    palSetPad(driverp->config->dcx_port, driverp->config->dcx_pad);  /* Data */
     spiSend(driverp->config->spi, length, chunk);
   }
 }
@@ -406,7 +404,6 @@ void ili9341ReadChunk(ILI9341Driver *driverp, uint8_t chunk[],
   osalDbgAssert(driverp->state == ILI9341_ACTIVE, "invalid state");
 
   if (length != 0) {
-    palSetPad(driverp->config->dcx_port, driverp->config->dcx_pad);  /* Data */
     spiReceive(driverp->config->spi, length, chunk);
   }
 }
