@@ -89,7 +89,9 @@ OSAL_IRQ_HANDLER(STM32_DMA2D_HANDLER) {
 
   DMA2DDriver *const dma2dp = &DMA2DD1;
   bool job_done = false;
+#if DMA2D_USE_WAIT
   thread_t *tp = NULL;
+#endif
 
   OSAL_IRQ_PROLOGUE();
 
