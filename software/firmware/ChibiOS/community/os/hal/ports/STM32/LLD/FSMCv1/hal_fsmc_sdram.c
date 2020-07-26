@@ -229,8 +229,7 @@ void fsmcSdramSelfRefresh(SDRAMDriver *sdramp) {
     _sdram_wait_ready();
     SDRAMD.sdram->SDCMR = FMCCM_PALL | command_target;
     _sdram_wait_ready();
-    SDRAMD.sdram->SDCMR = FMCCM_SELFREFRESH | command_target |
-      1 << FMC_SDCMR_NRFS_Pos;
+    SDRAMD.sdram->SDCMR = FMCCM_SELFREFRESH | command_target;
     _sdram_wait_ready();
   }
 }
