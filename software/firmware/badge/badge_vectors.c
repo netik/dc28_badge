@@ -113,6 +113,7 @@ static char exc_msgbuf[80];
  */
 
 static volatile uint8_t badge_sleep = FALSE;
+static volatile uint8_t badge_lpidle = FALSE;
 
 /*
  * A few notes on deep sleep power management.
@@ -264,11 +265,17 @@ badge_idle (void)
 		 * SDRAM controller clock is shut down.
 		 */
 
-		__disable_irq ();
-		fsmcSdramSelfRefresh (&SDRAMD);
+		if (badge_lpidle) {
+			__disable_irq ();
+			fsmcSdramSelfRefresh (&SDRAMD);
+		}
+		__DSB();
+		__ISB();
 		__WFI();
-		fsmcSdramNormal (&SDRAMD);
-		__enable_irq ();
+		if (badge_lpidle) {
+			fsmcSdramNormal (&SDRAMD);
+			__enable_irq ();
+		}
 	}
 	return;
 }
@@ -347,6 +354,34 @@ badge_sleep_disable (void)
 	return;
 }
 
+void
+badge_lpidle_enable (void)
+{
+	osalSysLock ();
+	badge_lpidle = TRUE;
+	rccEnableFSMC (FALSE);
+	rccEnableLTDC (FALSE);
+	osalSysUnlock ();
+	return;
+}
+
+void
+badge_lpidle_disable (void)
+{
+	osalSysLock ();
+	badge_lpidle = FALSE;
+	rccEnableFSMC (TRUE);
+	rccEnableLTDC (TRUE);
+	osalSysUnlock ();
+	return;
+}
+
+uint8_t
+badge_lpidle_get (void)
+{
+	return (badge_lpidle);
+}
+
 static
 THD_FUNCTION(badge_power_loop, arg)
 {
@@ -402,6 +437,8 @@ THD_FUNCTION(badge_power_loop, arg)
 
 		__disable_irq ();
 		fsmcSdramSelfRefresh (&SDRAMD);
+		__DSB();
+		__ISB();
 		__WFI();
 		fsmcSdramNormal (&SDRAMD);
 		__enable_irq ();

@@ -87,6 +87,9 @@ extern uint8_t badge_addr[BADGE_ADDR_LEN];
 
 extern void badge_sleep_enable (void);
 extern void badge_sleep_disable (void);
+extern uint8_t badge_lpidle_get (void);
+extern void badge_lpidle_enable (void);
+extern void badge_lpidle_disable (void);
 extern void badge_deepsleep_init (void);
 extern void badge_deepsleep_enable (void);
 extern void badge_cpu_show (void);
