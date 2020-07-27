@@ -34,7 +34,7 @@
  * User configuration support module.
  *
  * In previous badge designs, the user configuration data was saved
- * in the CPU's on-board flash. Unfortunately that'd a little difficult
+ * in the CPU's on-board flash. Unfortunately that's a little difficult
  * to do with the STM32F746's flash design. In the Kinetis KW01 and
  * Nordic nRF52840 chips, the flash was divided up into equal sized
  * sectors (1024 bytes per sector for the KW01 and 4096 bytes for the
@@ -51,10 +51,10 @@
  * One disadvantage though is that a user can easily eject the SD card
  * from the badge, mount it on their own computer, and then edit the
  * configuration manually. Since the user configuration structure typically
- * contains game stats, this can lead to easy cheating (which is why we
- * wanted to avoid it before). One way around this is to checksum the
- * configuration structure using an algorithm that the user doesn't know,
- * and reject any configuration with a bad checksum.
+ * contains game stats and unlocks, this can lead to easy cheating (which
+ * is why we wanted to avoid it before). One way around this is to checksum
+ * the configuration structure using an algorithm that the user can't
+ * easily infer and reject any configuration with a bad checksum.
  */
 
 #include <stdlib.h>
