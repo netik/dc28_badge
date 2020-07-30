@@ -41,63 +41,48 @@
 #include "badge.h"
 
 static void
-cmd_cpu (BaseSequentialStream *chp, int argc, char *argv[])
-{
-	(void)argv;
-	(void)chp;
-
-	if (argc > 0) {
-		printf ("Usage: cpu\n");
-		return;
-	}
-
-	badge_cpu_show ();
-
-	return;
-}
-
-static void
 cmd_dcache (BaseSequentialStream *chp, int argc, char *argv[])
 {
 	(void)chp;
 
-	if (argc != 1) {
-		printf ("Usage: dcache [on|off]\n");
-		return;
-	}
+	if (argc != 1)
+		goto usage;
 
-	if (strcmp (argv[0], "on") == 0) {
+	if (strcmp (argv[0], "on") == 0)
 		badge_cpu_dcache (TRUE);
-	} else if (strcmp (argv[0], "off") == 0) {
+	else if (strcmp (argv[0], "off") == 0)
 		badge_cpu_dcache (FALSE);
-	} else
-		printf ("Command [%s] not recognized\n", argv[0]);
+	else {
+usage:
+		printf ("Usage: dcache [on|off]\n");
+	}
 
 	return;
 }
 
 static void
-cmd_speed (BaseSequentialStream *chp, int argc, char *argv[])
+cmd_cpu (BaseSequentialStream *chp, int argc, char *argv[])
 {
 	(void)chp;
 
-	if (argc != 1) {
-		printf ("Usage: speed [slow|medium|normal]\n");
-		return;
-	}
+	if (argc != 1)
+		goto usage;
 
-	if (strcmp (argv[0], "slow") == 0) {
+	if (strcmp (argv[0], "slow") == 0)
 		badge_cpu_speed_set (BADGE_CPU_SPEED_SLOW);
-	} else if (strcmp (argv[0], "medium") == 0) {
+	else if (strcmp (argv[0], "medium") == 0)
 		badge_cpu_speed_set (BADGE_CPU_SPEED_MEDIUM);
-	} else if (strcmp (argv[0], "normal") == 0) {
+	else if (strcmp (argv[0], "normal") == 0)
 		badge_cpu_speed_set (BADGE_CPU_SPEED_NORMAL);
-	} else
-		printf ("Command [%s] not recognized\n", argv[0]);
+	else if (strcmp (argv[0], "show") == 0)
+		badge_cpu_show ();
+	else {
+usage:
+		printf ("Usage: cpu [show|slow|medium|normal]\n");
+	}
 
 	return;
 }
 
 orchard_command("dcache", cmd_dcache);
-orchard_command("speed", cmd_speed);
 orchard_command("cpu", cmd_cpu);

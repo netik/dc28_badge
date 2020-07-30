@@ -38,6 +38,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /*
  * This command demonstrates how to use the wakeup timer to put the
@@ -131,5 +132,47 @@ cmd_hibernate (BaseSequentialStream * chp, int argc, char * argv[])
 	return;
 }
 
+static void
+cmd_screen (BaseSequentialStream * chp, int argc, char * argv[])
+{
+	(void)chp;
+
+	if (argc != 1)
+		goto usage;
+
+	if (strcmp (argv[0], "on") == 0)
+		palSetPad (GPIOI, GPIOI_LCD_DISP);
+	else if (strcmp (argv[0], "off") == 0)
+		palClearPad (GPIOI, GPIOI_LCD_DISP);
+	else {
+usage:
+		printf ("Usage: screen [off|on]\n");
+	}
+
+	return;
+}
+
+static void
+cmd_backlight (BaseSequentialStream * chp, int argc, char * argv[])
+{
+	(void)chp;
+
+	if (argc != 1)
+		goto usage;
+
+	if (strcmp (argv[0], "on") == 0)
+		palSetPad (GPIOK, GPIOK_LCD_BL_CTRL);
+	else if (strcmp (argv[0], "off") == 0)
+		palClearPad (GPIOK, GPIOK_LCD_BL_CTRL);
+	else {
+usage:
+		printf ("Usage: backlight [off|on]\n");
+	}
+
+	return;
+}
+
 orchard_command("sleep", cmd_sleep);
 orchard_command("hibernate", cmd_hibernate);
+orchard_command("screen", cmd_screen);
+orchard_command("backlight", cmd_backlight);
