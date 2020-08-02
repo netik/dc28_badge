@@ -214,6 +214,7 @@ void fsmcSdramStop(SDRAMDriver *sdramp) {
  *
  * @notapi
  */
+
 void fsmcSdramSelfRefresh(SDRAMDriver *sdramp) {
 
   uint32_t command_target = 0;
@@ -226,11 +227,18 @@ void fsmcSdramSelfRefresh(SDRAMDriver *sdramp) {
 #endif
 
   if (sdramp->state == SDRAM_READY) {
-    _sdram_wait_ready();
-    SDRAMD.sdram->SDCMR = FMCCM_PALL | command_target;
+again:
     _sdram_wait_ready();
     SDRAMD.sdram->SDCMR = FMCCM_SELFREFRESH | command_target;
-    _sdram_wait_ready();
+      /* Make sure we actually get into self refresh mode. */
+#if STM32_SDRAM_USE_FSMC_SDRAM1
+    if ((SDRAMD.sdram->SDSR & FMC_SDSR_MODES1) != FMC_SDSR_MODES1_0)
+      goto again;
+#endif
+#if STM32_SDRAM_USE_FSMC_SDRAM2
+    if ((SDRAMD.sdram->SDSR & FMC_SDSR_MODES2) != FMC_SDSR_MODES2_0)
+      goto again;
+#endif
   }
 }
 

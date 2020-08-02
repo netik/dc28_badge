@@ -86,26 +86,7 @@ cmd_sleep (BaseSequentialStream * chp, int argc, char * argv[])
 
 	chThdSleepMilliseconds (10);
 
-	/*
-	 * Set the wakeup timer. The RTC clock has been set to the
-	 * low speed external clock, which is a 32.768KHz crystal.
-	 * We can apply a special 32768 prescaler to this to yield
-	 * a 1s tick time, which allows us to delay from 1 to
-	 * 65535 seconds.
-	 */
-
-	wkup.wutr = sleep - 1;
-	wkup.wutr |= (RTC_CR_WUCKSEL_2 << 16);
-
-	rtcSTM32SetPeriodicWakeup (&RTCD1, &wkup);
-
-	/* Enter stop mode - this will block until wakeup. */
-
-	badge_deepsleep_enable ();
-
-	/* Aaaand we're back. Turn off the wakeup timer */
-
-	rtcSTM32SetPeriodicWakeup (&RTCD1, NULL);
+	badge_deepsleep_timed ((uint16_t)sleep);
 
 	return;
 }

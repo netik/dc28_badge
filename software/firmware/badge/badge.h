@@ -92,6 +92,7 @@ extern void badge_lpidle_enable (void);
 extern void badge_lpidle_disable (void);
 extern void badge_deepsleep_init (void);
 extern void badge_deepsleep_enable (void);
+extern void badge_deepsleep_timed (uint16_t);
 extern void badge_cpu_show (void);
 extern uint32_t badge_cpu_speed_get (void);
 extern void badge_cpu_dcache (bool);

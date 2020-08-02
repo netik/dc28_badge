@@ -114,6 +114,7 @@ static char exc_msgbuf[80];
 
 static volatile uint8_t badge_sleep = FALSE;
 static volatile uint8_t badge_lpidle = FALSE;
+static volatile uint8_t badge_cpuspeed = BADGE_CPU_SPEED_NORMAL;
 
 /*
  * A few notes on deep sleep power management.
@@ -294,6 +295,7 @@ badge_wakeup (void)
 		badge_deep_sleep = FALSE;
 		SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
 		stm32_clock_init ();
+		badge_cpu_speed_set (badge_cpuspeed);
 
 		/*
 		 * stm32_clock_init () will reinitialize the power controller			 * CR1 register. It expects that the "disable backup
@@ -385,16 +387,20 @@ badge_lpidle_get (void)
 static
 THD_FUNCTION(badge_power_loop, arg)
 {
-	uint32_t cpuspeed;
-
 	(void)arg;
 
 	while (1) {
 		osalSysLock ();
 		osalThreadSuspendS (&badge_power_thread_reference);
+		osalSysUnlock ();
+
+		while (SCB->ICSR)
+			__ISB();
+
+		__disable_irq ();
 
 		badge_deep_sleep = TRUE;
-
+		
 		/* Enable deep sleep mode in the Cortex-M7 core. */
 
 		SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
@@ -410,7 +416,12 @@ THD_FUNCTION(badge_power_loop, arg)
 		 */
 
 	        PWR->CR1 |= PWR_CR1_DBP | PWR_CR1_FPDS | PWR_CR1_LPDS |
-		    PWR_CR1_MRUDS | PWR_CR1_UDEN_0 | PWR_CR1_UDEN_1;
+		    PWR_CR1_LPUDS | PWR_CR1_UDEN;
+
+		/* Wait for underdrive ready */
+ 
+		while (PWR->CSR1 & PWR_CSR1_UDRDY)
+			;
 
 		/*
 		 * When the CPU enters deep sleep mode, it will
@@ -424,10 +435,6 @@ THD_FUNCTION(badge_power_loop, arg)
 		palClearPad (GPIOI, GPIOI_LCD_DISP);
 		palClearPad (GPIOK, GPIOK_LCD_BL_CTRL);
 
-		osalSysUnlock ();
-
-		cpuspeed = badge_cpu_speed_get ();
-
 		/*
 		 * Executing a WFI here will immediately put us to sleep.
 		 * This instruction shouldn't complete until a wakeup event
@@ -435,7 +442,6 @@ THD_FUNCTION(badge_power_loop, arg)
 		 * should have re-enabled all of the clocks.
 		 */
 
-		__disable_irq ();
 		fsmcSdramSelfRefresh (&SDRAMD);
 		__DSB();
 		__ISB();
@@ -451,8 +457,6 @@ THD_FUNCTION(badge_power_loop, arg)
 		 * flash.
 		 */
 
-		badge_cpu_speed_set (cpuspeed);
-
 		palSetPad (GPIOI, GPIOI_LCD_DISP);
 		chThdSleepMilliseconds (180);
 		palSetPad (GPIOK, GPIOK_LCD_BL_CTRL);
@@ -464,7 +468,7 @@ THD_FUNCTION(badge_power_loop, arg)
 void badge_deepsleep_init (void)
 {
 	badge_power_thread = chThdCreateFromHeap (NULL,
-	    THD_WORKING_AREA_SIZE(128), "PowerEvent",
+	    THD_WORKING_AREA_SIZE(256), "PowerEvent",
 	    HIGHPRIO, badge_power_loop, NULL);
 
 	return;
@@ -473,7 +477,39 @@ void badge_deepsleep_init (void)
 void
 badge_deepsleep_enable (void)
 {
+	osalSysLock ();
 	osalThreadResumeS (&badge_power_thread_reference, MSG_OK);
+	osalSysUnlock ();
+
+	return;
+}
+
+void
+badge_deepsleep_timed (uint16_t delay)
+{
+	RTCWakeup wkup;
+
+	/*
+	 * Set the wakeup timer. The RTC clock has been set to the
+	 * low speed external clock, which is a 32.768KHz crystal.
+	 * We can apply a special 32768 prescaler to this to yield
+	 * a 1s tick time, which allows us to delay from 1 to
+	 * 65535 seconds.
+	 */
+
+	wkup.wutr = delay - 1;
+	wkup.wutr |= (RTC_CR_WUCKSEL_2 << 16);
+
+	rtcSTM32SetPeriodicWakeup (&RTCD1, &wkup);
+
+	/* Enter stop mode - this will block until wakeup. */
+
+	badge_deepsleep_enable ();
+
+	/* Aaaand we're back. Turn off the wakeup timer */
+
+	rtcSTM32SetPeriodicWakeup (&RTCD1, NULL);
+
 	return;
 }
 
@@ -656,6 +692,8 @@ badge_cpu_dcache (bool on)
 void
 badge_cpu_speed_set (int speed)
 {
+	badge_cpu_dcache (FALSE);
+
 	__disable_irq ();
 
 	/*
@@ -710,7 +748,7 @@ badge_cpu_speed_set (int speed)
 	RCC->CFGR &= ~RCC_CFGR_SW;
 	__ISB();
 	while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI)
-		;
+		__ISB();
 
 	/* If we're not targeting normal speed, turn off overdrive mode */
 
@@ -719,7 +757,7 @@ badge_cpu_speed_set (int speed)
 		PWR->CR1 &= ~(PWR_CR1_ODEN|PWR_CR1_ODSWEN);
 		__ISB();
 		while (PWR->CSR1 & PWR_CSR1_ODSWRDY)
-			;
+			__ISB();
 	}
 
 	/* Now turn off the PLL */
@@ -727,7 +765,7 @@ badge_cpu_speed_set (int speed)
 	RCC->CR &= ~RCC_CR_PLLON;
 	__ISB();
 	while (RCC->CR & RCC_CR_PLLRDY)
-		;
+		__ISB();
 
 	/*
 	 * Clear the ABP1 and APB2 pre-scaler values. We'll
@@ -757,6 +795,8 @@ badge_cpu_speed_set (int speed)
 	 * and medium speeds.
 	 */
 
+	RCC->APB1ENR |= RCC_APB1ENR_PWREN;
+
 	switch (speed) {
 		case BADGE_CPU_SPEED_SLOW:
 			RCC->PLLCFGR = STM32_PLLQ | STM32_PLLSRC |
@@ -765,7 +805,7 @@ badge_cpu_speed_set (int speed)
 			RCC->CFGR |= STM32_PPRE1_DIV2 | STM32_PPRE2_DIV2;
 			__ISB();
 			/* Set voltage scale 3 */
-			PWR->CR1 = STM32_VOS_SCALE3 | PWR_CR1_DBP;
+			PWR->CR1 &= ~PWR_CR1_VOS_1;
 			__ISB();
 			break;
 		case BADGE_CPU_SPEED_MEDIUM:
@@ -775,7 +815,7 @@ badge_cpu_speed_set (int speed)
 			RCC->CFGR |= STM32_PPRE1_DIV4 | STM32_PPRE2_DIV4;
 			__ISB();
 			/* Set voltage scale 3 */
-			PWR->CR1 = STM32_VOS_SCALE3 | PWR_CR1_DBP;
+			PWR->CR1 &= ~PWR_CR1_VOS_1;
 			__ISB();
 			break;
 		case BADGE_CPU_SPEED_NORMAL:
@@ -786,7 +826,7 @@ badge_cpu_speed_set (int speed)
 			RCC->CFGR |= STM32_PPRE1 | STM32_PPRE2;
 			__ISB();
 			/* Restore voltage scale 1 */
-			PWR->CR1 = STM32_VOS | PWR_CR1_DBP;
+			PWR->CR1 |= PWR_CR1_VOS_1;
 			__ISB();
 			break;
 	}
@@ -798,13 +838,9 @@ badge_cpu_speed_set (int speed)
 
 	RCC->CR |= RCC_CR_PLLON;
 	__ISB();
+
 	while ((PWR->CSR1 & PWR_CSR1_VOSRDY) == 0)
-		;
-
-	/* Now wait for PLL to lock */
-
-	while ((RCC->CR & RCC_CR_PLLRDY) == 0)
-		;
+		__ISB();
 
 	/* If we're targeting normal speed, turn on overdrive mode. */
 
@@ -813,19 +849,24 @@ badge_cpu_speed_set (int speed)
 		PWR->CR1 |= PWR_CR1_ODEN;
 		__ISB();
 		while ((PWR->CSR1 & PWR_CSR1_ODRDY) == 0)
-			;
+			__ISB();
 		PWR->CR1 |= PWR_CR1_ODSWEN;
 		__ISB();
 		while ((PWR->CSR1 & PWR_CSR1_ODSWRDY) == 0)
-			;
+			__ISB();
 	}
+
+	/* Now wait for PLL to lock */
+
+	while ((RCC->CR & RCC_CR_PLLRDY) == 0)
+		__ISB();
 
 	/* Now switch the system clock source back to the CPU */
 
 	RCC->CFGR |= STM32_SW;
 	__ISB();
   	while ((RCC->CFGR & RCC_CFGR_SWS) != (STM32_SW << 2))
-    		;
+		__ISB();
 
 	rccEnableSPI2 (TRUE);
 	rccEnableDMA1 (TRUE);
@@ -835,7 +876,11 @@ badge_cpu_speed_set (int speed)
 	rccEnableDMA2D (TRUE);
 	rccEnableAPB2 (RCC_APB2ENR_SAI2EN, TRUE);
 
+	badge_cpuspeed = speed;
+
 	__enable_irq ();
+
+	badge_cpu_dcache (TRUE);
 
 	return;
 }
