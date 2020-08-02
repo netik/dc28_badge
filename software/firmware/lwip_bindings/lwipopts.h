@@ -35,6 +35,8 @@
 /* Fixed settings mandated by the ChibiOS integration.*/
 #include "static_lwipopts.h"
 
+#define X8_F "02x"
+
 #define LWIP_RAW			1
 #define LWIP_SO_RCVTIMEO		1
 #define LWIP_SO_SNDTIMEO		1
