@@ -363,14 +363,20 @@ netif_add(struct netif *netif,
   netif->loop_cnt_current = 0;
 #endif /* ENABLE_LOOPBACK && LWIP_LOOPBACK_MAX_PBUFS */
 
-#if LWIP_IPV4
-  netif_set_addr(netif, ipaddr, netmask, gw);
-#endif /* LWIP_IPV4 */
+  /*
+   * HEY! DIPSHITS!! HOW ABOUT YOU INITIALIZE THE INTERFACE
+   * INFO *BEFORE* USING IT!
+   */
 
   /* call user specified initialization function for netif */
   if (init(netif) != ERR_OK) {
     return NULL;
   }
+
+#if LWIP_IPV4
+  netif_set_addr(netif, ipaddr, netmask, gw);
+#endif /* LWIP_IPV4 */
+
 #if LWIP_IPV6 && LWIP_ND6_ALLOW_RA_UPDATES
   /* Initialize the MTU for IPv6 to the one set by the netif driver.
      This can be updated later by RA. */
