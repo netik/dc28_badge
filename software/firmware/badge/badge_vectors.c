@@ -233,29 +233,39 @@ OSAL_IRQ_HANDLER(Vector184)
 	return;
 }
 
+/* Delay for exactly 1 ms */
+
 static void
-badge_delay (uint16_t ms)
+badge_delay_ms (void)
 {
-	volatile uint32_t freq;
-	uint16_t i;
+	uint32_t freq;
 
 	/* Calculate 1ms delay count based on current CPU frequency */
 
 	freq = badge_cpuspeed * 1000;
 
-	for (i = 0; i < ms; i++) {
-		SysTick->LOAD = freq;
-		SysTick->VAL = 0;
-		SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk |
-		    SysTick_CTRL_ENABLE_Msk;
+	SysTick->LOAD = freq;
+	SysTick->VAL = 0;
+	SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk |
+	    SysTick_CTRL_ENABLE_Msk;
 
-		while ((SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) == 0)
-			__ISB();
-	}
+	while ((SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) == 0)
+		__ISB();
 
 	SysTick->CTRL = 0;
 	SysTick->LOAD = 0;
 	SysTick->VAL = 0;
+
+	return;
+}
+
+void
+badge_delay (uint16_t ms)
+{
+	uint16_t i;
+
+	for (i = 0; i < ms; i++)
+		badge_delay_ms ();
 
 	return;
 }
@@ -266,25 +276,13 @@ badge_idle (void)
 	if (badge_sleep == TRUE) {
 
 		/*
-		 * If I understand correctly, when going into STOP
-		 * mode (deep sleep), the CPU will automatically
-		 * issue a self-refresh command to the SDRAM before
-		 * the memory controller clock is stopped. But when
-		 * going into SLEEP mode (low power idle), and we
-		 * have enabled automatic clock gating for the memory
-		 * controller, the CPU will turn off the memory
-		 * controller clock when we execute a WFI, but it will
-		 * not send the self-refresh command.
-		 *
-		 * This is a problem because a) it means the SDRAM
-		 * chip contents might degrade if the chip is idle
-		 * for a long time, and b) we want to put the chip
-		 * in self-refresh when idle since then it will only
-		 * draw about 2mA, as opposed to about 100mA when
-	 	 * in normal operation.
-		 *
-		 * So we manually issue the self-refresh command
-		 * here.
+		 * When in lpidle mode, we allow the CPU to turn
+		 * off the FMC/SDRAM controller clock and LCD
+		 * controller clock when it enters sleep mode.
+		 * To avoid losing the contents in RAM, we also
+		 * need to send a self-refresh command before
+		 * sleeping and then issue a "normal mode" command
+		 * when waking up.
 		 *
 		 * Note that since we have the LCD frame buffers
 		 * stored in SDRAM, this means we really need to
