@@ -59,7 +59,6 @@
 static void
 cmd_sleep (BaseSequentialStream * chp, int argc, char * argv[])
 {
-	RTCWakeup wkup;
 	uint32_t sleep;
 
 	(void)argv;
