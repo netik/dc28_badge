@@ -233,7 +233,7 @@ OSAL_IRQ_HANDLER(Vector184)
 	return;
 }
 
-void
+static void
 badge_delay (uint16_t ms)
 {
 	volatile uint32_t freq;
