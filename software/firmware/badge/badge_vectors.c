@@ -863,9 +863,11 @@ badge_cpu_speed_set (int speed)
 			__ISB();
 			RCC->CFGR |= STM32_PPRE1_DIV2 | STM32_PPRE2_DIV2;
 			__ISB();
+#ifdef notdef
 			/* Set voltage scale 3 */
 			PWR->CR1 &= ~PWR_CR1_VOS_1;
 			__ISB();
+#endif
 			break;
 		case BADGE_CPU_SPEED_MEDIUM:
 			RCC->PLLCFGR = STM32_PLLQ | STM32_PLLSRC |
@@ -873,9 +875,11 @@ badge_cpu_speed_set (int speed)
 			__ISB();
 			RCC->CFGR |= STM32_PPRE1_DIV4 | STM32_PPRE2_DIV4;
 			__ISB();
+#ifdef notdef
 			/* Set voltage scale 3 */
 			PWR->CR1 &= ~PWR_CR1_VOS_1;
 			__ISB();
+#endif
 			break;
 		case BADGE_CPU_SPEED_NORMAL:
 		default:
@@ -884,9 +888,11 @@ badge_cpu_speed_set (int speed)
 			__ISB();
 			RCC->CFGR |= STM32_PPRE1 | STM32_PPRE2;
 			__ISB();
+#ifdef notdef
 			/* Restore voltage scale 1 */
 			PWR->CR1 |= PWR_CR1_VOS_1;
 			__ISB();
+#endif
 			break;
 	}
 
