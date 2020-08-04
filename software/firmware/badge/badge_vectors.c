@@ -234,6 +234,33 @@ OSAL_IRQ_HANDLER(Vector184)
 }
 
 void
+badge_delay (uint16_t ms)
+{
+	volatile uint32_t freq;
+	uint16_t i;
+
+	/* Calculate 1ms delay count based on current CPU frequency */
+
+	freq = badge_cpuspeed * 1000;
+
+	for (i = 0; i < ms; i++) {
+		SysTick->LOAD = freq;
+		SysTick->VAL = 0;
+		SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk |
+		    SysTick_CTRL_ENABLE_Msk;
+
+		while ((SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) == 0)
+			__ISB();
+	}
+
+	SysTick->CTRL = 0;
+	SysTick->LOAD = 0;
+	SysTick->VAL = 0;
+
+	return;
+}
+
+void
 badge_idle (void)
 {
 	if (badge_sleep == TRUE) {
@@ -291,11 +318,16 @@ badge_wakeup (void)
 	 */
 
 	if (badge_deep_sleep == TRUE && SCB->SCR & SCB_SCR_SLEEPDEEP_Msk) {
-		osalSysLockFromISR ();
+		__disable_irq ();
+		fsmcSdramNormal (&SDRAMD);
 		badge_deep_sleep = FALSE;
 		SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
+
+		/* Reset these bits */
+
+		PWR->CSR1 |= PWR_CSR1_UDRDY;
+
 		stm32_clock_init ();
-		badge_cpu_speed_set (badge_cpuspeed);
 
 		/*
 		 * stm32_clock_init () will reinitialize the power controller			 * CR1 register. It expects that the "disable backup
@@ -307,6 +339,14 @@ badge_wakeup (void)
 		 */
 
 	        PWR->CR1 |= PWR_CR1_DBP;
+
+		/*
+		 * stm32_clock_init () will also reinitialize the CPU
+		 * to high speed. Restore whatever speed was set when
+		 * we went to sleep.
+		 */
+
+		badge_cpu_speed_set (badge_cpuspeed);
 
 		/*
 	 	 * Now restart the clocks on all the peripherals.
@@ -323,16 +363,16 @@ badge_wakeup (void)
 		rccEnableSDMMC1 (TRUE);
 		RCC->APB2ENR |= RCC_APB2ENR_LTDCEN;
 		rccEnableDMA2D (TRUE);
+		rccEnableAPB2 (RCC_APB2ENR_SAI2EN, TRUE);
 		rccEnableDMA1 (TRUE);
 		rccEnableDMA2 (TRUE);
 		rccEnableOTG_FS (TRUE);
 		rccEnableRNG (TRUE);
-		rccEnableAPB2 (RCC_APB2ENR_SAI2EN, TRUE);
 		rccEnableI2C1 (TRUE);
 		rccEnableI2C3 (TRUE);
 		rccEnableADC1 (TRUE);
 
-		osalSysUnlockFromISR ();
+		__enable_irq ();
 	}
 
 	return;
@@ -394,10 +434,35 @@ THD_FUNCTION(badge_power_loop, arg)
 		osalThreadSuspendS (&badge_power_thread_reference);
 		osalSysUnlock ();
 
-		while (SCB->ICSR)
-			__ISB();
+		/*
+	 	 * Once we wake up, we're the prettiest princess--
+		 * er.., we're the highest priority thread in the
+		 * system. We control the vertical. We control the
+		 * horizontal.
+		 *
+		 * It's important that we wait for any pending I/O
+		 * to complete before we put the CPU into deep sleep
+		 * mode. That means we need to wait for all DMA
+		 * transfers involving any of the peripherals to
+		 * finish, and we don't want to let any tasks start
+		 * any new transfers too.
+		 *
+		 * The best way to do that is to hog the CPU for a
+		 * bit. But we can't just use chThdSleep() because that
+		 * will just let other tasks take over the CPU again
+		 * while we're sleeping.
+		 *
+	 	 * So instead, we busy wait for a few milliseconds,
+		 * using the ARM core's SysTick timer as a stopwatch.
+		 */
+
+		badge_delay (100);
 
 		__disable_irq ();
+
+		/* Flush the cache, why not. */
+
+		SCB_CleanInvalidateDCache ();
 
 		badge_deep_sleep = TRUE;
 		
@@ -410,18 +475,13 @@ THD_FUNCTION(badge_power_loop, arg)
 		 * - Disable backup domain write protection
 	 	 * - Flash power down in stop mode
 		 * - Low power regulator in stop mode.
-		 * - Main regulator in under drive mode and flash
-		 *   memory power down when in stop mode
+		 * - Low power regulator in under drive mode during
+		 *   stop mode.and flash
 		 * - Underdrive when in stop mode
 		 */
 
-	        PWR->CR1 |= PWR_CR1_DBP | PWR_CR1_FPDS | PWR_CR1_LPDS |
-		    PWR_CR1_LPUDS | PWR_CR1_UDEN;
-
-		/* Wait for underdrive ready */
- 
-		while (PWR->CSR1 & PWR_CSR1_UDRDY)
-			;
+		PWR->CR1 |= PWR_CR1_DBP | PWR_CR1_FPDS | PWR_CR1_LPDS |
+		   PWR_CR1_LPUDS | PWR_CR1_UDEN;
 
 		/*
 		 * When the CPU enters deep sleep mode, it will
@@ -446,7 +506,6 @@ THD_FUNCTION(badge_power_loop, arg)
 		__DSB();
 		__ISB();
 		__WFI();
-		fsmcSdramNormal (&SDRAMD);
 		__enable_irq ();
 
 		/*
