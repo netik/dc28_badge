@@ -2,13 +2,18 @@
 #
 # The STM32F parts include an internal bootloader ROM which can be used
 # to flash the device using various different I/O interfaces using the
-# Device Firmware Update (DFU) protocol. The STM32F746 support DFU via
-# USB, and we can use the dfu-util with that on a number of different
-# OSes.
+# Device Firmware Update (DFU) protocol. The STM32F746 supports DFU via
+# USB, and we can make use of that with the dfu-util tool on a number
+# of different OSes.
 #
 # The DFU firmware can be activated by resetting the CPU while holding
-# the boot0 pin gounded. Alternatively, you can enter it manually by
-# jumping the CPU to the DFU entry point. Per application note AN2606,
+# the boot0 pin high. This is a little tricky to do on the STM32F746
+# Discovery board: you need to short the pads for the unpopulated resistor
+# R42, which is right next to the CPU, while pressing the black reset
+# button.
+#
+# Alternatively, you can enter it jumping the CPU to the DFU entry
+# entry point with the SWD debugger. Per application note AN2606,
 # the start address of the DFU firmware for the STM32F746 is 0x1ff00000.
 # To force it to start with GDB/OpenOCD, you can use the following
 # commands
