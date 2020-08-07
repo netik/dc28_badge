@@ -64,9 +64,8 @@ mutex_t conmutex;
 orchard_command_start();
 orchard_command_end();
 
-extern ShellCommand _orchard_cmd_list_cmd_cpu;
-
 /* Resources for UART shell */
+
 static ShellConfig shell_cfg_sd =
 {
 	(BaseSequentialStream *)&SD1,
@@ -234,7 +233,7 @@ static const SPIConfig hs_spicfg =
  *
  * The values we get are:
  *
- * Prescaler: divide by 1, minus 0 == 1
+ * Prescaler: divide by 1, minus 1 == 0
  * SCLL: 1250/37.037 == 33.75, rounded up == 34, minus 1 == 33
  * SCLH: 500/37.037 == 13.5, rounded up == 14, minus 1 == 13
  * SDADEL: 250/37.037 == 6.76, rounded up == 7, minus 1 == 6
