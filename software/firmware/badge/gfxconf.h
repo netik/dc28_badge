@@ -44,11 +44,12 @@
  * This can be fixed on the production board, but on the Discovery
  * board it would require hardware rework.
  *
- * So as a temporart workaround, we keep the mouse polling turned
+ * So as a temporary workaround, we keep the mouse polling turned
  * on so that we can still get uGFX touch events.
  *
-#define GINPUT_MOUSE_POLL_PERIOD                       TIME_INFINITE
  */
+
+#define GINPUT_MOUSE_POLL_PERIOD                       TIME_INFINITE
 
 ///////////////////////////////////////////////////////////////////////////
 // GFX - Compatibility options                                           //
