@@ -28,7 +28,7 @@ rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
 #include "hal.h"
 
 #include "gfx.h"
-#include "src/gdisp/gdisp_driver.h"
+#include "ides_gfx.h"
 #include "hal_stm32_dma2d.h"
 #include "hal_stm32_ltdc.h"
 
@@ -42,17 +42,7 @@ rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
 
 #include "doomdef.h"
 
-typedef struct palette_color {
-	uint8_t		b;
-	uint8_t		g;
-	uint8_t		r;
-	uint8_t		a;
-} palette_color_t;
-
 static palette_color_t * palettebuf;
-static void * d0;
-static void * d1;
-static int layer;
 static int buttontmp;
 static void * screenbuf;
 
@@ -68,29 +58,16 @@ void I_ShutdownGraphics (void)
 	 * we haven't set up the graphics yet.
 	 */
 
-	if (d0 == NULL)
+	if (palettebuf == NULL)
 		return;
 
-	/* Restore pixel format translation */
-
-	dma2dFgSetPixelFormat (&DMA2DD1, DMA2D_FMT_RGB565);
-
-	/* Re-enable the right layer */
-
-	ltdcFgEnableI (&LTDCD1);
-	ltdcBgDisableI (&LTDCD1);
-	ltdcReload (&LTDCD1, FALSE);
+	idesDoubleBufferStop ();
 
 	free (palettebuf);
 	free (screenbuf);
 	screens[0] = NULL;
 	palettebuf = NULL;
 	screenbuf = NULL;
-
-	gdispGClear (d0, GFX_BLACK);
-	gdispGClear (d1, GFX_BLACK);
-	d0 = NULL;
-	d1 = NULL;
 
 	return;
 }
@@ -267,9 +244,8 @@ void I_FinishUpdate (void)
 	static int	lasttic;
 	int		tics;
 	int		i;
-	GDisplay *	g;
 
-	if (d0 == NULL || d1 == NULL)
+	if (palettebuf == NULL)
 		return;
 
 	/* draws little dots on the bottom of the screen */
@@ -286,35 +262,7 @@ void I_FinishUpdate (void)
 	    		screens[0][ (SCREENHEIGHT-1)*SCREENWIDTH + i] = 0x0;
     	}
 
-	if (layer == 0) {
-		g = (GDisplay *)d1;
-		ltdcFgDisableI (&LTDCD1);
-		ltdcBgEnableI (&LTDCD1);
-	} else {
-		g = (GDisplay *)d0;
-		ltdcFgEnableI (&LTDCD1);
-		ltdcBgDisableI (&LTDCD1);
-	}
-
-	gdispGBlitArea (g,
-		/* Start position */
-		0, 20,
-		/* Size of filled area */
-		SCREENWIDTH, SCREENHEIGHT,
-		/* Bitmap position to start fill from */
-		0, 0,
-		/* Width of bitmap line */
-		SCREENWIDTH,
-		/* Bitmap buffer */
-		(gPixel *)screens[0]);
-
-	/* Trigger frame swap on next vertical refresh. */
-
-	ltdcStartReloadI (&LTDCD1, FALSE);
-
-	/* Swap layers */
-
-	layer ^= layer;
+	idesDoubleBufferBlit (0, 20, SCREENWIDTH, SCREENHEIGHT, screens[0]);
 
 	return;
 }
@@ -333,7 +281,6 @@ void I_ReadScreen (byte* scr)
 //
 void I_SetPalette (byte* palette)
 {
-	dma2d_palcfg_t palcfg;
 	int i;
 	int c;
 
@@ -347,13 +294,7 @@ void I_SetPalette (byte* palette)
 		palettebuf[i].b = c;
 	}
 
-	cacheBufferFlush (palettebuf, sizeof(palette_color_t) * 256);
-
-	palcfg.length = 256;
-	palcfg.fmt = DMA2D_FMT_ARGB8888;
-	palcfg.colorsp = palettebuf;
-
-	dma2dFgSetPalette (&DMA2DD1, &palcfg);
+	idesDoubleBufferPaletteLoad (palettebuf);
 
 	return;
 }
@@ -365,16 +306,8 @@ void I_InitGraphics(void)
 
 	palettebuf = malloc (sizeof(palette_color_t) * 256);
 
-	/* Get screen handles */
+	idesDoubleBufferInit (IDES_DB_L8);
 
-	d0 = (void *)gdriverGetInstance (GDRIVER_TYPE_DISPLAY, 0);
-	d1 = (void *)gdriverGetInstance (GDRIVER_TYPE_DISPLAY, 1);
-
-	/* Set pixel format translation */
-
-	dma2dFgSetPixelFormat (&DMA2DD1, DMA2D_FMT_L8);
-
-	layer = 0;
 	buttontmp = 0;
 
 	/* Allocate the screen buffer */
@@ -383,9 +316,6 @@ void I_InitGraphics(void)
 
 	screens[0] = (unsigned char *)roundup((uintptr_t)screenbuf,
 	    CACHE_LINE_SIZE);
-
-	gdispGClear (d0, GFX_BLACK);
-	gdispGClear (d1, GFX_BLACK);
 
 	return;
 }

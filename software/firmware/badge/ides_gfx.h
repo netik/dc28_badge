@@ -54,6 +54,23 @@ extern void drawBufferedStringBox(
       gJustify justify);
 extern  gColor levelcolor(uint16_t player_level, uint16_t enemy_level);
 
+#define IDES_DB_DEFAULT		0x00
+#define IDES_DB_RGB888		0x01
+#define IDES_DB_L8		0x02
+
+typedef struct palette_color {
+	uint8_t		b;
+	uint8_t		g;
+	uint8_t		r;
+	uint8_t		a;
+} palette_color_t;
+
+extern void idesDoubleBufferInit (uint8_t);
+extern void idesDoubleBufferPaletteLoad (palette_color_t *);
+extern void idesDoubleBufferBlit (gCoord x, gCoord y, gCoord cx,
+    gCoord cy, void * buf);
+extern void idesDoubleBufferStop (void);
+
 #endif /* __IDES_GFX_H__ */
 
 /* used by screen_alert_draw */

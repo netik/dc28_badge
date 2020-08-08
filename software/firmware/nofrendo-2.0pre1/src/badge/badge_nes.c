@@ -17,6 +17,7 @@
 
 #include "gfx.h"
 #include "src/gdisp/gdisp_driver.h"
+#include "ides_gfx.h"
 #include "hal_stm32_dma2d.h"
 #include "hal_stm32_ltdc.h"
 #include "stm32sai_lld.h"
@@ -105,16 +106,6 @@ static nes_bitmap_t *lock_write(void);
 static void free_write(int num_dirties, rect_t *dirty_rects);
 static void badge_blit (nes_bitmap_t * , int, rect_t *);
 
-typedef struct palette_color {
-	uint8_t		b;
-	uint8_t		g;
-	uint8_t		r;
-	uint8_t		a;
-} palette_color_t;
-
-static void * d0;
-static void * d1;
-static int layer;
 static nes_bitmap_t * myBitmap;
 static palette_color_t * palettebuf;
 static uint8_t fb[1];
@@ -150,14 +141,7 @@ init (int width, int height)
 
 	palettebuf = malloc (sizeof(palette_color_t) * 256);
 
-	d0 = (void *)gdriverGetInstance (GDRIVER_TYPE_DISPLAY, 0);
-	d1 = (void *)gdriverGetInstance (GDRIVER_TYPE_DISPLAY, 1);
-
-	/* Set pixel format translation */
-
-	dma2dFgSetPixelFormat (&DMA2DD1, DMA2D_FMT_L8);
-
-	layer = 0;
+	idesDoubleBufferInit (IDES_DB_L8);
 
 	return (0);
 }
@@ -165,20 +149,9 @@ init (int width, int height)
 static void
 shutdown (void)
 {
-	/* Restore pixel format translation */
-
-	dma2dFgSetPixelFormat (&DMA2DD1, DMA2D_FMT_RGB565);
-
-	/* Re-enable the right layer */
-
-	ltdcFgEnableI (&LTDCD1);
-	ltdcBgDisableI (&LTDCD1);
-	ltdcReload (&LTDCD1, FALSE);
+	idesDoubleBufferStop ();
 
 	free (palettebuf);
-
-	gdispGClear (d0, GFX_BLACK);
-	gdispGClear (d1, GFX_BLACK);
 
 	return;
 }
@@ -195,41 +168,11 @@ set_mode (int width, int height)
 static void
 badge_blit (nes_bitmap_t * primary, int num_dirties, rect_t *dirty_rects)
 {
-	GDisplay * g;
-
 	(void)dirty_rects;
 
 	if (num_dirties == -1) {
-
-		if (layer == 0) {
-			g = (GDisplay *)d1;
-			ltdcFgDisableI (&LTDCD1);
-			ltdcBgEnableI (&LTDCD1);
-		} else {
-			g = (GDisplay *)d0;
-			ltdcFgEnableI (&LTDCD1);
-			ltdcBgDisableI (&LTDCD1);
-		}
-
-		gdispGBlitArea (g,
-			/* Start position */
-			32, 0,
-			/* Size of filled area */
-			primary->width, primary->height,
-			/* Bitmap position to start fill from */
-			0, 0,
-			/* Width of bitmap line */
-			primary->width,
-			/* Bitmap buffer */
-			(gPixel *)primary->data);
-
-		/* Trigger frame swap on next vertical refresh. */
-
-		ltdcStartReloadI (&LTDCD1, FALSE);
-
-		/* Swap layers */
-
-		layer ^= layer;
+		idesDoubleBufferBlit (32, 0, primary->width,
+		    primary->height, primary->data);
 	}
 
 	/* Grab the audio samples and start them playing */
@@ -247,7 +190,6 @@ static void
 set_palette (rgb_t * pal)
 {
 	int i;
-	dma2d_palcfg_t palcfg;
 
 	for (i = 0; i < 256; i++) {
 		palettebuf[i].a = 0;
@@ -256,13 +198,7 @@ set_palette (rgb_t * pal)
 		palettebuf[i].b = pal[i].b;
 	}
 
-	cacheBufferFlush (palettebuf, sizeof(palette_color_t) * 256);
-
-	palcfg.length = 256;
-	palcfg.fmt = DMA2D_FMT_ARGB8888;
-	palcfg.colorsp = palettebuf;
-
-	dma2dFgSetPalette (&DMA2DD1, &palcfg);
+	idesDoubleBufferPaletteLoad (palettebuf);
 
 	return;
 }
@@ -271,6 +207,8 @@ set_palette (rgb_t * pal)
 static void
 clear (uint8 color)
 {
+	void * d;
+
 	(void)color;
 
 	/*
@@ -284,8 +222,10 @@ clear (uint8 color)
 	 */
 
 	dma2dFgSetPixelFormat (&DMA2DD1, DMA2D_FMT_RGB565);
-	gdispGClear (d0, GFX_BLACK);
-	gdispGClear (d1, GFX_BLACK);
+	d = (void *)gdriverGetInstance (GDRIVER_TYPE_DISPLAY, 0);
+	gdispGClear (d, GFX_BLACK);
+	d = (void *)gdriverGetInstance (GDRIVER_TYPE_DISPLAY, 1);
+	gdispGClear (d, GFX_BLACK);
 	dma2dFgSetPixelFormat (&DMA2DD1, DMA2D_FMT_L8);
 
 	return;

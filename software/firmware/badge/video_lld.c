@@ -34,6 +34,7 @@
 #include "hal.h"
 
 #include "gfx.h"
+#include "ides_gfx.h"
 #include "src/gdisp/gdisp_driver.h"
 
 #include "video_lld.h"
@@ -234,11 +235,6 @@ videoPlay (char * path)
 	geventListenerInit (&gl);
 	geventAttachSource (&gl, gs, GLISTEN_MOUSEMETA);
 
-	/* Make sure we start out with layer 1 visible and layer 2 hidden. */
-
-	ltdcFgEnable (&LTDCD1);
-	ltdcReload (&LTDCD1, FALSE);
-
 	g0 = (GDisplay *)gdriverGetInstance (GDRIVER_TYPE_DISPLAY, 0);
 	g1 = (GDisplay *)gdriverGetInstance (GDRIVER_TYPE_DISPLAY, 1);
 
@@ -255,7 +251,7 @@ videoPlay (char * path)
 	 * of using a little more memory).
 	 */
 
-	dma2dFgSetPixelFormat (&DMA2DD1, DMA2D_FMT_RGB888);
+	idesDoubleBufferInit (IDES_DB_RGB888);
 
 	ch = &_ch;
 
@@ -373,14 +369,7 @@ videoPlay (char * path)
 
 	free (btmp);
 
-	/* Restore the DMA2D input pixel format. */
-
-	dma2dFgSetPixelFormat (&DMA2DD1, DMA2D_FMT_RGB565);
-
-	/* Restore visible layer */
-
-	ltdcFgEnable (&LTDCD1);
-	ltdcReload (&LTDCD1, FALSE);
+	idesDoubleBufferStop ();
 
 	geventDetachSource (&gl, NULL);
 
