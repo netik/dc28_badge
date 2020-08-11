@@ -8,6 +8,8 @@
 #include "src/gdisp/gdisp_driver.h"
 #include "src/gwin/gwin_class.h"
 #include "stm32sai_lld.h"
+#include "hal_stm32_ltdc.h"
+#include "hal_stm32_dma2d.h"
 #include "userconfig.h"
 
 #include <stdlib.h>
@@ -16,11 +18,28 @@
 #define LAUNCHER_ROWS 2
 #define LAUNCHER_PERPAGE (LAUNCHER_ROWS * LAUNCHER_COLS)
 
+/*
+ * Define scroll window.
+ * The icons are 30 pixels from the top of the display and are
+ * 50 pixels in from the right. They are 2 pixels from the
+ * display bottom.
+ */
+
+#define TOP	30
+#define SIDE	50
+#define BOT	2
+
+extern void gdisp_lld_acquire_bus (GDisplay *);
+extern void gdisp_lld_release_bus (GDisplay *);
+
 extern const OrchardApp *orchard_app_list;
 static uint32_t last_ui_time;
 
 static unsigned int selected = 0;
 static unsigned int page = 0;
+
+static void * d0;
+static void * d1;
 
 struct launcher_list_item {
 	const char *		name;
@@ -46,7 +65,113 @@ struct launcher_list {
 	struct launcher_list_item items[0];
 };
 
-static void redraw_list(struct launcher_list *list);
+static void redraw_list(struct launcher_list *list, int dir);
+
+static void
+launcher_scroll_up (void)
+{
+	uint16_t * s1;
+	uint16_t * d1;
+	uint16_t * s2;
+	uint16_t * d2;
+	gCoord h, w;
+
+	int i;
+
+	h = gdispGetHeight ();
+	w = gdispGetWidth ();
+
+	s1 = (uint16_t *)LTDCD1.config->fg_laycfg->frame->bufferp;
+	s1 += w * TOP;
+	d1 = (uint16_t *)LTDCD1.config->fg_laycfg->frame->bufferp;
+	d1 += w * (TOP - 1);
+
+	s2 = (uint16_t *)LTDCD1.config->bg_laycfg->frame->bufferp;
+	s2 += w * TOP;
+	d2 = (uint16_t *)LTDCD1.config->fg_laycfg->frame->bufferp;
+	d2 += w * (h - BOT - 1);
+
+	dma2dFgSetWrapOffsetI (&DMA2DD1, SIDE);
+	dma2dOutSetWrapOffsetI (&DMA2DD1, SIDE);
+	dma2dJobSetModeI (&DMA2DD1, DMA2D_JOB_COPY);
+
+	for (i = 0; i < (h - TOP - BOT); i++) {
+		dma2dJobSetSizeI (&DMA2DD1, w - SIDE, h - TOP - BOT - i);
+		dma2dFgSetAddressI (&DMA2DD1, s1);
+		dma2dOutSetAddressI (&DMA2DD1, d1);
+		dma2dJobExecute (&DMA2DD1);
+
+		d2 -= w;
+		dma2dJobSetSizeI (&DMA2DD1, w - SIDE, i);
+		dma2dFgSetAddressI (&DMA2DD1, s2);
+		dma2dOutSetAddressI (&DMA2DD1, d2);
+		dma2dJobExecute (&DMA2DD1);
+	}
+
+	return;
+}
+
+static void
+launcher_scroll_down (void)
+{
+	uint16_t * s1;
+	uint16_t * d1;
+	uint16_t * s2;
+	uint16_t * d2;
+	uint16_t * b;
+	gCoord h, w;
+	int i;
+
+	h = gdispGetHeight ();
+	w = gdispGetWidth ();
+
+	b = malloc (h * w * sizeof (gColor));
+
+	/* Make a copy of the current screen */
+
+	s1 = (uint16_t *)LTDCD1.config->fg_laycfg->frame->bufferp;
+	dma2dFgSetWrapOffsetI (&DMA2DD1, 0);
+	dma2dOutSetWrapOffsetI (&DMA2DD1, 0);
+	dma2dJobSetSizeI (&DMA2DD1, w, h);
+	dma2dFgSetAddressI (&DMA2DD1, s1);
+	dma2dOutSetAddressI (&DMA2DD1, b);
+	dma2dJobSetModeI (&DMA2DD1, DMA2D_JOB_COPY);
+	dma2dJobExecute (&DMA2DD1);
+
+	/* Slide it down */
+
+	s1 = b;
+	s1 += w * (TOP - 1);
+	d1 = (uint16_t *)LTDCD1.config->fg_laycfg->frame->bufferp;
+	d1 += w * TOP;
+
+	s2 = (uint16_t *)LTDCD1.config->bg_laycfg->frame->bufferp;
+	s2 += w * (h - BOT - 1);
+	d2 = (uint16_t *)LTDCD1.config->fg_laycfg->frame->bufferp;
+	d2 += w * TOP;
+
+	dma2dFgSetWrapOffsetI (&DMA2DD1, SIDE);
+	dma2dOutSetWrapOffsetI (&DMA2DD1, SIDE);
+
+	for (i = 0; i < (gdispGetHeight () - TOP - BOT); i++) {
+		dma2dJobSetSizeI (&DMA2DD1, w - SIDE, h - TOP - BOT - i);
+		dma2dFgSetAddressI (&DMA2DD1, s1);
+		dma2dOutSetAddressI (&DMA2DD1, d1);
+		dma2dJobExecute (&DMA2DD1);
+
+		dma2dJobSetSizeI (&DMA2DD1, w - SIDE, i);
+		dma2dFgSetAddressI (&DMA2DD1, s2);
+		dma2dOutSetAddressI (&DMA2DD1, d2);
+		dma2dJobExecute (&DMA2DD1);
+
+		s2 -= w;
+		d1 += w;
+	}
+
+	free (b);
+
+	return;
+}
 
 static void
 draw_launcher_buttons(struct launcher_list * list)
@@ -131,7 +256,7 @@ draw_launcher_buttons(struct launcher_list * list)
 			wi.g.x = (j * 90) + 2;
 			wi.g.y = 110 * (i+1);
 			wi.g.height = 20;
-			wi.text = "---";
+			wi.text = "";
 			wi.customDraw = gwinLabelDrawJustifiedCenter;
 			list->ghLabels[(i * LAUNCHER_COLS) + j] =
 			    gwinLabelCreate (0, &wi);
@@ -158,7 +283,7 @@ draw_launcher_buttons(struct launcher_list * list)
 	list->ghButtonDn = gwinButtonCreate (0, &wi);
 	gwinRedraw (list->ghButtonDn);
 
-	redraw_list(list);
+	redraw_list(list, 0);
 
 	return;
 }
@@ -200,7 +325,7 @@ draw_box (struct launcher_list * list, gColor color)
 }
 
 static void
-redraw_list (struct launcher_list * list)
+redraw_list (struct launcher_list * list, int dir)
 {
 	unsigned int i, j;
 	unsigned int actualid;
@@ -218,6 +343,11 @@ redraw_list (struct launcher_list * list)
 			    (i * LAUNCHER_COLS) + j;
 	 		label = list->ghLabels[(i * LAUNCHER_COLS) + j];
 			item = &list->items[actualid];
+
+			if (dir) {
+				GDISP = d1;
+				label->display = d1;
+			}
 
 			_gwinDrawStart (list->ghButtonDn);
 
@@ -245,9 +375,32 @@ redraw_list (struct launcher_list * list)
 			}
 
 			_gwinDrawEnd (list->ghButtonDn);
+
+			if (dir) {
+				GDISP = d0;
+				label->display = d0;
+			}
 		}
 	}
 
+	_gwinFlushRedraws (REDRAW_WAIT);
+
+	gdisp_lld_acquire_bus (d0);
+	gdisp_lld_acquire_bus (d1);
+
+	/* Bump the CPU speed back to normal to speed up scroll. */
+
+	badge_cpu_speed_set (BADGE_CPU_SPEED_NORMAL);
+
+	if (dir == 1)
+		launcher_scroll_up ();
+	if (dir == 2)
+		launcher_scroll_down ();
+
+	badge_cpu_speed_set (BADGE_CPU_SPEED_MEDIUM);
+
+	gdisp_lld_release_bus (d1);
+	gdisp_lld_release_bus (d0);
 
 	draw_box (list, GFX_RED);
 
@@ -259,7 +412,10 @@ launcher_init (OrchardAppContext *context)
 {
 	(void)context;
 
-	gdispClear (GFX_BLACK);
+	d0 = (void *)gdriverGetInstance (GDRIVER_TYPE_DISPLAY, 0);
+	d1 = (void *)gdriverGetInstance (GDRIVER_TYPE_DISPLAY, 1);
+	gdispGClear (d0, GFX_BLACK);
+	gdispGClear (d1, GFX_BLACK);
 
 	return (0);
 }
@@ -488,7 +644,7 @@ launcher_event (OrchardAppContext *context, const OrchardAppEvent *event)
 				if (selected > (list->total - 1))
 					selected = (list->total - 1);
 				page++;
-				redraw_list (list);
+				redraw_list (list, 1);
 				return;
 			}
 		}
@@ -498,7 +654,7 @@ launcher_event (OrchardAppContext *context, const OrchardAppEvent *event)
 				/* remove the box before update  */
 				page--;
 				selected -= LAUNCHER_PERPAGE;
-				redraw_list (list);
+				redraw_list (list, 2);
 				return;
 			}
 		}
