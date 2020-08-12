@@ -51,6 +51,16 @@ typedef struct _NesHandles {
 
 static char * nesdir;
 
+static THD_FUNCTION(nesThread, arg)
+{
+	nes_main (2, arg); 
+ 
+	chSysLock ();
+	chThdExitS (MSG_OK);
+
+        return;
+}
+
 static uint32_t
 nes_init(OrchardAppContext *context)
 {
@@ -132,6 +142,7 @@ nes_event(OrchardAppContext *context, const OrchardAppEvent *event)
 	NesHandles * p;
 	char nesfn[35];
 	char * args[2];
+	thread_t * pThread;
 
 	p = context->priv;
 	ui = context->instance->ui;
@@ -165,13 +176,14 @@ nes_event(OrchardAppContext *context, const OrchardAppEvent *event)
 		strcat (nesfn, "/");
 		strcat (nesfn, p->listitems[uiContext->selected +1]);
 
-		/*chThdSetPriority (NORMALPRIO + 1);*/
-
 		args[0] = "nofrendo";
 		args[1] = nesfn;
-		nes_main (2, args);
 
-		/*chThdSetPriority (ORCHARD_APP_PRIO);*/
+		pThread = chThdCreateFromHeap (NULL,
+		    THD_WORKING_AREA_SIZE(8 * 1024), "NesThread",
+		    ORCHARD_APP_PRIO, nesThread, args);
+
+		chThdWait (pThread);
 
 		orchardAppExit ();
 	}

@@ -43,6 +43,36 @@ extern int doom_main (int argc, char * argv[]);
 extern char __ram7_start__; /* Set by linker */
 extern char __ram7_end__; /* Set by linker */
 
+static THD_FUNCTION(doomThread, arg)
+{
+	char * args[1];
+	size_t bsslen;
+
+	(void)arg;
+
+	/* Set the environment */
+
+	setenv ("HOME", "/", TRUE);
+	setenv ("DOOMWADDIR", "/doom", TRUE);
+
+	/* Initialize Doom's .bss */
+
+	bsslen = (uintptr_t)&__ram7_end__ - (uintptr_t)&__ram7_start__;
+	memset (&__ram7_start__, 0, bsslen);
+
+	badge_concreate (BADGE_CONSOLE_SHARE);
+
+       	args[0] = "doom";
+       	doom_main (1, args);
+
+	badge_condestroy ();
+
+	chSysLock ();
+	chThdExitS (MSG_OK);
+
+	return;
+}
+
 static uint32_t
 doom_init (OrchardAppContext *context)
 {
@@ -62,22 +92,20 @@ doom_start (OrchardAppContext *context)
 static void
 doom_event (OrchardAppContext *context, const OrchardAppEvent *event)
 {
-	char * args[1];
-	size_t bsslen;
+	thread_t * pThread;
 
 	(void) context;
 
 	if (event->type == appEvent && event->app.event == appTerminate) {
 		i2sWait ();
-		setenv ("HOME", "/", TRUE);
-		setenv ("DOOMWADDIR", "/doom", TRUE);
-        	args[0] = "doom";
-		bsslen = (uintptr_t)&__ram7_end__ - (uintptr_t)&__ram7_start__;
-		memset (&__ram7_start__, 0, bsslen);
 
-		badge_concreate (BADGE_CONSOLE_SHARE);
-        	doom_main (1, args);
-		badge_condestroy ();
+		/* Doom needs lots of stack space */
+
+		pThread = chThdCreateFromHeap (NULL,
+		    THD_WORKING_AREA_SIZE(48 * 1024), "DoomThread",
+		    ORCHARD_APP_PRIO, doomThread, NULL);
+
+		chThdWait (pThread);
 	}
 
 	return;
