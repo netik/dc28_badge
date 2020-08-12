@@ -143,6 +143,7 @@ wipe_exitColorXForm
 }
 
 
+__attribute__((section(".ram7")))
 static int*	y;
 
 int

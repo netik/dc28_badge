@@ -41,8 +41,10 @@ rcsid[] = "$Id: v_video.c,v 1.5 1997/02/03 22:45:13 b1 Exp $";
 
 
 // Each screen is [SCREENWIDTH*SCREENHEIGHT]; 
+__attribute__((section(".ram7")))
 byte*				screens[5];	
  
+__attribute__((section(".ram7")))
 int				dirtybox[4]; 
 
 

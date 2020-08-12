@@ -176,8 +176,12 @@ void I_GetEvent(void)
 void I_StartTic (void)
 {
 	event_t event;
+	uint32_t sts;
 
-	if (buttontmp == 5) {
+	chThdSleep (50);
+	sts = palReadLine (LINE_BUTTON_USER);
+
+	if (buttontmp == 2 && sts == 1) {
 		buttontmp = 0;
 		event.type = ev_keydown;
 		event.data1 = 'y';
@@ -186,7 +190,7 @@ void I_StartTic (void)
 		D_PostEvent(&event);
 	}
 
-	if (buttontmp == 0 && palReadLine (LINE_BUTTON_USER) == 1) {
+	if (buttontmp == 0 && sts == 1) {
 		buttontmp = 1;
 		event.type = ev_keydown;
 		event.data1 = KEY_F10;
@@ -195,8 +199,8 @@ void I_StartTic (void)
 		D_PostEvent(&event);
 	}
 
-	if (buttontmp)
-		buttontmp++;
+	if (buttontmp == 1 && sts == 0)
+		buttontmp = 2;
 
 #ifdef notdef
     if (!X_display)
