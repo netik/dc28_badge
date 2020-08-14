@@ -881,9 +881,11 @@ int WI_fragSum(int playernum)
 }
 
 
-
+__attribute__((section(".ram7")))
 static int		dm_state;
+__attribute__((section(".ram7")))
 static int		dm_frags[MAXPLAYERS][MAXPLAYERS];
+__attribute__((section(".ram7")))
 static int		dm_totals[MAXPLAYERS];
 
 
@@ -1113,8 +1115,11 @@ void WI_drawDeathmatchStats(void)
     }
 }
 
+__attribute__((section(".ram7")))
 static int	cnt_frags[MAXPLAYERS];
+__attribute__((section(".ram7")))
 static int	dofrags;
+__attribute__((section(".ram7")))
 static int	ng_state;
 
 void WI_initNetgameStats(void)
@@ -1355,6 +1360,7 @@ void WI_drawNetgameStats(void)
 
 }
 
+__attribute__((section(".ram7")))
 static int	sp_state;
 
 void WI_initStats(void)

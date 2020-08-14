@@ -212,8 +212,9 @@ mline_t thintriangle_guy[] = {
 
 
 
-
+__attribute__((section(".ram7")))
 static int 	cheating = 0;
+__attribute__((section(".ram7")))
 static int 	grid = 0;
 
 static int 	leveljuststarted = 1; 	// kluge until AM_LevelInit() is called
@@ -223,63 +224,94 @@ static int 	finit_width = SCREENWIDTH;
 static int 	finit_height = SCREENHEIGHT - 32;
 
 // location of window on screen
+__attribute__((section(".ram7")))
 static int 	f_x;
+__attribute__((section(".ram7")))
 static int	f_y;
 
 // size of window on screen
+__attribute__((section(".ram7")))
 static int 	f_w;
+__attribute__((section(".ram7")))
 static int	f_h;
 
+__attribute__((section(".ram7")))
 static int 	lightlev; 		// used for funky strobing effect
+__attribute__((section(".ram7")))
 static byte*	fb; 			// pseudo-frame buffer
+__attribute__((section(".ram7")))
 static int 	amclock;
 
 static mpoint_t m_paninc; // how far the window pans each tic (map coords)
+__attribute__((section(".ram7")))
 static fixed_t 	mtof_zoommul; // how far the window zooms in each tic (map coords)
+__attribute__((section(".ram7")))
 static fixed_t 	ftom_zoommul; // how far the window zooms in each tic (fb coords)
 
+__attribute__((section(".ram7")))
 static fixed_t 	m_x, m_y;   // LL x,y where the window is on the map (map coords)
+__attribute__((section(".ram7")))
 static fixed_t 	m_x2, m_y2; // UR x,y where the window is on the map (map coords)
 
 //
 // width/height of window on map (map coords)
 //
+__attribute__((section(".ram7")))
 static fixed_t 	m_w;
+__attribute__((section(".ram7")))
 static fixed_t	m_h;
 
 // based on level size
+__attribute__((section(".ram7")))
 static fixed_t 	min_x;
+__attribute__((section(".ram7")))
 static fixed_t	min_y; 
+__attribute__((section(".ram7")))
 static fixed_t 	max_x;
+__attribute__((section(".ram7")))
 static fixed_t  max_y;
 
+__attribute__((section(".ram7")))
 static fixed_t 	max_w; // max_x-min_x,
+__attribute__((section(".ram7")))
 static fixed_t  max_h; // max_y-min_y
 
 // based on player size
+__attribute__((section(".ram7")))
 static fixed_t 	min_w;
+__attribute__((section(".ram7")))
 static fixed_t  min_h;
 
 
+__attribute__((section(".ram7")))
 static fixed_t 	min_scale_mtof; // used to tell when to stop zooming out
+__attribute__((section(".ram7")))
 static fixed_t 	max_scale_mtof; // used to tell when to stop zooming in
 
 // old stuff for recovery later
+__attribute__((section(".ram7")))
 static fixed_t old_m_w, old_m_h;
+__attribute__((section(".ram7")))
 static fixed_t old_m_x, old_m_y;
 
 // old location used by the Follower routine
+__attribute__((section(".ram7")))
 static mpoint_t f_oldloc;
 
 // used by MTOF to scale from map-to-frame-buffer coords
 static fixed_t scale_mtof = INITSCALEMTOF;
 // used by FTOM to scale from frame-buffer-to-map coords (=1/scale_mtof)
+__attribute__((section(".ram7")))
 static fixed_t scale_ftom;
 
+__attribute__((section(".ram7")))
 static player_t *plr; // the player represented by an arrow
 
+__attribute__((section(".ram7")))
 static patch_t *marknums[10]; // numbers used for marking by the automap
+__attribute__((section(".ram7")))
 static mpoint_t markpoints[AM_NUMMARKPOINTS]; // where the points are
+__attribute__((section(".ram7")))
 static int markpointnum = 0; // next point to be assigned
 
 static int followplayer = 1; // specifies whether to follow the player around
@@ -572,7 +604,10 @@ void AM_Stop (void)
 //
 void AM_Start (void)
 {
-    static int lastlevel = -1, lastepisode = -1;
+    static int lastlevel, lastepisode;
+
+    lastlevel = -1;
+    lastepisode = -1;
 
     if (!stopped) AM_Stop();
     stopped = false;
@@ -617,7 +652,9 @@ AM_Responder
 
     int rc;
     /*static int cheatstate=0;*/
+__attribute__((section(".ram7")))
     static int bigstate=0;
+__attribute__((section(".ram7")))
     static char buffer[20];
 
     rc = false;
@@ -783,9 +820,11 @@ void AM_doFollowPlayer(void)
 //
 void AM_updateLightLev(void)
 {
+__attribute__((section(".ram7")))
     static int nexttic = 0;
     //static int litelevels[] = { 0, 3, 5, 6, 6, 7, 7, 7 };
     static int litelevels[] = { 0, 4, 7, 10, 12, 14, 15, 15 };
+__attribute__((section(".ram7")))
     static int litelevelscnt = 0;
    
     // Change light level
@@ -989,6 +1028,7 @@ AM_drawFline
     register int ay;
     register int d;
     
+__attribute__((section(".ram7")))
     static int fuck = 0;
 
     // For debugging only
@@ -1057,6 +1097,7 @@ AM_drawMline
 ( mline_t*	ml,
   int		color )
 {
+__attribute__((section(".ram7")))
     static fline_t fl;
 
     if (AM_clipMline(ml, &fl))
@@ -1117,6 +1158,7 @@ void AM_drawGrid(int color)
 void AM_drawWalls(void)
 {
     int i;
+__attribute__((section(".ram7")))
     static mline_t l;
 
     for (i=0;i<numlines;i++)
