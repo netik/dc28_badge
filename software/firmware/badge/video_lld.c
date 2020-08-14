@@ -40,7 +40,6 @@
 #include "video_lld.h"
 #include "async_io_lld.h"
 #include "stm32sai_lld.h"
-#include "hal_stm32_dma2d.h"
 #include "hal_stm32_ltdc.h"
 
 #include "badge.h"

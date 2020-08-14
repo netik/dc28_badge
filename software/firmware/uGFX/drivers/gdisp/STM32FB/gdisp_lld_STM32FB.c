@@ -70,20 +70,6 @@ typedef struct fbPriv {
 /* Driver exported functions.                                                */
 /*===========================================================================*/
 
-void
-gdisp_lld_acquire_bus (GDisplay *g)
-{
-	osalMutexLock (&((fbPriv *)g->priv)->fbi.mutex);
-	return;
-}
-
-void
-gdisp_lld_release_bus (GDisplay *g)
-{
-	osalMutexUnlock (&((fbPriv *)g->priv)->fbi.mutex);
-	return;
-}
-
 LLDSPEC gBool
 gdisp_lld_init (GDisplay *g)
 {
@@ -191,7 +177,7 @@ gdisp_lld_fill_area (GDisplay* g)
 	gU32 pos;
 	gU32 lineadd;
 
-	gdisp_lld_acquire_bus (g);
+	dma2dAcquireBusS (&DMA2DD1);
 
 #if GDISP_NEED_CONTROL
 	switch(g->g.Orientation) {
@@ -235,7 +221,7 @@ gdisp_lld_fill_area (GDisplay* g)
 	dma2dJobSetModeI (&DMA2DD1, DMA2D_JOB_CONST);
 	dma2dJobExecute (&DMA2DD1);
 
-	gdisp_lld_release_bus (g);
+	dma2dReleaseBusS (&DMA2DD1);
 
 	return;
 }
@@ -290,7 +276,7 @@ gdisp_lld_blit_area (GDisplay* g)
 standard:
 #endif
 
-	gdisp_lld_acquire_bus (g);
+	dma2dAcquireBusS (&DMA2DD1);
 
 	srcstart = LLDCOLOR_BYTES * ((gU32)g->p.x2 * g->p.y1 * + g->p.x1) +
 	    (gU32)g->p.ptr;
@@ -311,7 +297,7 @@ standard:
 	dma2dJobSetModeI (&DMA2DD1, DMA2D_JOB_CONVERT);
 	dma2dJobExecute (&DMA2DD1);
 
-	gdisp_lld_release_bus (g);
+	dma2dReleaseBusS (&DMA2DD1);
 
 	return;
 }

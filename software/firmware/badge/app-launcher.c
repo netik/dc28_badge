@@ -29,9 +29,6 @@
 #define SIDE	50
 #define BOT	2
 
-extern void gdisp_lld_acquire_bus (GDisplay *);
-extern void gdisp_lld_release_bus (GDisplay *);
-
 extern const OrchardApp *orchard_app_list;
 static uint32_t last_ui_time;
 
@@ -385,22 +382,20 @@ redraw_list (struct launcher_list * list, int dir)
 
 	_gwinFlushRedraws (REDRAW_WAIT);
 
-	gdisp_lld_acquire_bus (d0);
-	gdisp_lld_acquire_bus (d1);
-
 	/* Bump the CPU speed back to normal to speed up scroll. */
 
 	badge_cpu_speed_set (BADGE_CPU_SPEED_NORMAL);
+
+	dma2dAcquireBusS (&DMA2DD1);
 
 	if (dir == 1)
 		launcher_scroll_up ();
 	if (dir == 2)
 		launcher_scroll_down ();
 
-	badge_cpu_speed_set (BADGE_CPU_SPEED_MEDIUM);
+	dma2dReleaseBusS (&DMA2DD1);
 
-	gdisp_lld_release_bus (d1);
-	gdisp_lld_release_bus (d0);
+	badge_cpu_speed_set (BADGE_CPU_SPEED_MEDIUM);
 
 	draw_box (list, GFX_RED);
 

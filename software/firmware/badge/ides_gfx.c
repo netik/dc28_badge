@@ -436,6 +436,8 @@ idesDoubleBufferInit (uint8_t pixfmt)
 	 * the DMA2D engine.
 	 */
 
+	dma2dAcquireBusS (&DMA2DD1);
+
 	switch (pixfmt) {
 		case IDES_DB_RGB888:
 			dma2dFgSetPixelFormat (&DMA2DD1, DMA2D_FMT_RGB888);
@@ -451,6 +453,8 @@ idesDoubleBufferInit (uint8_t pixfmt)
 			dma2dBgSetPixelFormat (&DMA2DD1, DMA2D_FMT_RGB565);
 			break;
 	}
+
+	dma2dReleaseBusS (&DMA2DD1);
 
 	gdispGClear (d0, GFX_BLACK);
 	gdispGClear (d1, GFX_BLACK);
@@ -477,8 +481,12 @@ idesDoubleBufferPaletteLoad (palette_color_t * palette)
 
 	/* Load the palette into the DMA2D engine */
 
+	dma2dAcquireBusS (&DMA2DD1);
+
 	dma2dFgSetPalette (&DMA2DD1, &palcfg);
 	dma2dBgSetPalette (&DMA2DD1, &palcfg);
+
+	dma2dReleaseBusS (&DMA2DD1);
 
 	return;
 }
@@ -492,8 +500,12 @@ idesDoubleBufferStop (void)
 	 * the default.
 	 */
 
+	dma2dAcquireBusS (&DMA2DD1);
+
 	dma2dFgSetPixelFormat (&DMA2DD1, DMA2D_FMT_RGB565);
 	dma2dBgSetPixelFormat (&DMA2DD1, DMA2D_FMT_RGB565);
+
+	dma2dReleaseBusS (&DMA2DD1);
 
 	/*
 	 * Ensure correct display frame is restored:
