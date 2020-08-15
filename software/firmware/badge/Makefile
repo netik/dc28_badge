@@ -200,6 +200,7 @@ CSRC = $(ALLCSRC) \
        app-nes.c \
        app-setup.c \
        app-video.c \
+       badge_finder.c \
        userconfig.c \
        ui-keyboard.c \
        ui-list.c

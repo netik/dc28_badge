@@ -410,6 +410,7 @@ main (void)
 {
 	STM32_ID * pId;
 	uint32_t crc;
+	unsigned seed;
 
 	/*
 	 * System initializations.
@@ -681,9 +682,13 @@ main (void)
 
 	printf ("SAI2 block A enabled\n");
 
-	/* Enable random number generator */
+	/* Enable random number generator, and seed rand()/random() with it */
 
 	trngStart (&TRNGD1, NULL);
+        trngGenerate (&TRNGD1, sizeof (seed), (uint8_t *)&seed);
+	srand (seed);
+        trngGenerate (&TRNGD1, sizeof (seed), (uint8_t *)&seed);
+	srandom (seed);
 
 	printf ("Random number generator enabled\n");
 
@@ -792,6 +797,12 @@ main (void)
 		i2sWait ();
 	} else
 		configStart (CONFIG_LOAD);
+
+	/* Start the badge finder/pinger service. */
+
+	badge_finder_start ();
+
+	/* Initialize the GUI output console */
 
 	badge_coninit ();
 

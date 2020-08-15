@@ -35,6 +35,7 @@
 #include "shell.h"
 
 #include "badge.h"
+#include "badge_finder.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -227,4 +228,21 @@ cmd_ping (BaseSequentialStream *chp, int argc, char *argv[])
 	return;
 }
 
+static void
+cmd_peershow (BaseSequentialStream *chp, int argc, char *argv[])
+{
+        (void)argv;
+        (void)chp;
+
+	if (argc > 0) {
+		printf ("Usage: peershow\n");
+		return;
+	}
+
+	badge_peer_show ();
+
+        return;
+};
+
+orchard_command("peershow", cmd_peershow);
 orchard_command("ping", cmd_ping);

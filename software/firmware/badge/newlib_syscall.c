@@ -456,6 +456,14 @@ _gettimeofday (struct timeval * ptimeval, void * ptimezone)
 }
 
 __attribute__((used))
+unsigned int
+sleep (unsigned int secs)
+{
+	chThdSleepMilliseconds (secs * 1000);
+	return (0);
+}
+
+__attribute__((used))
 int
 usleep (useconds_t usecs)
 {
