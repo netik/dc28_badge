@@ -23,6 +23,7 @@
 #include "portab.h"
 #include "usbcfg.h"
 #include "badge.h"
+#include "badge_finder.h"
 #include "badge_console.h"
 #include "nullprot_lld.h"
 
