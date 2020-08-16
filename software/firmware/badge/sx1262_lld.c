@@ -252,7 +252,11 @@ sx1262CmdSend (SX1262_Driver * p, void * cmd, uint8_t len)
 
 	spiSelect (p->sx_spi);
 
+	badge_lpidle_suspend ();
+
 	spiSend (p->sx_spi, len, p->sx_cmdbuf);
+
+	badge_lpidle_resume ();
 
 	spiUnselect (p->sx_spi);
 
@@ -292,7 +296,11 @@ sx1262CmdExc (SX1262_Driver * p, void * cmd, uint8_t len)
 
 	spiSelect (p->sx_spi);
 
+	badge_lpidle_suspend ();
+
 	spiExchange (p->sx_spi, len, p->sx_cmdbuf, p->sx_cmdbuf);
+
+	badge_lpidle_resume ();
 
 	spiUnselect (p->sx_spi);
 
@@ -362,7 +370,12 @@ sx1262BufRead (SX1262_Driver * p, uint8_t * buf, uint8_t off, uint8_t len)
 
 	/* Send buffer read command */
 
+	badge_lpidle_suspend ();
+
 	spiExchange (p->sx_spi, sizeof(b), &b, &b);
+
+	badge_lpidle_resume ();
+
 	/* Read the resulting buffer data */
 
 	spiExchange (p->sx_spi, len, buf, buf);
@@ -402,10 +415,14 @@ sx1262BufWrite (SX1262_Driver * p, uint8_t * buf, uint8_t off, uint8_t len)
 	spiAcquireBus (p->sx_spi);
 	spiSelect (p->sx_spi);
 
+	badge_lpidle_suspend ();
+
 	/* Send buffer write command */
 	spiSend (p->sx_spi, sizeof(b), &b);
 	/* Send the buffer data */
 	spiSend (p->sx_spi, len, buf);
+
+	badge_lpidle_resume ();
 
 	spiUnselect (p->sx_spi);
 
