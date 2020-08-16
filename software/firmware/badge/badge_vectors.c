@@ -113,7 +113,7 @@ static char exc_msgbuf[80];
  */
 
 static volatile uint8_t badge_sleep = FALSE;
-static volatile uint8_t badge_lpidle = FALSE;
+static volatile uint16_t badge_lpidle = FALSE;
 static volatile uint8_t badge_cpuspeed = BADGE_CPU_SPEED_NORMAL;
 
 /*
@@ -291,14 +291,14 @@ badge_idle (void)
 		 * SDRAM controller clock is shut down.
 		 */
 
-		if (badge_lpidle) {
+		if (badge_lpidle & 0xFF) {
 			__disable_irq ();
 			fsmcSdramSelfRefresh (&SDRAMD);
 		}
 		__DSB();
 		__ISB();
 		__WFI();
-		if (badge_lpidle) {
+		if (badge_lpidle & 0xFF) {
 			fsmcSdramNormal (&SDRAMD);
 			__enable_irq ();
 		}
@@ -413,6 +413,46 @@ badge_lpidle_disable (void)
 	rccEnableFSMC (TRUE);
 	rccEnableLTDC (TRUE);
 	osalSysUnlock ();
+	return;
+}
+
+void
+badge_lpidle_suspend (void)
+{
+	uint16_t lp;
+
+	osalSysLock ();
+
+	lp = badge_lpidle;
+	badge_lpidle <<= 8;
+
+	if (lp) {
+		rccEnableFSMC (TRUE);
+		rccEnableLTDC (TRUE);
+	}
+
+	osalSysUnlock ();
+
+	return;
+}
+
+void
+badge_lpidle_resume (void)
+{
+	uint16_t lp;
+
+	osalSysLock ();
+
+	lp = badge_lpidle;
+	badge_lpidle >>= 8;
+
+	if (lp) {
+		rccEnableFSMC (FALSE);
+		rccEnableLTDC (FALSE);
+	}
+
+	osalSysUnlock ();
+
 	return;
 }
 
