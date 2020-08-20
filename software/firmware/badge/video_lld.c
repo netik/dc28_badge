@@ -50,10 +50,9 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <malloc.h>
 
 #include "jpeglib.h"
-
-#define        roundup(x, y)   ((((x)+((y)-1))/(y))*(y))
 
 static struct jpeg_decompress_struct cinfo;
 static struct jpeg_error_mgr jerr;
@@ -205,7 +204,6 @@ videoPlay (char * path)
 {
 	CHUNK_HEADER _ch;
 	CHUNK_HEADER * ch;
-	uint8_t * btmp;
 	uint8_t * buf;
 	uint8_t * p1;
 	uint8_t * p2;
@@ -258,8 +256,7 @@ videoPlay (char * path)
 
 	max = (ch->cur_vid_size + ch->cur_aud_size) + sizeof(CHUNK_HEADER);
 
-	btmp = malloc ((max * 2) + CACHE_LINE_SIZE);
-	buf = (uint8_t *)roundup ((uintptr_t)btmp, CACHE_LINE_SIZE);
+	buf = memalign (CACHE_LINE_SIZE, (max * 2));
 
 	p1 = buf;
 	p2 = buf + max;
@@ -366,7 +363,7 @@ videoPlay (char * path)
 
 	/* Free memory */
 
-	free (btmp);
+	free (buf);
 
 	idesDoubleBufferStop ();
 

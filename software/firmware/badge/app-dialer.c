@@ -39,9 +39,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <malloc.h>
 #include <math.h>
-
-#define        roundup(x, y)   ((((x)+((y)-1))/(y))*(y))
 
 typedef struct dialer_button {
 	gCoord		button_x;
@@ -234,7 +233,6 @@ tonePlay (GWidgetObject * w, uint8_t b, uint32_t duration)
 	double point2;
 	double result;
 	double pi;
-	uint16_t * buf_orig;
 	uint16_t * buf;
 	uint16_t freqa;
 	uint16_t freqb;
@@ -248,8 +246,7 @@ tonePlay (GWidgetObject * w, uint8_t b, uint32_t duration)
 
 	samples = buttons[b].button_samples;
 
-	buf_orig = malloc ((samples * sizeof(uint16_t)) + CACHE_LINE_SIZE);
-	buf = (uint16_t *)roundup ((uintptr_t)buf_orig, CACHE_LINE_SIZE);
+	buf = memalign (CACHE_LINE_SIZE, (samples * sizeof(uint16_t)));
 
 	pi = (3.14159265358979323846264338327950288 * 2);
 
@@ -287,7 +284,7 @@ tonePlay (GWidgetObject * w, uint8_t b, uint32_t duration)
 
 	chThdSetPriority (ORCHARD_APP_PRIO);
 
-	free (buf_orig);
+	free (buf);
 
 	return;
 }

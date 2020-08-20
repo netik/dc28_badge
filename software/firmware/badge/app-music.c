@@ -54,6 +54,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <malloc.h>
 
 #define MUSIC_SAMPLES 2048
 #define MUSIC_BYTES (MUSIC_SAMPLES * 2)
@@ -61,8 +62,6 @@
 
 #define BACKGROUND HTML2COLOR(0x470b67)
 #define MUSICDIR "/sound"
-
-#define        roundup(x, y)   ((((x)+((y)-1))/(y))*(y))
 
 typedef struct _MusicHandles {
 	char **			listitems;
@@ -252,7 +251,6 @@ static int
 musicPlay (MusicHandles * p, char * fname)
 {
 	int f;
-	uint16_t * i2sBuf;
 	uint16_t * buf;
 	uint16_t * p1;
 	uint16_t * p2;
@@ -278,10 +276,9 @@ musicPlay (MusicHandles * p, char * fname)
 	if (f == -1)
 		return (0);
 
-	i2sBuf = malloc (((MUSIC_SAMPLES * sizeof(uint16_t)) * 2) +
-	    CACHE_LINE_SIZE);
+	buf = memalign (CACHE_LINE_SIZE, ((MUSIC_SAMPLES *
+	    sizeof(uint16_t)) * 2));
 
-	buf = (uint16_t *)roundup ((uintptr_t)i2sBuf, CACHE_LINE_SIZE);
 	p1 = buf;
 	p2 = buf + MUSIC_SAMPLES;
 
@@ -325,7 +322,7 @@ musicPlay (MusicHandles * p, char * fname)
 	i2sEnabled = enb;
 
 	close (f);
-	free (i2sBuf);
+	free (buf);
 
 	geventDetachSource (&gl, NULL);
 

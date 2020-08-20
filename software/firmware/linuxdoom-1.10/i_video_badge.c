@@ -33,6 +33,7 @@ rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
 #include "hal_stm32_ltdc.h"
 
 #include <stdlib.h>
+#include <malloc.h>
 
 #include "doomstat.h"
 #include "i_system.h"
@@ -44,9 +45,6 @@ rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
 
 static palette_color_t * palettebuf;
 static int buttontmp;
-static void * screenbuf;
-
-#define        roundup(x, y)   ((((x)+((y)-1))/(y))*(y))
 
 //
 // I_ShutdownGraphics
@@ -64,10 +62,9 @@ void I_ShutdownGraphics (void)
 	idesDoubleBufferStop ();
 
 	free (palettebuf);
-	free (screenbuf);
+	free (screens[0]);
 	screens[0] = NULL;
 	palettebuf = NULL;
-	screenbuf = NULL;
 
 	return;
 }
@@ -316,10 +313,7 @@ void I_InitGraphics(void)
 
 	/* Allocate the screen buffer */
 
-	screenbuf = malloc ((SCREENWIDTH * SCREENHEIGHT) + CACHE_LINE_SIZE);
-
-	screens[0] = (unsigned char *)roundup((uintptr_t)screenbuf,
-	    CACHE_LINE_SIZE);
+	screens[0] = memalign (CACHE_LINE_SIZE, (SCREENWIDTH * SCREENHEIGHT));
 
 	return;
 }
