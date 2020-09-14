@@ -366,12 +366,12 @@ Text Label 7200 5550 0    50   ~ 0
 IM2
 Text Label 7200 5650 0    50   ~ 0
 IM3
+Text Notes 3700 1100 0    50   ~ 0
+Actual display pinout: https://www.buydisplay.com/download/ic/ILI9341.pdf\nNote: May need alternate part: https://www.mouser.com/ProductDetail/Amphenol-FCI/62684-50110E9ALF?qs=%2Fha2pyFadujOUaW3MI47g4tVkznaXoi2XEy9rmwa7FEZzDwWxeWYmQ%3D%3D\nNote: Pins may need to be reversed if "bottom contacts" connector is used.
 Wire Bus Line
 	4400 2350 4400 3000
 Wire Bus Line
 	10050 1600 10050 2100
 Wire Bus Line
 	4600 3100 4600 5200
-Text Notes 3700 1100 0    50   ~ 0
-Actual display pinout: https://www.buydisplay.com/download/ic/ILI9341.pdf\nNote: May need alternate part: https://www.mouser.com/ProductDetail/Amphenol-FCI/62684-50110E9ALF?qs=%2Fha2pyFadujOUaW3MI47g4tVkznaXoi2XEy9rmwa7FEZzDwWxeWYmQ%3D%3D\nNote: Pins may need to be reversed if "bottom contacts" connector is used.
 $EndSCHEMATC

@@ -643,8 +643,8 @@ Wire Wire Line
 Connection ~ 2450 3550
 Wire Wire Line
 	2450 3550 2450 4150
-Wire Bus Line
-	7300 3100 7300 3950
 Text Notes 1950 1800 0    50   ~ 0
 Note: SemTech schematic shows L2 between pin 23 (RFO) and junction of\nL1 and L3. But for the 915MHz SX1262 board, this is populated as a 0ohm\nresistor. Component is just omitted here since that's effectively just a jumper.\n
+Wire Bus Line
+	7300 3100 7300 3950
 $EndSCHEMATC
