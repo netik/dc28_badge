@@ -384,7 +384,7 @@ Wire Wire Line
 Wire Wire Line
 	9100 1700 4450 1700
 Wire Wire Line
-	4450 1700 4450 2500
+	4450 1700 4450 2300
 Wire Wire Line
 	9200 850  9200 2050
 Wire Wire Line
