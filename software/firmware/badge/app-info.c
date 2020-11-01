@@ -46,7 +46,7 @@
 #include <string.h>
 #include <malloc.h>
 
-extern uint32_t __flash0_start__;
+extern uint32_t __flash0_base__;
 extern uint32_t __ram7_init_text__;
 
 #pragma pack(1)
@@ -156,7 +156,7 @@ info_start (OrchardAppContext *context)
 	gwinPrintf (p->ghConsole, "ChibiOS kernel version: %s\n",
 	    CH_KERNEL_VERSION);
 	gwinPrintf (p->ghConsole, "Firmware image size: %d bytes\n",
-	    (uint32_t)&__ram7_init_text__ - (uint32_t)&__flash0_start__);
+	    (uint32_t)&__ram7_init_text__ - (uint32_t)&__flash0_base__);
 	gwinPrintf (p->ghConsole, "%s\n", BUILDTIME);
 	gwinPrintf (p->ghConsole, "Built with: %s\n", PORT_COMPILER_NAME);
 

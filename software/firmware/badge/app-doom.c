@@ -40,7 +40,7 @@
 #include <string.h>
 
 extern int doom_main (int argc, char * argv[]);
-extern char __ram7_start__; /* Set by linker */
+extern char __ram7_base__; /* Set by linker */
 extern char __ram7_end__; /* Set by linker */
 
 static THD_FUNCTION(doomThread, arg)
@@ -57,8 +57,8 @@ static THD_FUNCTION(doomThread, arg)
 
 	/* Initialize Doom's .bss */
 
-	bsslen = (uintptr_t)&__ram7_end__ - (uintptr_t)&__ram7_start__;
-	memset (&__ram7_start__, 0, bsslen);
+	bsslen = (uintptr_t)&__ram7_end__ - (uintptr_t)&__ram7_base__;
+	memset (&__ram7_base__, 0, bsslen);
 
 	badge_concreate (BADGE_CONSOLE_SHARE);
 

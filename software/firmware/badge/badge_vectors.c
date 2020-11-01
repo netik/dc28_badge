@@ -33,7 +33,7 @@
 #include "ch.h"
 #include "hal.h"
 
-#include "hal_fsmc_sdram.h"
+#include "hal_sdram_lld.h"
 
 #include "badge.h"
 
@@ -293,13 +293,13 @@ badge_idle (void)
 
 		if (badge_lpidle & 0xFF) {
 			__disable_irq ();
-			fsmcSdramSelfRefresh (&SDRAMD);
+			sdram_lld_selfrefresh (&SDRAMD1);
 		}
 		__DSB();
 		__ISB();
 		__WFI();
 		if (badge_lpidle & 0xFF) {
-			fsmcSdramNormal (&SDRAMD);
+			sdram_lld_normal (&SDRAMD1);
 			__enable_irq ();
 		}
 	}
@@ -317,7 +317,7 @@ badge_wakeup (void)
 
 	if (badge_deep_sleep == TRUE && SCB->SCR & SCB_SCR_SLEEPDEEP_Msk) {
 		__disable_irq ();
-		fsmcSdramNormal (&SDRAMD);
+		sdram_lld_normal (&SDRAMD1);
 		badge_deep_sleep = FALSE;
 		SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
 
@@ -397,22 +397,22 @@ badge_sleep_disable (void)
 void
 badge_lpidle_enable (void)
 {
-	osalSysLock ();
+	__enable_irq ();
 	badge_lpidle = TRUE;
 	rccEnableFSMC (FALSE);
 	rccEnableLTDC (FALSE);
-	osalSysUnlock ();
+	__disable_irq ();
 	return;
 }
 
 void
 badge_lpidle_disable (void)
 {
-	osalSysLock ();
+	__enable_irq ();
 	badge_lpidle = FALSE;
 	rccEnableFSMC (TRUE);
 	rccEnableLTDC (TRUE);
-	osalSysUnlock ();
+	__disable_irq ();
 	return;
 }
 
@@ -421,7 +421,7 @@ badge_lpidle_suspend (void)
 {
 	uint16_t lp;
 
-	osalSysLock ();
+	__enable_irq ();
 
 	lp = badge_lpidle;
 	badge_lpidle <<= 8;
@@ -431,7 +431,9 @@ badge_lpidle_suspend (void)
 		rccEnableLTDC (TRUE);
 	}
 
-	osalSysUnlock ();
+	__ISB();
+
+	__disable_irq ();
 
 	return;
 }
@@ -441,7 +443,7 @@ badge_lpidle_resume (void)
 {
 	uint16_t lp;
 
-	osalSysLock ();
+	__enable_irq ();
 
 	lp = badge_lpidle;
 	badge_lpidle >>= 8;
@@ -451,7 +453,9 @@ badge_lpidle_resume (void)
 		rccEnableLTDC (FALSE);
 	}
 
-	osalSysUnlock ();
+	__ISB();
+
+	__disable_irq ();
 
 	return;
 }
@@ -514,7 +518,7 @@ THD_FUNCTION(badge_power_loop, arg)
 	 	 * - Flash power down in stop mode
 		 * - Low power regulator in stop mode.
 		 * - Low power regulator in under drive mode during
-		 *   stop mode.and flash
+		 *   stop mode.
 		 * - Underdrive when in stop mode
 		 */
 
@@ -540,7 +544,7 @@ THD_FUNCTION(badge_power_loop, arg)
 		 * should have re-enabled all of the clocks.
 		 */
 
-		fsmcSdramSelfRefresh (&SDRAMD);
+		sdram_lld_selfrefresh (&SDRAMD1);
 		__DSB();
 		__ISB();
 		__WFI();

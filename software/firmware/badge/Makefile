@@ -104,8 +104,7 @@ include $(CHIBIOS)/os/common/startup/ARMCMx/compilers/GCC/mk/startup_stm32f7xx.m
 include $(CHIBIOS_CONTRIB)/os/hal/hal.mk
 include $(CHIBIOS_CONTRIB)/os/hal/ports/STM32/STM32F7xx/platform.mk
 include $(CHIBIOS)/os/hal/boards/ST_STM32F746G_DISCOVERY/board.mk
-include $(CHIBIOS)/os/hal/ports/STM32/LLD/RNGv1/driver.mk
-include $(CHIBIOS)/os/hal/osal/rt/osal.mk
+include $(CHIBIOS)/os/hal/osal/rt-nil/osal.mk
 # RTOS files (optional).
 include $(CHIBIOS)/os/rt/rt.mk
 include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/port_v7m.mk
@@ -173,6 +172,7 @@ CSRC = $(ALLCSRC) \
        newlib_syscall.c \
        nullprot_lld.c \
        badge_console.c \
+       badge_finder.c \
        badge_vectors.c \
        async_io_lld.c \
        video_lld.c \
@@ -200,7 +200,6 @@ CSRC = $(ALLCSRC) \
        app-nes.c \
        app-setup.c \
        app-video.c \
-       badge_finder.c \
        userconfig.c \
        ui-keyboard.c \
        ui-list.c

@@ -27,8 +27,6 @@
 #include "badge_console.h"
 #include "nullprot_lld.h"
 
-#include "hal_fsmc_sram.h"
-#include "hal_fsmc_sdram.h"
 #include "hal_stm32_ltdc.h"
 #include "hal_stm32_dma2d.h"
 #include "fsmc_sdram.h"
@@ -88,17 +86,10 @@ thread_reference_t shell_ref_usb;
 static event_listener_t shell_el;
 
 /*
- * Working area for SD card driver.
- */
-
-static uint8_t sd_scratchpad[512];
-
-/*
  * SDIO configuration.
  */
 static const SDCConfig sdccfg =
 {
-	sd_scratchpad,
 	SDC_MODE_4BIT
 };
 
@@ -476,8 +467,8 @@ main (void)
 
 	/* Enable SDRAM */
 
-	fsmcSdramInit ();
-	fsmcSdramStart (&SDRAMD, &sdram_cfg);
+	sdramInit ();
+	sdramStart (&SDRAMD1, &sdram_cfg);
 
 	/*
 	 * Per the manual, SRAM/PSRAM/NOR bank 1 is always enabled
@@ -509,7 +500,7 @@ main (void)
 	 *
 	 * I discovered that completely disabling the data cache
 	 * seemed to mitigate this, but at the cost of reduced
-	 * performance (which was mainly noticeably when running
+	 * performance (which was mainly noticeable when running
 	 * the Nintendo emulator; the sound was too slow).
 	 *
 	 * After further experimentation, I discovered I could also
@@ -530,9 +521,9 @@ main (void)
 	 * problem at the source.
 	 */
 
-	fsmcSramInit ();
-	fsmcSramStart (&SRAMD1, &sram_cfg);
-	fsmcSramStop (&SRAMD1);
+	sramInit ();
+	sramStart (&SRAMD1, &sram_cfg);
+	sramStop (&SRAMD1);
 
 	/* Configure memory mappings. */
 
@@ -626,7 +617,7 @@ main (void)
 
 	printf ("Flash size: %d KB\n", *(uint16_t *)FLASHSIZE_BASE);
 
-	printf ("CPU speed: %luMHz\n", badge_cpu_speed_get ());
+	printf ("CPU speed: %lu MHz\n", badge_cpu_speed_get ());
 
 	printf ("Debugger: %s\n",
 	    CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk ?
@@ -719,10 +710,10 @@ main (void)
 	printf ("USB controller enabled\n");
 
 	/*
-	 * Initializes the SDIO drivers.
+	 * Initialize the SDIO driver.
 	 */
 
-	sdcStart(&SDCD1, &sdccfg);
+	sdcStart (&SDCD1, &sdccfg);
 
 	printf ("SD card controller enabled\n");
 
@@ -739,6 +730,8 @@ main (void)
 	asyncIoStart ();
 
 	printf ("Async I/O subsystem enabled\n");
+
+	/* Initialize the LCD display and DMA2D engine */
 
 	ltdcInit ();
 	ltdcStart (&LTDCD1, &ltdc_cfg);
@@ -763,7 +756,7 @@ main (void)
 
 	printf ("uGFX graphics enabled\n");
 
-	/* Initialize SD card sensor */
+	/* Initialize SD card insert/remove sensor */
 
 	sdDetectStart ();
 
