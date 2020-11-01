@@ -18,7 +18,7 @@
 */
 
 /**
- * @file    chsem.c
+ * @file    rt/src/chsem.c
  * @brief   Semaphores code.
  *
  * @addtogroup semaphores
@@ -107,20 +107,18 @@ void chSemObjectInit(semaphore_t *sp, cnt_t n) {
  * @post    After invoking this function all the threads waiting on the
  *          semaphore, if any, are released and the semaphore counter is set
  *          to the specified, non negative, value.
- * @note    The released threads can recognize they were waked up by a reset
- *          rather than a signal because the @p chSemWait() will return
- *          @p MSG_RESET instead of @p MSG_OK.
  *
  * @param[in] sp        pointer to a @p semaphore_t structure
  * @param[in] n         the new value of the semaphore counter. The value must
  *                      be non-negative.
+ * @param[in] msg       message to be sent
  *
  * @api
  */
-void chSemReset(semaphore_t *sp, cnt_t n) {
+void chSemResetWithMessage(semaphore_t *sp, cnt_t n, msg_t msg) {
 
   chSysLock();
-  chSemResetI(sp, n);
+  chSemResetWithMessageI(sp, n, msg);
   chSchRescheduleS();
   chSysUnlock();
 }
@@ -134,18 +132,15 @@ void chSemReset(semaphore_t *sp, cnt_t n) {
  *          function must be performed before unlocking the kernel. Note that
  *          interrupt handlers always reschedule on exit so an explicit
  *          reschedule must not be performed in ISRs.
- * @note    The released threads can recognize they were waked up by a reset
- *          rather than a signal because the @p chSemWait() will return
- *          @p MSG_RESET instead of @p MSG_OK.
  *
  * @param[in] sp        pointer to a @p semaphore_t structure
  * @param[in] n         the new value of the semaphore counter. The value must
  *                      be non-negative.
+ * @param[in] msg       message to be sent
  *
  * @iclass
  */
-void chSemResetI(semaphore_t *sp, cnt_t n) {
-  cnt_t cnt;
+void chSemResetWithMessageI(semaphore_t *sp, cnt_t n, msg_t msg) {
 
   chDbgCheckClassI();
   chDbgCheck((sp != NULL) && (n >= (cnt_t)0));
@@ -153,10 +148,9 @@ void chSemResetI(semaphore_t *sp, cnt_t n) {
               ((sp->cnt < (cnt_t)0) && queue_notempty(&sp->queue)),
               "inconsistent semaphore");
 
-  cnt = sp->cnt;
   sp->cnt = n;
-  while (++cnt <= (cnt_t)0) {
-    chSchReadyI(queue_lifo_remove(&sp->queue))->u.rdymsg = MSG_RESET;
+  while (queue_notempty(&sp->queue)) {
+    chSchReadyI(queue_lifo_remove(&sp->queue))->u.rdymsg = msg;
   }
 }
 

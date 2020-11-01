@@ -32,6 +32,20 @@
 #endif
 
 /**
+ * @brief   Enables the SDRAM subsystem.
+ */
+#if !defined(HAL_USE_SDRAM) || defined(__DOXYGEN__)
+#define HAL_USE_SDRAM               FALSE
+#endif
+
+/**
+ * @brief   Enables the SRAM subsystem.
+ */
+#if !defined(HAL_USE_SRAM) || defined(__DOXYGEN__)
+#define HAL_USE_SRAM                FALSE
+#endif
+
+/**
  * @brief   Enables the NAND subsystem.
  */
 #if !defined(HAL_USE_NAND) || defined(__DOXYGEN__)
@@ -168,6 +182,7 @@
  */
 #define EEPROM_USE_EE25XX FALSE
 
+
 /*===========================================================================*/
 /* USBH driver related settings.                                             */
 /*===========================================================================*/
@@ -176,7 +191,7 @@
 #define HAL_USBH_PORT_DEBOUNCE_TIME                   200
 #define HAL_USBH_PORT_RESET_TIMEOUT                   500
 #define HAL_USBH_DEVICE_ADDRESS_STABILIZATION         20
-#define HAL_USBH_CONTROL_REQUEST_DEFAULT_TIMEOUT	    OSAL_MS2I(1000)
+#define HAL_USBH_CONTROL_REQUEST_DEFAULT_TIMEOUT	  OSAL_MS2I(1000)
 
 /* MSD */
 #define HAL_USBH_USE_MSD                              TRUE
@@ -191,6 +206,7 @@
 #define HAL_USBHFTDI_MAX_INSTANCES                    1
 #define HAL_USBHFTDI_DEFAULT_SPEED                    9600
 #define HAL_USBHFTDI_DEFAULT_FRAMING                  (USBHFTDI_FRAMING_DATABITS_8 | USBHFTDI_FRAMING_PARITY_NONE | USBHFTDI_FRAMING_STOP_BITS_1)
+#define HAL_USBHFTDI_DEFAULT_FRAMING                  (USBHFTDI_FRAMING_DATABITS_8 | USBHFTDI_FRAMING_PARITY_NONE | USBHFTDI_FRAMING_STOP_BITS_1)
 #define HAL_USBHFTDI_DEFAULT_HANDSHAKE                USBHFTDI_HANDSHAKE_NONE
 #define HAL_USBHFTDI_DEFAULT_XON                      0x11
 #define HAL_USBHFTDI_DEFAULT_XOFF                     0x13
@@ -200,7 +216,7 @@
 
 #define HAL_USBHAOA_MAX_INSTANCES                     1
 /* Uncomment this if you need a filter for AOA devices:
- * #define HAL_USBHAOA_FILTER_CALLBACK            _try_aoa
+ * #define HAL_USBHAOA_FILTER_CALLBACK                _try_aoa
  */
 #define HAL_USBHAOA_DEFAULT_MANUFACTURER              "Diego MFG & Co."
 #define HAL_USBHAOA_DEFAULT_MODEL                     "Diego's device"
@@ -229,13 +245,14 @@
 #define HAL_USBHHUB_MAX_INSTANCES                     1
 #define HAL_USBHHUB_MAX_PORTS                         6
 
-#define HAL_USBH_USE_ADDITIONAL_CLASS_DRIVERS		  TRUE
+#define HAL_USBH_USE_ADDITIONAL_CLASS_DRIVERS            TRUE
 
 /* debug */
 #define USBH_DEBUG_ENABLE                             TRUE
-#define USBH_DEBUG_USBHD                              USBHD1
-#define USBH_DEBUG_SD                                 SD2
+#define USBH_DEBUG_MULTI_HOST                         FALSE
+#define USBH_DEBUG_SINGLE_HOST_SELECTION			  USBHD1
 #define USBH_DEBUG_BUFFER                             25000
+#define USBH_DEBUG_OUTPUT_CALLBACK                    usbh_debug_output
 
 #define USBH_DEBUG_ENABLE_TRACE                       FALSE
 #define USBH_DEBUG_ENABLE_INFO                        TRUE

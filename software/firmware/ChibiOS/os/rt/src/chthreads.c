@@ -18,7 +18,7 @@
 */
 
 /**
- * @file    chthreads.c
+ * @file    rt/src/chthreads.c
  * @brief   Threads code.
  *
  * @addtogroup threads
@@ -303,7 +303,7 @@ thread_t *chThdCreate(const thread_descriptor_t *tdp) {
 /**
  * @brief   Creates a new thread into a static memory area.
  * @post    The created thread has a reference counter set to one, it is
- *          caller responsibility to call @p chThdRelease() or @p chthdWait()
+ *          caller responsibility to call @p chThdRelease() or @p chThdWait()
  *          in order to release the reference. The thread persists in the
  *          registry until its reference counter reaches zero.
  * @note    A thread can terminate by calling @p chThdExit() or by simply
@@ -682,7 +682,7 @@ void chThdSleepUntil(systime_t time) {
 /**
  * @brief   Suspends the invoking thread until the system time arrives to the
  *          specified value.
- * @note    The system time is assumed to be between @p prev and @p time
+ * @note    The system time is assumed to be between @p prev and @p next
  *          else the call is assumed to have been called outside the
  *          allowed time interval, in this case no sleep is performed.
  * @see     chThdSleepUntil()

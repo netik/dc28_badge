@@ -23,8 +23,8 @@
 /*
  * FSMC NAND driver system settings.
  */
-#define STM32_NAND_USE_FSMC_NAND1           FALSE
-#define STM32_NAND_USE_FSMC_NAND2           FALSE
+#define STM32_NAND_USE_NAND1           FALSE
+#define STM32_NAND_USE_NAND2           FALSE
 #define STM32_NAND_USE_EXT_INT              FALSE
 #define STM32_NAND_DMA_STREAM               STM32_DMA_STREAM_ID(2, 7)
 #define STM32_NAND_DMA_PRIORITY             0
@@ -85,6 +85,16 @@
 #define STM32_DISABLE_EXTI30_32_HANDLER
 #define STM32_DISABLE_EXTI33_HANDLER
 #endif
+
+/*
+ * OPAMP driver system settings.
+ */
+
+#define STM32_OPAMP_USE_OPAMP1                  TRUE
+#define STM32_OPAMP_USE_OPAMP2                  TRUE
+#define STM32_OPAMP_USE_OPAMP3                  TRUE
+#define STM32_OPAMP_USE_OPAMP4                  TRUE
+#define STM32_OPAMP_USER_TRIM_ENABLED           TRUE
 
 /*
  * USBH driver system settings.

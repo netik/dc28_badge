@@ -589,6 +589,29 @@
  * @api
  */
 #define rccResetDMA2() rccResetAHB1(RCC_AHB1RSTR_DMA2RST)
+
+/**
+ * @brief   Enables the MDMA peripheral clock.
+ *
+ * @param[in] lp        low power enable flag
+ *
+ * @api
+ */
+#define rccEnableMDMA(lp) rccEnableAHB3(RCC_AHB3ENR_MDMAEN, lp)
+
+/**
+ * @brief   Disables the MDMA peripheral clock.
+ *
+ * @api
+ */
+#define rccDisableMDMA() rccDisableAHB3(RCC_AHB3ENR_MDMAEN)
+
+/**
+ * @brief   Resets the MDMA peripheral.
+ *
+ * @api
+ */
+#define rccResetMDMA() rccResetAHB3(RCC_AHB3ENR_MDMARST)
 /** @} */
 
 /**
@@ -690,6 +713,34 @@
  * @api
  */
 #define rccResetETH() rccResetAHB1(RCC_AHB1RSTR_ETHMACRST)
+/** @} */
+
+/**
+ * @name    FDCAN peripherals specific RCC operations
+ * @{
+ */
+/**
+ * @brief   Enables the FDCAN peripheral clock.
+ *
+ * @param[in] lp        low power enable flag
+ *
+ * @api
+ */
+#define rccEnableFDCAN(lp) rccEnableAPB1H(RCC_APB1HENR_FDCANEN, lp)
+
+/**
+ * @brief   Disables the FDCAN peripheral clock.
+ *
+ * @api
+ */
+#define rccDisableFDCAN() rccDisableAPB1H(RCC_APB1HENR_FDCANEN)
+
+/**
+ * @brief   Resets the FDCAN peripheral.
+ *
+ * @api
+ */
+#define rccResetFDCAN() rccResetAPB1H(RCC_APB1HRSTR_FDCANRST)
 /** @} */
 
 /**
@@ -898,6 +949,34 @@
  * @api
  */
 #define rccResetQUADSPI1() rccResetAHB3(RCC_AHB3RSTR_QSPIRST)
+/** @} */
+
+/**
+ * @name    RNG peripherals specific RCC operations
+ * @{
+ */
+/**
+ * @brief   Enables the RNG peripheral clock.
+ *
+ * @param[in] lp        low power enable flag
+ *
+ * @api
+ */
+#define rccEnableRNG(lp) rccEnableAHB2(RCC_AHB2ENR_RNGEN, lp)
+
+/**
+ * @brief   Disables the RNG peripheral clock.
+ *
+ * @api
+ */
+#define rccDisableRNG() rccDisableAHB2(RCC_AHB2ENR_RNGEN)
+
+/**
+ * @brief   Resets the RNG peripheral.
+ *
+ * @api
+ */
+#define rccResetRNG() rccResetAHB2(RCC_AHB2RSTR_RNGRST)
 /** @} */
 
 /**
@@ -1608,6 +1687,30 @@
  * @api
  */
 #define rccResetUART8() rccResetAPB1L(RCC_APB1LRSTR_UART8RST)
+/** @} */
+
+/**
+ * @brief   Enables the LPUART1 peripheral clock.
+ *
+ * @param[in] lp        low power enable flag
+ *
+ * @api
+ */
+#define rccEnableLPUART1(lp) rccEnableAPB4(RCC_APB4ENR_LPUART1EN, lp)
+
+/**
+ * @brief   Disables the LPUART1 peripheral clock.
+ *
+ * @api
+ */
+#define rccDisableLPUART1() rccDisableAPB4(RCC_APB4ENR_LPUART1EN)
+
+/**
+ * @brief   Resets the LPUART1 peripheral.
+ *
+ * @api
+ */
+#define rccResetLPUART1() rccResetAPB4(RCC_APB4RSTR_LPUART1RST)
 /** @} */
 
 /**

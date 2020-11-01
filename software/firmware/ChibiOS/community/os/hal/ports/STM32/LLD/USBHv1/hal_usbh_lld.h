@@ -1,6 +1,6 @@
 /*
     ChibiOS - Copyright (C) 2006..2017 Giovanni Di Sirio
-              Copyright (C) 2015..2017 Diego Ismirlian, (dismirlian (at) google's mail)
+              Copyright (C) 2015..2019 Diego Ismirlian, (dismirlian(at)google's mail)
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -83,6 +83,7 @@ typedef struct stm32_hc_management {
 		uint32_t 			hcintmsk;													\
 		uint32_t			hcchar;														\
 		uint32_t 			dt_mask;			/* data-toggle mask */					\
+		int32_t				trace_level;		/* enable tracing */					\
 		/* current transfer */															\
 		struct {																		\
 			stm32_hc_management_t *hcm;				/* assigned channel */				\

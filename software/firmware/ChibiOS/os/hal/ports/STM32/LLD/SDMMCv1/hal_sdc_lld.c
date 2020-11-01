@@ -88,21 +88,10 @@ SDCDriver SDCD2;
 /* Driver local variables and types.                                         */
 /*===========================================================================*/
 
-#if STM32_SDC_SDMMC_UNALIGNED_SUPPORT
-/**
- * @brief   Buffer for temporary storage during unaligned transfers.
- */
-__attribute__((aligned(CACHE_LINE_SIZE)))
-static struct {
-  uint8_t   buf[MMCSD_BLOCK_SIZE];
-} u;
-#endif /* STM32_SDC_SDMMC_UNALIGNED_SUPPORT */
-
 /**
  * @brief   SDIO default configuration.
  */
 static const SDCConfig sdc_default_cfg = {
-  NULL,
   SDC_MODE_4BIT
 };
 
@@ -152,7 +141,7 @@ static bool sdc_lld_prepare_read_bytes(SDCDriver *sdcp,
 
   /* Transaction starts just after DTEN bit setting.*/
   sdcp->sdmmc->DCTRL = SDMMC_DCTRL_DTDIR |
-                       SDMMC_DCTRL_DTMODE |   /* multibyte data transfer */
+                       SDMMC_DCTRL_DTMODE |   /* Multibyte data transfer.*/
                        SDMMC_DCTRL_DMAEN |
                        SDMMC_DCTRL_DTEN;
 
@@ -930,9 +919,9 @@ bool sdc_lld_read(SDCDriver *sdcp, uint32_t startblk,
   if (((unsigned)buf & (CACHE_LINE_SIZE - 1)) != 0) {
     uint32_t i;
     for (i = 0; i < blocks; i++) {
-      if (sdc_lld_read_aligned(sdcp, startblk, u.buf, 1))
+      if (sdc_lld_read_aligned(sdcp, startblk, sdcp->buf, 1))
         return HAL_FAILED;
-      memcpy(buf, u.buf, MMCSD_BLOCK_SIZE);
+      memcpy(buf, sdcp->buf, MMCSD_BLOCK_SIZE);
       buf += MMCSD_BLOCK_SIZE;
       startblk++;
     }
@@ -965,9 +954,9 @@ bool sdc_lld_write(SDCDriver *sdcp, uint32_t startblk,
   if (((unsigned)buf & 3) != 0) {
     uint32_t i;
     for (i = 0; i < blocks; i++) {
-      memcpy(u.buf, buf, MMCSD_BLOCK_SIZE);
+      memcpy(sdcp->buf, buf, MMCSD_BLOCK_SIZE);
       buf += MMCSD_BLOCK_SIZE;
-      if (sdc_lld_write_aligned(sdcp, startblk, u.buf, 1))
+      if (sdc_lld_write_aligned(sdcp, startblk, sdcp->buf, 1))
         return HAL_FAILED;
       startblk++;
     }
@@ -992,7 +981,7 @@ bool sdc_lld_write(SDCDriver *sdcp, uint32_t startblk,
  */
 bool sdc_lld_sync(SDCDriver *sdcp) {
 
-  /* TODO: Implement.*/
+  /* CHTODO: Implement.*/
   (void)sdcp;
   return HAL_SUCCESS;
 }
