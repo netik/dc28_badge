@@ -478,7 +478,7 @@ THD_FUNCTION(badge_power_loop, arg)
 
 		/*
 	 	 * Once we wake up, we're the prettiest princess--
-		 * er.., we're the highest priority thread in the
+		 * er... we're the highest priority thread in the
 		 * system. We control the vertical. We control the
 		 * horizontal.
 		 *
@@ -487,7 +487,7 @@ THD_FUNCTION(badge_power_loop, arg)
 		 * mode. That means we need to wait for all DMA
 		 * transfers involving any of the peripherals to
 		 * finish, and we don't want to let any tasks start
-		 * any new transfers too.
+		 * any new transfers either.
 		 *
 		 * The best way to do that is to hog the CPU for a
 		 * bit. But we can't just use chThdSleep() because that
@@ -799,7 +799,7 @@ badge_cpu_speed_set (int speed)
 
 	/*
 	 * As a hack, when we're in slow speed mode, we divide the
-	 * SPI bus clock by a factor of instead of 4. This reduces
+	 * SPI bus clock by a factor of 4 instead of 2. This reduces
 	 * the bus SPI clock speed from 6.75MHz to 3.375MHz. This
 	 * is to compensate for the fact that while we're able to
 	 * maintain the same APB bus speed for the SPI controller,
