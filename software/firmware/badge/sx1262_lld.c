@@ -75,9 +75,11 @@
  * this right. Also, the rev C schematics have this error corrected.
  *
  * Unfortunately the error from the rev B schematics was propagated to
- * the ChibiOS BSP for the STM32F746G Discovery board, so it has the
- * pins assigned backwards. As a workaround, we currently use LINE_ARD_D10
- * in this driver.
+ * the ChibiOS BSP for the STM32F746G Discovery board. Versions of
+ * ChibiOS prior to 20.3.1 have this bug in it, so for those versions
+ * it's necessary to workaround it by using LINE_ARD_D10 in place of
+ * LIND_ARD_D5 where applicable. Fortunately we're now using version
+ * 20.3.2.7 where this is fixed.
  */
 
 SX1262_Driver SX1262D1;
@@ -1070,10 +1072,10 @@ sx1262Start (SX1262_Driver * p)
 	palSetLine (LINE_ARD_D8);
 
 	/* DIO1 */
-	palSetLineMode (LINE_ARD_D10, PAL_STM32_PUPDR_PULLDOWN |
+	palSetLineMode (LINE_ARD_D5, PAL_STM32_PUPDR_PULLDOWN |
 	     PAL_STM32_MODE_INPUT);
-	palSetLineCallback (LINE_ARD_D10, sx1262Int, p);
-	palEnableLineEvent (LINE_ARD_D10, PAL_EVENT_MODE_RISING_EDGE);
+	palSetLineCallback (LINE_ARD_D5, sx1262Int, p);
+	palEnableLineEvent (LINE_ARD_D5, PAL_EVENT_MODE_RISING_EDGE);
 
 	p->sx_rxbuf_orig = malloc (SX_MAX_PKT + SX_MAX_CMD + SX_ALIGNMENT);
 	p->sx_rxbuf = (uint8_t *)roundup ((uintptr_t)p->sx_rxbuf_orig,
