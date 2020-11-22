@@ -128,7 +128,7 @@ WM8994 = $(CHIBIOS)/../wm8994
 include $(WM8994)/build.mk
 
 # libjpeg library
-LIBJPEG = $(CHIBIOS)/../jpeg-9c
+LIBJPEG = $(CHIBIOS)/../jpeg-9d
 include $(LIBJPEG)/build.mk
 
 # lwIP TCP/IP stack
