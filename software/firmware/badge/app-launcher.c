@@ -382,9 +382,11 @@ redraw_list (struct launcher_list * list, int dir)
 
 	_gwinFlushRedraws (REDRAW_WAIT);
 
+#ifdef notyet
 	/* Bump the CPU speed back to normal to speed up scroll. */
 
 	badge_cpu_speed_set (BADGE_CPU_SPEED_NORMAL);
+#endif
 
 	dma2dAcquireBusS (&DMA2DD1);
 
@@ -395,7 +397,9 @@ redraw_list (struct launcher_list * list, int dir)
 
 	dma2dReleaseBusS (&DMA2DD1);
 
+#ifdef notyet
 	badge_cpu_speed_set (BADGE_CPU_SPEED_MEDIUM);
+#endif
 
 	draw_box (list, GFX_RED);
 
@@ -509,8 +513,10 @@ launcher_event (OrchardAppContext *context, const OrchardAppEvent *event)
 	if (event->type == radioEvent)
 		return;
 
+#ifdef notyet
 	if (event->type == appEvent && event->app.event == appStart)
 		badge_cpu_speed_set (BADGE_CPU_SPEED_MEDIUM);
+#endif
 
 	/*
 	 * Timer events trigger once a second. If we get ten timer
@@ -673,7 +679,9 @@ launcher_exit (OrchardAppContext *context)
 	struct launcher_list *list;
 	unsigned int i;
 
+#ifdef notyet
 	badge_cpu_speed_set (BADGE_CPU_SPEED_NORMAL);
+#endif
 
 	gdispClear (GFX_BLACK);
 
