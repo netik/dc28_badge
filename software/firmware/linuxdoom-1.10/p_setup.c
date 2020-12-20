@@ -613,7 +613,7 @@ P_SetupLevel
   skill_t	skill)
 {
     int		i;
-    char	lumpname[9];
+    char	lumpname[16];
     int		lumpnum;
 	
     (void)skill;
