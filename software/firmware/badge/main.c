@@ -33,6 +33,7 @@
 
 #include "async_io_lld.h"
 #include "stm32sai_lld.h"
+#include "stm32flash_lld.h"
 #include "sddetect_lld.h"
 #include "touch_lld.h"
 #include "sx1262_lld.h"
@@ -84,6 +85,12 @@ static thread_t * shell_tp_usb = NULL;
 thread_reference_t shell_ref_usb;
 
 static event_listener_t shell_el;
+
+/*
+ * Flash configuration
+ */
+
+STM32FLASHDriver FLASHD1;
 
 /*
  * SDIO configuration.
@@ -403,6 +410,7 @@ main (void)
 	STM32_ID * pId;
 	uint32_t crc;
 	unsigned seed;
+	const flash_descriptor_t * pFlash;
 
 	/*
 	 * System initializations.
@@ -622,6 +630,18 @@ main (void)
 	printf ("Debugger: %s\n",
 	    CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk ?
 	    "connected" : "disconnected");
+
+	/* Enable flash driver */
+
+	stm32FlashObjectInit (&FLASHD1);
+	stm32FlashStart (&FLASHD1);
+	pFlash = flashGetDescriptor (&FLASHD1);
+
+	if (pFlash->sectors_count > 0) {
+		printf ("On-board STM32F746 flash detected: "
+		    "%ld KB mapped at %p\n", pFlash->size / 1024,
+		    pFlash->address);
+	}
 
 	/* Enable timer */
 

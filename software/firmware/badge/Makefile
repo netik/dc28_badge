@@ -177,6 +177,7 @@ CSRC = $(ALLCSRC) \
        async_io_lld.c \
        video_lld.c \
        stm32adc_lld.c \
+       stm32flash_lld.c \
        stm32sai_lld.c \
        sddetect_lld.c \
        sx1262_lld.c \
