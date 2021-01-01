@@ -131,7 +131,6 @@ main (void)
 
 	chprintf (chp, "done!\r\n");
 	
-	/* Read data from the SD card and copy it to flash. */
 	/* Close the file */
 
 	f_close (&f);
