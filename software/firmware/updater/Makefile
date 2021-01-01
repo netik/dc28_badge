@@ -5,8 +5,7 @@
 
 # Compiler options here.
 ifeq ($(USE_OPT),)
-#  USE_OPT = -Os -ggdb -fomit-frame-pointer -falign-functions=16
-  USE_OPT = -Os -ggdb -fomit-frame-pointer -falign-functions=16
+  USE_OPT = -O2 -ggdb -fomit-frame-pointer -falign-functions=16
 endif
 
 # C specific options here (added to USE_OPT).
@@ -31,7 +30,7 @@ endif
 
 # Enable this if you want link time optimizations (LTO).
 ifeq ($(USE_LTO),)
-  USE_LTO = yes
+  USE_LTO = no
 endif
 
 # Enable this if you want to see the full log while compiling.
@@ -56,18 +55,18 @@ endif
 # Stack size to be allocated to the Cortex-M process stack. This stack is
 # the stack used by the main() thread.
 ifeq ($(USE_PROCESS_STACKSIZE),)
-  USE_PROCESS_STACKSIZE = 0x400
+  USE_PROCESS_STACKSIZE = 0x800
 endif
 
 # Stack size to the allocated to the Cortex-M main/exceptions stack. This
 # stack is used for processing interrupts and exceptions.
 ifeq ($(USE_EXCEPTIONS_STACKSIZE),)
-  USE_EXCEPTIONS_STACKSIZE = 0x400
+  USE_EXCEPTIONS_STACKSIZE = 0x800
 endif
 
 # Enables the use of FPU (no, softfp, hard).
 ifeq ($(USE_FPU),)
-  USE_FPU = hard
+  USE_FPU = no
 endif
 
 # FPU-related options.
@@ -84,14 +83,13 @@ endif
 #
 
 # Define project name here
-PROJECT = badge
+PROJECT = updater
 
 # Target settings.
 MCU  = cortex-m7
 
 # Imported source files and paths.
 CHIBIOS  := ../ChibiOS
-CHIBIOS_CONTRIB := $(CHIBIOS)/community
 CONFDIR  := ./cfg
 BUILDDIR := ./build
 DEPDIR   := ./.dep
@@ -101,46 +99,24 @@ include $(CHIBIOS)/os/license/license.mk
 # Startup files.
 include $(CHIBIOS)/os/common/startup/ARMCMx/compilers/GCC/mk/startup_stm32f7xx.mk
 # HAL-OSAL files (optional).
-include $(CHIBIOS_CONTRIB)/os/hal/hal.mk
-include $(CHIBIOS_CONTRIB)/os/hal/ports/STM32/STM32F7xx/platform.mk
+include $(CHIBIOS)/os/hal/hal.mk
+include $(CHIBIOS)/os/hal/ports/STM32/STM32F7xx/platform.mk
 include $(CHIBIOS)/os/hal/boards/ST_STM32F746G_DISCOVERY/board.mk
-include $(CHIBIOS)/os/hal/osal/rt-nil/osal.mk
+include $(CHIBIOS)/os/hal/osal/os-less/ARMCMx/osal.mk
 # RTOS files (optional).
-include $(CHIBIOS)/os/rt/rt.mk
-include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/port_v7m.mk
+#include $(CHIBIOS)/os/rt/rt.mk
+#include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/port_v7m.mk
 # Auto-build files in ./source recursively.
 include $(CHIBIOS)/tools/mk/autobuild.mk
 # Other files (optional).
 include $(CHIBIOS)/os/hal/lib/streams/streams.mk
-include $(CHIBIOS)/os/various/shell/shell.mk
-
-# uGFX includes
-GFXLIB = $(CHIBIOS)/../uGFX
-include $(GFXLIB)/gfx.mk
-include $(GFXLIB)/boards/base/Nonstandard-Ides-Of-Defcon/board.mk
+#include $(CHIBIOS)/test/lib/test.mk
+#include $(CHIBIOS)/test/rt/rt_test.mk
+#include $(CHIBIOS)/test/oslib/oslib_test.mk
 
 # FatFS library
 FATFS = $(CHIBIOS)/../FatFs
 include $(FATFS)/build.mk
-
-# WM8994 Codec driver
-WM8994 = $(CHIBIOS)/../wm8994
-include $(WM8994)/build.mk
-
-# libjpeg library
-LIBJPEG = $(CHIBIOS)/../jpeg-9d
-include $(LIBJPEG)/build.mk
-
-# lwIP TCP/IP stack
-include $(CHIBIOS)/../lwip_bindings/lwip.mk
-
-# NES emulator
-NES = $(CHIBIOS)/../nofrendo-2.0pre1
-include $(NES)/build.mk
-
-# Doom
-DOOM = $(CHIBIOS)/../linuxdoom-1.10
-include $(DOOM)/build.mk
 
 # Define linker script file here
 LDSCRIPT= STM32F746xG.ld
@@ -148,63 +124,10 @@ LDSCRIPT= STM32F746xG.ld
 # C sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
 CSRC = $(ALLCSRC) \
+       $(TESTSRC) \
        $(FATFSSRC) \
-       $(GFXSRC) \
-       $(STMSRC) \
-       $(TJPGDSRC) \
-       $(WM8994SRC) \
-       $(LIBJPEGSRC) \
-       $(NESSRC) \
-       $(DOOMSRC) \
-       main.c \
-       usbcfg.c \
-       cmd-adc.c \
-       cmd-audio.c \
-       cmd-cpu.c \
-       cmd-mem.c \
-       cmd-reset.c \
-       cmd-video.c \
-       cmd-scroll.c \
-       cmd-sleep.c \
-       cmd-ping.c \
-       cmd-unix.c \
-       crc32.c \
-       newlib_syscall.c \
-       nullprot_lld.c \
-       badge_console.c \
-       badge_finder.c \
-       badge_vectors.c \
-       async_io_lld.c \
-       video_lld.c \
-       stm32adc_lld.c \
        stm32flash_lld.c \
-       stm32sai_lld.c \
-       sddetect_lld.c \
-       sx1262_lld.c \
-       touch_lld.c \
-       scroll_lld.c \
-       orchard-app.c \
-       orchard-ui.c \
-       fix_fft.c \
-       ides_gfx.c \
-       app-badge.c \
-       app-dialer.c \
-       app-doomguy.c \
-       app-doom.c \
-       app-email.c \
-       app-info.c \
-       app-intro.c \
-       app-launcher.c \
-       app-ledsign.c \
-       app-music.c \
-       app-name.c \
-       app-nes.c \
-       app-setup.c \
-       app-update.c \
-       app-video.c \
-       userconfig.c \
-       ui-keyboard.c \
-       ui-list.c
+       updater.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
@@ -214,12 +137,10 @@ CPPSRC = $(ALLCPPSRC)
 ASMSRC = $(ALLASMSRC)
 
 # List ASM with preprocessor source files here.
-ASMXSRC = $(ALLXASMSRC) badge_fault.S
+ASMXSRC = $(ALLXASMSRC)
 
 # Inclusion directories.
-INCDIR = $(CONFDIR) $(ALLINC) $(CHIBIOS_CONTRIB)/os/various $(FATFSINC)
-INCDIR += $(GFXINC) $(STMINC) $(TJPGDINC) $(WM8994INC) $(LIBJPEGINC)
-INCDIR += $(NESINC) $(DOOMINC)
+INCDIR = $(CONFDIR) $(ALLINC) $(TESTINC) $(FATFSINC)
 
 # Define C warning options here.
 CWARN = -Wall -Wextra -Wundef -Wstrict-prototypes
@@ -236,22 +157,19 @@ CPPWARN = -Wall -Wextra -Wundef
 #
 
 # List all user C define here, like -D_DEBUG=1
-UDEFS = -DSHELL_PROMPT_STR="\"badge> \""
+UDEFS =
 
 # Define ASM defines here
 UADEFS =
 
 # List all user directories here
-UINCDIR =
+UINCDIR = ../badge
 
 # List the user directory to look for the libraries here
 ULIBDIR =
 
 # List all user libraries here
-ULIBS = -lc_nano -lnosys -lm
-# This enables the use of the versions of printf() and scanf()
-# in newlib that support floating point
-ULIBS += -u _printf_float -u _scanf_float
+ULIBS =
 
 #
 # End of user section
@@ -273,13 +191,16 @@ include $(RULESPATH)/rules.mk
 # Custom rules
 #
 
-.PHONY: updatebuildtime
-PRE_MAKE_ALL_RULE_HOOK: buildtime.h
+PRE_MAKE_ALL_RULE_HOOK: stm32flash_lld.c
 
-buildtime.h: updatebuildtime
-	echo "#define BUILDTIME \"Built: `/bin/date`\"" > $@
-	echo "#define BUILDVER `/bin/date +%s`" >> $@
-	echo "#define BUILDMAGIC 0xCAFEBABE" >> $@
+stm32flash_lld.c: $(CHIBIOS)/../badge/stm32flash_lld.c
+	rm -f stm32flash_lld.c
+	cp $(CHIBIOS)/../badge/stm32flash_lld.c .
+	touch ch.h
+
+CLEAN_RULE_HOOK:
+	rm -f stm32flash_lld.c
+	rm -f ch.h
 
 #
 # Custom rules
