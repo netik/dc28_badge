@@ -33,11 +33,14 @@
 #include "hal.h"
 #include "chprintf.h"
 
+#include "hal_stm32_ltdc.h"
+
 #include "stm32flash_lld.h"
 #include "ff.h"
 #include "ffconf.h"
 
 #include "updater.h"
+#include "badge.h"
 
 /*
  * Flash configuration
@@ -52,6 +55,76 @@ STM32FLASHDriver FLASHD1;
 static const SDCConfig sdccfg =
 {
 	SDC_MODE_4BIT
+};
+
+/* LCD driver configuration */
+
+static const ltdc_window_t ltdc_fullscreen_wincfg = {
+	0, 320 - 1, 0, 240 - 1
+};
+
+static const ltdc_frame_t ltdc_screen_frmcfg_fg = {
+	(void *)FB_BASE0,
+	320,
+	240,
+	320 * 2,
+	LTDC_FMT_RGB565,
+};
+
+static const ltdc_frame_t ltdc_screen_frmcfg_bg = {
+	(void *)FB_BASE1,
+	320,
+	240,
+	320 * 2,
+	LTDC_FMT_RGB565,
+};
+
+static const ltdc_laycfg_t ltdc_screen_laycfg_fg = {
+	&ltdc_screen_frmcfg_fg,
+	&ltdc_fullscreen_wincfg,
+	0,
+	0xFF,
+	0,
+	NULL,
+	0,
+	LTDC_BLEND_MOD1_MOD2,
+	LTDC_LEF_ENABLE
+};
+
+static const ltdc_laycfg_t ltdc_screen_laycfg_bg = {
+	&ltdc_screen_frmcfg_bg,
+	&ltdc_fullscreen_wincfg,
+	0,
+	0xFF,
+	0,
+	NULL,
+	0,
+	LTDC_BLEND_FIX1_FIX2,
+	0
+};
+
+static const LTDCConfig ltdc_cfg = {
+	/* Display specifications.*/
+	480,			/**< Screen pixel width.*/
+	272,			/**< Screen pixel height.*/
+	41,			/**< Horizontal sync pixel width.*/
+	10,			/**< Vertical sync pixel height.*/
+	13,			/**< Horizontal back porch pixel width.*/
+	2,			/**< Vertical back porch pixel height.*/
+	32,			/**< Horizontal front porch pixel width.*/
+	4,			/**< Vertical front porch pixel height.*/
+	0,			/**< Driver configuration flags.*/
+
+	/* ISR callbacks.*/
+	NULL,			/**< Line Interrupt ISR, or @p NULL.*/
+	NULL,			/**< Register Reload ISR, or @p NULL.*/
+	NULL,			/**< FIFO Underrun ISR, or @p NULL.*/
+	NULL,			/**< Transfer Error ISR, or @p NULL.*/
+
+	/* Color and layer settings.*/
+	LTDC_COLOR_TEAL,
+	&ltdc_screen_laycfg_bg,
+	&ltdc_screen_laycfg_fg
 };
 
 /* Buffers */
@@ -82,6 +155,28 @@ main (void)
 	chp = (BaseSequentialStream *)&SD1;
 
 	chprintf (chp, "\r\nFirmware updater started\r\n");
+
+	/*
+	 * Try to turn on the LCD
+	 * Note that we are taking advantage of the fact that
+	 * when the main OS loads the updater, the memory
+	 * controller will still be turned on and we'll be
+	 * able to make use of the external SDRAM as the
+	 * graphics frame buffer memory.
+	 */
+
+	ltdcInit ();
+	ltdcStart (&LTDCD1, &ltdc_cfg);
+
+	/*
+	 * Enable display & backlight
+	 * Note: specific to STM32F746 Discovery board.
+	 */
+
+	palSetPad (GPIOI, GPIOI_LCD_DISP);
+	palSetPad (GPIOK, GPIOK_LCD_BL_CTRL);
+
+	chprintf (chp, "Display enabled\r\n");
 
 	sdcStart (&SDCD1, &sdccfg);
 
@@ -114,6 +209,10 @@ main (void)
 	chprintf (chp, "Erasing flash... ");
 
 	flashStartEraseAll (&FLASHD1);
+	if (flashWaitErase ((void *)&FLASHD1) != FLASH_NO_ERROR) {
+		chprintf (chp, "erasing flash failed!\n");
+		goto done;
+	}
 
 	chprintf (chp, "done!\r\n");
 	
