@@ -150,23 +150,7 @@ stm32_start_erase_sector (void *instance, flash_sector_t sector)
 
 	devp->port->CR |= FLASH_CR_STRT;
 
-	/* Wait for completion */
-
-	while (devp->port->SR & FLASH_SR_BSY)
-		__DSB();
-
-	/* Check status */
-
-	if ((devp->port->SR & FLASH_SR_ERSERR) == 0)
-		r = FLASH_NO_ERROR;
-
-	/* Clear status */
-
-	devp->port->SR = 0xFFFFFFFF;
-
-	/* Lock the flash */
-
-	devp->port->CR |= FLASH_CR_LOCK;
+	devp->state = FLASH_ERASE;
 
 	osalMutexUnlock (&devp->mutex);
 
@@ -176,10 +160,43 @@ stm32_start_erase_sector (void *instance, flash_sector_t sector)
 static flash_error_t
 stm32_query_erase (void *instance, uint32_t *msec)
 {
-	(void)instance;
-	(void)msec;
+	STM32FLASHDriver *devp = (STM32FLASHDriver *)instance;
+	int r = FLASH_ERROR_ERASE;
 
-	return (FLASH_NO_ERROR);
+	osalMutexLock (&devp->mutex);
+
+	if (devp->state != FLASH_ERASE) {
+		osalMutexUnlock (&devp->mutex);
+		return (FLASH_ERROR_PROGRAM);
+	}
+
+	/* Check for completion */
+
+	if (devp->port->SR & FLASH_SR_BSY) {
+		if (msec != NULL)
+			*msec = 1U;
+		r = FLASH_BUSY_ERASING;
+	} else {
+
+		/* Check status */
+
+		if ((devp->port->SR & FLASH_SR_ERSERR) == 0)
+			r = FLASH_NO_ERROR;
+
+		/* Clear status */
+
+		devp->port->SR = 0xFFFFFFFF;
+
+		/* Lock the flash */
+
+		devp->port->CR |= FLASH_CR_LOCK;
+
+		devp->state = FLASH_READY;
+	}
+
+	osalMutexUnlock (&devp->mutex);
+
+	return (r);
 }
 
 static flash_error_t
@@ -214,23 +231,7 @@ stm32_start_erase_all(void *instance)
 	devp->port->CR = FLASH_CR_MER;
 	devp->port->CR |= FLASH_CR_STRT;
 
-	/* Wait for completion */
-
-        while (devp->port->SR & FLASH_SR_BSY)
-                __DSB();
-
-	/* Check status */
-
-	if ((devp->port->SR & FLASH_SR_ERSERR) == 0)
-		r = FLASH_NO_ERROR;
-
-	/* Clear status */
-
-	devp->port->SR = 0xFFFFFFFF;
-
-	/* Lock the flash */
-
-	devp->port->CR |= FLASH_CR_LOCK;
+	devp->state = FLASH_ERASE;
 
 	osalMutexUnlock (&devp->mutex);
 
