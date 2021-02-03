@@ -20,12 +20,12 @@
 
 /*
  * Define scroll window.
- * The icons are 30 pixels from the top of the display and are
+ * The icons are 26 pixels from the top of the display and are
  * 50 pixels in from the right. They are 2 pixels from the
  * display bottom.
  */
 
-#define TOP	30
+#define TOP	26
 #define SIDE	50
 #define BOT	2
 
