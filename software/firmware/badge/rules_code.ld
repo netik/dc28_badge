@@ -26,6 +26,7 @@ SECTIONS
     .text : ALIGN_WITH_INPUT
     {
         __text_base__ = .;
+	KEEP(*(.fwversion))
         *(.text)
         *(.text.*)
         KEEP(*(SORT(.chibi_list*)));
