@@ -27,6 +27,7 @@ rcsid[] = "$Id: m_bbox.c,v 1.1 1997/02/03 22:45:10 b1 Exp $";
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <malloc.h>
 
 #include <stdarg.h>
 #include <sys/time.h>
@@ -46,7 +47,6 @@ rcsid[] = "$Id: m_bbox.c,v 1.1 1997/02/03 22:45:10 b1 Exp $";
 #pragma implementation "i_system.h"
 #endif
 #include "i_system.h"
-
 
 
 
@@ -170,7 +170,7 @@ byte*	I_AllocLow(int length)
 {
     byte*	mem;
         
-    mem = (byte *)malloc (length);
+    mem = (byte *)memalign (1024, length);
     lowbase = mem;
     memset (mem,0,length);
     return mem;
