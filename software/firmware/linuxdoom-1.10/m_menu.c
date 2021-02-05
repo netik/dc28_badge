@@ -1891,7 +1891,9 @@ void M_Init (void)
     // Here we could catch other version dependencies,
     //  like HELP1/2, and four episodes.
 
-  
+    MainDef.numitems = main_end;
+    EpiDef.numitems = ep_end;
+ 
     switch ( gamemode )
     {
       case commercial:
