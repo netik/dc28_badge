@@ -40,6 +40,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <malloc.h>
 
 extern int nes_main (int argc, char * argv[]);
 
@@ -53,6 +54,7 @@ static char * nesdir;
 
 static THD_FUNCTION(nesThread, arg)
 {
+	chRegSetThreadName ("NES Thread");
 	nes_main (2, arg); 
  
 	chSysLock ();
@@ -143,6 +145,7 @@ nes_event(OrchardAppContext *context, const OrchardAppEvent *event)
 	char nesfn[35];
 	char * args[2];
 	thread_t * pThread;
+	void * pWsp;
 
 	p = context->priv;
 	ui = context->instance->ui;
@@ -179,12 +182,21 @@ nes_event(OrchardAppContext *context, const OrchardAppEvent *event)
 		args[0] = "nofrendo";
 		args[1] = nesfn;
 
-		pThread = chThdCreateFromHeap (NULL,
-		    THD_WORKING_AREA_SIZE(8 * 1024), "NesThread",
-		    ORCHARD_APP_PRIO, nesThread, args);
+		pWsp = memalign (PORT_WORKING_AREA_ALIGN,
+		    THD_WORKING_AREA_SIZE(8 * 1024));
 
-		chThdWait (pThread);
+		if (pWsp == NULL)
+			printf ("Allocating NES stack failed!\n");
+		else {
+			pThread = chThdCreateStatic (pWsp,
+			    THD_WORKING_AREA_SIZE(8 * 1024), ORCHARD_APP_PRIO,
+			    nesThread, args);
 
+			chThdWait (pThread);
+
+			free (pWsp);
+		}
+		
 		orchardAppExit ();
 	}
 

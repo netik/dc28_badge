@@ -38,6 +38,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <malloc.h>
 
 extern int doom_main (int argc, char * argv[]);
 extern char __ram7_base__; /* Set by linker */
@@ -49,6 +50,8 @@ static THD_FUNCTION(doomThread, arg)
 	size_t bsslen;
 
 	(void)arg;
+
+	chRegSetThreadName ("DoomThread");
 
 	/* Set the environment */
 
@@ -93,6 +96,7 @@ static void
 doom_event (OrchardAppContext *context, const OrchardAppEvent *event)
 {
 	thread_t * pThread;
+	void * pWsp;
 
 	(void) context;
 
@@ -101,11 +105,20 @@ doom_event (OrchardAppContext *context, const OrchardAppEvent *event)
 
 		/* Doom needs lots of stack space */
 
-		pThread = chThdCreateFromHeap (NULL,
-		    THD_WORKING_AREA_SIZE(48 * 1024), "DoomThread",
-		    ORCHARD_APP_PRIO, doomThread, NULL);
+		pWsp = memalign (PORT_WORKING_AREA_ALIGN,
+		    THD_WORKING_AREA_SIZE(48 * 1024));
 
-		chThdWait (pThread);
+		if (pWsp == NULL)
+			printf ("Allocating Doom stack failed\n");
+		else {
+			pThread = chThdCreateStatic (pWsp,
+			    THD_WORKING_AREA_SIZE(48 * 1024), ORCHARD_APP_PRIO,
+                            doomThread, NULL);
+
+			chThdWait (pThread);
+
+			free (pWsp);
+		}
 	}
 
 	return;
