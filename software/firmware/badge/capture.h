@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020
+ * Copyright (c) 2021
  *      Bill Paul <wpaul@windriver.com>.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,85 +30,53 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ch.h"
-#include "hal.h"
+#ifndef _CAPTURE_H_
 
-#include "gfx.h"
-#include "src/gwin/gwin_class.h"
+#define CAPTURE_CHAR_UP		'Y'
+#define CAPTURE_CHAR_DOWN	'X'
+#define CAPTURE_CHAR_EXIT	'Z'
 
-#include "badge.h"
-#include "badge_console.h"
+#define CAPTURE_KEY_DOWN	0x08000000
+#define CAPTURE_KEY_UP		0x04000000
+#define CAPTURE_DIR(x)		((x) & 0x0C000000)
+#define CAPTURE_CODE(x)		((x) & 0xF3FFFFFF)
 
-#include <string.h>
+#define CAP_BACKSPACE		0x00000008
+#define CAP_TAB			0x00000009
+#define CAP_RETURN		0x0000000D
+#define CAP_ESCAPE		0x0000001B
+#define CAP_MINUS		0x0000002D
+#define CAP_EQUALS		0x0000003D
+#define CAP_DELETE		0x0000007F
 
-static GHandle ghConsole;
-static gFont font;
-static uint8_t mode;
+#define CAP_F1			0x4000003A
+#define CAP_F2			0x4000003B
+#define CAP_F3			0x4000003C
+#define CAP_F4			0x4000003D
+#define CAP_F5			0x4000003E
+#define CAP_F6			0x4000003F
+#define CAP_F7			0x40000040
+#define CAP_F8			0x40000041
+#define CAP_F9			0x40000042
+#define CAP_F10			0x40000043
+#define CAP_F11			0x40000044
+#define CAP_F12			0x40000045
+#define CAP_PAUSE		0x40000048
+#define CAP_RIGHT		0x4000004F
+#define CAP_LEFT		0x40000050
+#define CAP_DOWN		0x40000051
+#define CAP_UP			0x40000052
+#define CAP_KP_MINUS		0x40000056
+#define CAP_LSHIFT		0x400000E1
+#define CAP_RSHIFT		0x400000E5
+#define CAP_LCTRL		0x400000E0
+#define CAP_RCTRL		0x400000E4
+#define CAP_LALT		0x400000E2
+#define CAP_LMETA		0x400000E3
+#define CAP_RALT		0x400000E6
+#define CAP_RMETA		0x400000E7
 
-static msg_t badge_con_put (void *, uint8_t);
+extern void capture_queue_init (void);
+extern int capture_queue_get (uint32_t * code);
 
-static const struct BaseSequentialStreamVMT * vmt1;
-static struct BaseSequentialStreamVMT vmt2;
-
-static msg_t
-badge_con_put (void * instance, uint8_t b)
-{
-	(void)instance;
-
-	gwinPutChar (ghConsole, (char)b);
-	if (mode == BADGE_CONSOLE_SHARE)
-		vmt1->put (conout, (char)b);
-
-	return (MSG_OK);
-}
-
-void
-badge_coninit (void) 
-{
-	return;
-}
-
-void
-badge_concreate (uint8_t m)
-{
-	GWidgetInit wi;
-
-	font = gdispOpenFont ("tom_thumb");
-	gwinSetDefaultFont (font);
-
-	gwinWidgetClearInit (&wi);
-	wi.g.show = FALSE;
-	wi.g.x = 0;
-	wi.g.y = 0;
-	wi.g.width = gdispGetWidth();
-	wi.g.height = gdispGetHeight();
-	ghConsole = gwinConsoleCreate (0, &wi.g);
-	gwinSetColor (ghConsole, GFX_WHITE);
-	gwinSetBgColor (ghConsole, GFX_BLUE);
-	gwinShow (ghConsole);
-	gwinClear (ghConsole);
-
-	mode = m;
-
-	osalMutexLock (&conmutex);
-	vmt1 = conout->vmt;
-	memcpy (&vmt2, conout->vmt, sizeof(vmt2));
-	vmt2.put = badge_con_put;
-	conout->vmt = &vmt2;
-	osalMutexUnlock (&conmutex);
-
-	return;
-}
-
-void
-badge_condestroy (void)
-{
-	gwinDestroy (ghConsole);
-	gdispCloseFont (font);
-
-	osalMutexLock (&conmutex);
-	conout->vmt = vmt1;
-	osalMutexUnlock (&conmutex);
-
-	return;
-}
+#endif /* _CAPTURE_H_ */

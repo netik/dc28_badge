@@ -160,6 +160,7 @@ CSRC = $(ALLCSRC) \
        usbcfg.c \
        cmd-adc.c \
        cmd-audio.c \
+       cmd-capture.c \
        cmd-cpu.c \
        cmd-mem.c \
        cmd-reset.c \

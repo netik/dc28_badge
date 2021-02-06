@@ -22,6 +22,8 @@
 #include "hal_stm32_ltdc.h"
 #include "stm32sai_lld.h"
 
+#include "capture.h"
+
 #define  DEFAULT_SAMPLERATE   15625
 #define  DEFAULT_BPS          16
 #define  DEFAULT_FRAGSIZE     (DEFAULT_SAMPLERATE/NES_REFRESH_RATE)
@@ -256,10 +258,61 @@ free_write (int num_dirties, rect_t *dirty_rects)
 
 static int buttontmp = 0;
 
+#define CAP_LAST 256
+
+static int key_array[CAP_LAST];
+#define LOAD_KEY(key, def_key) \
+key_array[key & 0xFFFF] = def_key
+
 static void
 osd_initinput (void)
 {
+	uint32_t sym;
+
 	buttontmp = 0;
+
+	LOAD_KEY(CAP_ESCAPE, event_quit);
+   
+	LOAD_KEY(CAP_F1, event_soft_reset);
+	LOAD_KEY(CAP_F2, event_hard_reset);
+	LOAD_KEY(CAP_F3, event_gui_toggle_fps);
+	LOAD_KEY(CAP_F4, event_snapshot);
+	LOAD_KEY(CAP_F5, event_state_save);
+	LOAD_KEY(CAP_F6, event_toggle_sprites);
+	LOAD_KEY(CAP_F7, event_state_load);
+	LOAD_KEY(CAP_F8, event_none);
+	LOAD_KEY(CAP_F9, event_none);
+	LOAD_KEY(CAP_F10, event_osd_1);
+	LOAD_KEY(CAP_F11, event_none);
+	LOAD_KEY(CAP_F12, event_none);
+
+	LOAD_KEY(CAP_BACKSPACE, event_gui_display_info);
+
+	LOAD_KEY(CAP_LCTRL, event_joypad1_b);
+	LOAD_KEY(CAP_RCTRL, event_joypad1_b);
+	LOAD_KEY(CAP_LALT, event_joypad1_a);
+	LOAD_KEY(CAP_RALT, event_joypad1_a);
+	LOAD_KEY(CAP_LSHIFT, event_joypad1_a);
+	LOAD_KEY(CAP_RSHIFT, event_joypad1_a);
+
+	LOAD_KEY(CAP_UP, event_joypad1_up);
+	LOAD_KEY(CAP_DOWN, event_joypad1_down);
+	LOAD_KEY(CAP_LEFT, event_joypad1_left);
+	LOAD_KEY(CAP_RIGHT, event_joypad1_right);
+
+	LOAD_KEY('z', event_joypad1_b);
+	LOAD_KEY('x', event_joypad1_a);
+	LOAD_KEY('c', event_joypad1_select);
+	LOAD_KEY('v', event_joypad1_start);
+	LOAD_KEY('b', event_joypad2_b);
+	LOAD_KEY('n', event_joypad2_a);
+	LOAD_KEY('m', event_joypad2_select);
+
+	/* Make sure the input queue is empty. */
+
+	while (capture_queue_get (&sym)) {
+	}
+
 	return;
 }
 
@@ -267,6 +320,20 @@ void
 osd_getinput (void)
 {
 	event_t ev;
+	uint32_t sym;
+	int code;
+
+	/* Process virtual keyboard events */
+
+	if (capture_queue_get (&sym)) {
+		if (CAPTURE_DIR(sym) == CAPTURE_KEY_UP)
+			code = INP_STATE_BREAK;
+		if (CAPTURE_DIR(sym) == CAPTURE_KEY_DOWN)
+			code = INP_STATE_MAKE;
+		ev = event_get (key_array[sym & 0xFFFF]);
+		if (ev)
+			ev (code);
+	}
 
 	if (buttontmp) {
 		buttontmp = 0;

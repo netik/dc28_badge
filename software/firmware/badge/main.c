@@ -48,6 +48,8 @@
 
 #include "userconfig.h"
 
+#include "capture.h"
+
 #include <lwip/opt.h>
 #include <lwip/def.h>
 #include <lwip/mem.h>
@@ -819,6 +821,7 @@ main (void)
 	/* Initialize the GUI output console */
 
 	badge_coninit ();
+	capture_queue_init ();
 
 	/*
 	 * Initialize orchard subsystem

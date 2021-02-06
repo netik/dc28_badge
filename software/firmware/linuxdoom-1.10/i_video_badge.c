@@ -32,6 +32,8 @@ rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
 #include "hal_stm32_dma2d.h"
 #include "hal_stm32_ltdc.h"
 
+#include "capture.h"
+
 #include <stdlib.h>
 #include <malloc.h>
 
@@ -45,6 +47,70 @@ rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
 
 static palette_color_t * palettebuf;
 static int buttontmp;
+
+//
+//  Translates the key 
+//
+
+static int xlatekey(uint32_t sym)
+{
+ 	int rc;
+
+	switch (sym) {
+		case CAP_LEFT:   rc = KEY_LEFTARROW;     break;
+		case CAP_RIGHT:  rc = KEY_RIGHTARROW;    break;
+		case CAP_DOWN:   rc = KEY_DOWNARROW;     break;
+		case CAP_UP:     rc = KEY_UPARROW;       break;
+		case CAP_ESCAPE: rc = KEY_ESCAPE;        break;
+		case CAP_RETURN: rc = KEY_ENTER;         break;
+		case CAP_TAB:    rc = KEY_TAB;           break;
+		case CAP_F1:     rc = KEY_F1;            break;
+		case CAP_F2:     rc = KEY_F2;            break;
+		case CAP_F3:     rc = KEY_F3;            break;
+		case CAP_F4:     rc = KEY_F4;            break;
+		case CAP_F5:     rc = KEY_F5;            break;
+		case CAP_F6:     rc = KEY_F6;            break;
+		case CAP_F7:     rc = KEY_F7;            break;
+		case CAP_F8:     rc = KEY_F8;            break;
+		case CAP_F9:     rc = KEY_F9;            break;
+		case CAP_F10:    rc = KEY_F10;           break;
+		case CAP_F11:    rc = KEY_F11;           break;
+		case CAP_F12:    rc = KEY_F12;           break;
+        
+		case CAP_BACKSPACE:
+		case CAP_DELETE: rc = KEY_BACKSPACE;     break;
+
+		case CAP_PAUSE:  rc = KEY_PAUSE;         break;
+
+		case CAP_EQUALS: rc = KEY_EQUALS;        break;
+
+		case CAP_KP_MINUS:
+		case CAP_MINUS:  rc = KEY_MINUS;         break;
+
+		case CAP_LSHIFT:
+		case CAP_RSHIFT:
+			rc = KEY_RSHIFT;
+			break;
+        
+		case CAP_LCTRL:
+		case CAP_RCTRL:
+			rc = KEY_RCTRL;
+			break;
+        
+		case CAP_LALT:
+		case CAP_LMETA:
+		case CAP_RALT:
+		case CAP_RMETA:
+			rc = KEY_RALT;
+			break;
+        
+		default:
+			rc = sym;
+			break;
+	}
+
+	return (rc);
+}
 
 //
 // I_ShutdownGraphics
@@ -81,90 +147,20 @@ void I_StartFrame (void)
 
 void I_GetEvent(void)
 {
-#ifdef notdef
-    event_t event;
+	uint32_t	keysym;
+	event_t		event;
 
-    // put event-grabbing stuff in here
-    XNextEvent(X_display, &X_event);
-    switch (X_event.type)
-    {
-      case KeyPress:
-	event.type = ev_keydown;
-	event.data1 = xlatekey();
-	D_PostEvent(&event);
-	// fprintf(stderr, "k");
-	break;
-      case KeyRelease:
-	event.type = ev_keyup;
-	event.data1 = xlatekey();
-	D_PostEvent(&event);
-	// fprintf(stderr, "ku");
-	break;
-      case ButtonPress:
-	event.type = ev_mouse;
-	event.data1 =
-	    (X_event.xbutton.state & Button1Mask)
-	    | (X_event.xbutton.state & Button2Mask ? 2 : 0)
-	    | (X_event.xbutton.state & Button3Mask ? 4 : 0)
-	    | (X_event.xbutton.button == Button1)
-	    | (X_event.xbutton.button == Button2 ? 2 : 0)
-	    | (X_event.xbutton.button == Button3 ? 4 : 0);
-	event.data2 = event.data3 = 0;
-	D_PostEvent(&event);
-	// fprintf(stderr, "b");
-	break;
-      case ButtonRelease:
-	event.type = ev_mouse;
-	event.data1 =
-	    (X_event.xbutton.state & Button1Mask)
-	    | (X_event.xbutton.state & Button2Mask ? 2 : 0)
-	    | (X_event.xbutton.state & Button3Mask ? 4 : 0);
-	// suggest parentheses around arithmetic in operand of |
-	event.data1 =
-	    event.data1
-	    ^ (X_event.xbutton.button == Button1 ? 1 : 0)
-	    ^ (X_event.xbutton.button == Button2 ? 2 : 0)
-	    ^ (X_event.xbutton.button == Button3 ? 4 : 0);
-	event.data2 = event.data3 = 0;
-	D_PostEvent(&event);
-	// fprintf(stderr, "bu");
-	break;
-      case MotionNotify:
-	event.type = ev_mouse;
-	event.data1 =
-	    (X_event.xmotion.state & Button1Mask)
-	    | (X_event.xmotion.state & Button2Mask ? 2 : 0)
-	    | (X_event.xmotion.state & Button3Mask ? 4 : 0);
-	event.data2 = (X_event.xmotion.x - lastmousex) << 2;
-	event.data3 = (lastmousey - X_event.xmotion.y) << 2;
-
-	if (event.data2 || event.data3)
-	{
-	    lastmousex = X_event.xmotion.x;
-	    lastmousey = X_event.xmotion.y;
-	    if (X_event.xmotion.x != X_width/2 &&
-		X_event.xmotion.y != X_height/2)
-	    {
-		D_PostEvent(&event);
-		// fprintf(stderr, "m");
-		mousemoved = false;
-	    } else
-	    {
-		mousemoved = true;
-	    }
+	if (capture_queue_get (&keysym)) {
+		if (CAPTURE_DIR(keysym) == CAPTURE_KEY_UP)
+			event.type = ev_keyup;
+		if (CAPTURE_DIR(keysym) == CAPTURE_KEY_DOWN)
+			event.type = ev_keydown;
+		keysym = CAPTURE_CODE(keysym);
+		event.data1 = xlatekey (keysym);
+		D_PostEvent (&event);
 	}
-	break;
-	
-      case Expose:
-      case ConfigureNotify:
-	break;
-	
-      default:
-	if (doShm && X_event.type == X_shmeventtype) shmFinished = true;
-	break;
-    }
-#endif
 
+	return; 
 }
 
 //
@@ -175,7 +171,9 @@ void I_StartTic (void)
 	event_t event;
 	uint32_t sts;
 
-	chThdSleep (50);
+	I_GetEvent ();
+
+	/*chThdSleep (50);*/
 	sts = palReadLine (LINE_BUTTON_USER);
 
 	if (buttontmp == 2 && sts == 1) {
@@ -199,33 +197,7 @@ void I_StartTic (void)
 	if (buttontmp == 1 && sts == 0)
 		buttontmp = 2;
 
-#ifdef notdef
-    if (!X_display)
 	return;
-
-    while (XPending(X_display))
-	I_GetEvent();
-
-    // Warp the pointer back to the middle of the window
-    //  or it will wander off - that is, the game will
-    //  loose input focus within X11.
-    if (grabMouse)
-    {
-	if (!--doPointerWarp)
-	{
-	    XWarpPointer( X_display,
-			  None,
-			  X_mainWindow,
-			  0, 0,
-			  0, 0,
-			  X_width/2, X_height/2);
-
-	    doPointerWarp = POINTER_WARP_COUNTDOWN;
-	}
-    }
-
-    mousemoved = false;
-#endif
 }
 
 
@@ -303,6 +275,8 @@ void I_SetPalette (byte* palette)
 
 void I_InitGraphics(void)
 {
+	uint32_t sym;
+
 	/* Allocate pallete */
 
 	palettebuf = malloc (sizeof(palette_color_t) * 256);
@@ -314,6 +288,11 @@ void I_InitGraphics(void)
 	/* Allocate the screen buffer */
 
 	screens[0] = memalign (CACHE_LINE_SIZE, (SCREENWIDTH * SCREENHEIGHT));
+
+	/* Drain the input queue */
+
+	while (capture_queue_get (&sym)) {
+	}
 
 	return;
 }
