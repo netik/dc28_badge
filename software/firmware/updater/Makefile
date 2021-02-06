@@ -90,6 +90,7 @@ MCU  = cortex-m7
 
 # Imported source files and paths.
 CHIBIOS  := ../ChibiOS
+CHIBIOS_CONTRIB := $(CHIBIOS)/community
 CONFDIR  := ./cfg
 BUILDDIR := ./build
 DEPDIR   := ./.dep
@@ -99,8 +100,10 @@ include $(CHIBIOS)/os/license/license.mk
 # Startup files.
 include $(CHIBIOS)/os/common/startup/ARMCMx/compilers/GCC/mk/startup_stm32f7xx.mk
 # HAL-OSAL files (optional).
-include $(CHIBIOS)/os/hal/hal.mk
-include $(CHIBIOS)/os/hal/ports/STM32/STM32F7xx/platform.mk
+include $(CHIBIOS_CONTRIB)/os/hal/hal.mk
+include $(CHIBIOS_CONTRIB)/os/hal/ports/STM32/STM32F7xx/platform.mk
+#include $(CHIBIOS)/os/hal/hal.mk
+#include $(CHIBIOS)/os/hal/ports/STM32/STM32F7xx/platform.mk
 include $(CHIBIOS)/os/hal/boards/ST_STM32F746G_DISCOVERY/board.mk
 include $(CHIBIOS)/os/hal/osal/os-less/ARMCMx/osal.mk
 # RTOS files (optional).

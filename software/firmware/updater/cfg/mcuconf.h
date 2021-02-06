@@ -465,6 +465,6 @@
 #define STM32_WSPI_USE_QUADSPI1             FALSE
 #define STM32_WSPI_QUADSPI1_DMA_STREAM      STM32_DMA_STREAM_ID(2, 7)
 
-/*#include "mcuconf_community.h"*/
+#include "mcuconf_community.h"
 
 #endif /* MCUCONF_H */
