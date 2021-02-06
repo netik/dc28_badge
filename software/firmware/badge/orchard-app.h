@@ -52,7 +52,7 @@ extern void orchardAppTimer(const OrchardAppContext *context,
 extern void orchardAppUgfxCallback (void * arg, GEvent * pe);
 extern void orchardAppUgfxNonBlockCallback (void * arg, GEvent * pe);
 extern void orchardAppRadioCallback (OrchardAppRadioEventType type,
-    ble_evt_t * evt, void * pkt, uint16_t pktlen);
+    uint32_t customEvt, void * pkt, uint16_t pktlen);
 
 extern bool (*app_radio_notify)(void *);
 

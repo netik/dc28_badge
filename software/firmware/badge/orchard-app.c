@@ -12,11 +12,8 @@
 #include "orchard-ui.h"
 
 #include "stm32sai_lld.h"
-#ifdef notdef
-#include "joypad_lld.h"
 
-extern OrchardAppEvent joyEvent;
-#endif
+OrchardAppEvent joyEvent;
 
 orchard_app_start();
 orchard_app_end();
@@ -127,7 +124,7 @@ static void flush_radio_queue (void) {
   return;
 }
 void orchardAppRadioCallback (OrchardAppRadioEventType type,
-  ble_evt_t * evt, void * pkt, uint16_t len) {
+  uint32_t customEvt, void * pkt, uint16_t len) {
 
   OrchardAppRadioEvent * r_evt;
 
@@ -156,8 +153,8 @@ void orchardAppRadioCallback (OrchardAppRadioEventType type,
       r_evt->pktlen = len;
       }
 
-    if (evt != NULL)
-      memcpy (&r_evt->evt, evt, sizeof(ble_evt_t));
+    if (type == customEvent)
+        r_evt->customEvent = customEvt;
     queue_cnt++;
     prod_idx++;
     if (prod_idx == RADIO_QUEUE_LEN)
@@ -194,8 +191,9 @@ static void radio_event(eventid_t id) {
 
         if ((strcmp (instance.app->name, "Badge") == 0 ||
             strcmp (instance.app->name, "Launcher") == 0) &&
-            (r_evt->type == gattsReadWriteAuthEvent ||
-            r_evt->type == gattsWriteEvent))
+            (r_evt->type == chatEvent ||
+            r_evt->type == challengeEvent ||
+            r_evt->type == fwEvent))
           r = app_radio_notify (r_evt);
 
         if (r == FALSE) {
@@ -224,14 +222,13 @@ static void key_event(eventid_t id) {
 
   (void) id;
 
-#ifdef notdef
   if (instance.context != NULL) {
     //      if (strcmp (instance.app->name, "Launcher") == 0 &&
     //          joyEvent.key.flags == keyPress)
     //        i2sPlay ("sound/ping.snd");
       instance.app->event(instance.context, &joyEvent);
   }
-#endif
+
   return;
 }
 

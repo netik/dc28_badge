@@ -399,7 +399,6 @@ dialer_event(OrchardAppContext *context, const OrchardAppEvent *event)
 
 	p = context->priv;
 
-#ifdef notdef
 	/* Handle joypad events  */
 
 	if (event->type == keyEvent) {
@@ -408,7 +407,6 @@ dialer_event(OrchardAppContext *context, const OrchardAppEvent *event)
       			orchardAppExit();
     		}
 	}
-#endif
 
 	/* Handle uGFX events  */
 

@@ -100,11 +100,27 @@ typedef enum _OrchardUiEventFlags {
   uiError,
 } OrchardUiEventFlags;
 
+typedef enum _OrchardAppEventKeyFlag {
+  keyPress = 0,
+  keyRelease = 1,
+} OrchardAppEventKeyFlag;
+
+typedef enum _OrchardAppEventKeyCode {
+  keyAUp = 0x80,
+  keyADown = 0x81,
+  keyALeft = 0x82,
+  keyARight = 0x83,
+  keyASelect = 0x84,
+  keyBUp = 0x85,
+  keyBDown = 0x86,
+  keyBLeft = 0x87,
+  keyBRight = 0x88,
+  keyBSelect = 0x89,
+} OrchardAppEventKeyCode;
+
 typedef struct _OrchardAppKeyEvent {
-#ifdef notdef
   OrchardAppEventKeyCode code;
   OrchardAppEventKeyFlag flags;
-#endif
 } OrchardAppKeyEvent;
 
 typedef struct _OrchardAppUgfxEvent {
@@ -112,34 +128,37 @@ typedef struct _OrchardAppUgfxEvent {
   GEvent * pEvent;
 } OrchardAppUgfxEvent;
 
+/*
+ * The radio event type was originally created for Bluetooth radio
+ * events. We're not using BLE anymore though: now we have sockets
+ * layered on top of the radio. Sockets don't really mesh well with
+ * our app framework, so socket-based apps will typically spawn their
+ * own separate work thread, and the orchard app front-end just serves
+ * as a placeholder. (That is, as long as that app is running, it
+ * keeps posession of the system and the launcher won't take over until
+ * it's finished.)
+ *
+ * We define some event types to support this, as well as some
+ * simple socket-based network events so that in some simple cases we
+ * can still use the orchard app front end for GUI support.
+ */
+
 typedef enum _OrchardAppRadioEventType {
-   connectEvent,		/* GAP Connected to peer */
-   disconnectEvent,		/* GAP Disconnected from peer */
-   connectTimeoutEvent,		/* GAP Connection timed out */
-   advertisementEvent,		/* GAP Received advertisement */
-   scanResponseEvent,		/* GAP Received scan response */
-   advAndScanEvent,		/* GAP Received adv + scan response */
-   l2capConnectEvent,		/* L2CAP connection successful */
-   l2capDisconnectEvent,	/* L2CAP connection closed */
-   l2capConnectRefusedEvent,	/* L2CAP connection failed */
-   l2capRxEvent,		/* L2CAP data received */
-   l2capTxEvent,		/* L2CAP data sent */
-   l2capTxDoneEvent,		/* L2CAP data acknowledged */
-   gattsWriteEvent,		/* GATTS attribute write notification */
-   gattsReadWriteAuthEvent,	/* GATTS attribute read/write auth request */
-   gattsTimeout,		/* GATTS timeout */
-   gattcServiceDiscoverEvent,	/* GATTC service discovery complete */
-   gattcCharDiscoverEvent,	/* GATTC characteristic discovery complete */
-   gattcAttrDiscoverEvent,	/* GATTC attribute discovery complete */
-   gattcCharReadByUuidEvent,	/* GATTC characteristic read b/UUID complete */
-   gattcCharReadEvent,		/* GATTC characteristic read complete */
-   gattcCharWriteEvent,		/* GATTC characteristic write complete */
-   gattcTimeout			/* GATTC timeout */
+   customEvent,			/* App custom event */
+   connectEvent,		/* Connected to peer */
+   disconnectEvent,		/* Disconnected from peer */
+   connectTimeoutEvent,		/* Connection timed out */
+   rxEvent,			/* Data received */
+   txEvent,			/* Data sent */
+   chatEvent,			/* Chat request received */
+   challengeEvent,		/* Challenge request received */
+   fwEvent,			/* Firmware update request received */
+   exitEvent			/* App should exit */
 } OrchardAppRadioEventType;
 
 typedef struct _OrchardAppRadioEvent {
    OrchardAppRadioEventType type;
-   ble_evt_t evt;
+   uint32_t customEvent;
    uint16_t pktlen;
    uint8_t * pkt;
 } OrchardAppRadioEvent;

@@ -259,12 +259,10 @@ setup_event(OrchardAppContext *context,
 		return;
 	}
 
-#ifdef notyet
 	if (event->type == keyEvent && event->key.flags == keyPress) {
 		last_ui_time = chVTGetSystemTime();
 		i2sPlay("sound/click.snd");
 	}
-#endif
 
 	if (event->type == ugfxEvent) {
 		pe = event->ugfx.pEvent;

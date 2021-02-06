@@ -113,7 +113,6 @@ doomguy_event (OrchardAppContext *context,
 		else {
 			x = (gdispGetWidth () - p->img.width) / 2;
 			y = (gdispGetHeight () - p->img.height) / 2;
-			gdispImageCache (&p->img);
 			gdispImageDraw (&p->img, x, y,
 			    p->img.width, p->img.height, 0, 0);
 			gdispImageClose (&p->img);
@@ -123,13 +122,11 @@ doomguy_event (OrchardAppContext *context,
 		orchardAppTimer (context, 600000, FALSE);
 	}
 
-#ifdef notdef
 	if (event->type == keyEvent && event->key.flags == keyPress) {
 		i2sPlay ("sound/click.snd");
 		orchardAppExit ();
 		return;
 	}
-#endif
 
 	if (event->type == ugfxEvent) {
 		me = (GEventMouse *)event->ugfx.pEvent;

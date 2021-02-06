@@ -206,7 +206,6 @@ info_event (OrchardAppContext *context,
 	(void)event;
 	(void)context;
 
-#ifdef notdef
 	if (event->type == keyEvent && event->key.flags == keyPress) {
 		if (event->key.code == keyASelect ||
 		    event->key.code == keyBSelect) {
@@ -215,7 +214,6 @@ info_event (OrchardAppContext *context,
 			return;
 		}
 	}
-#endif
 
 	if (event->type == ugfxEvent) {
 		me = (GEventMouse *)event->ugfx.pEvent;

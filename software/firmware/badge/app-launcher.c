@@ -280,7 +280,7 @@ draw_launcher_buttons(struct launcher_list * list)
 	list->ghButtonDn = gwinButtonCreate (0, &wi);
 	gwinRedraw (list->ghButtonDn);
 
-	redraw_list(list, 0);
+	redraw_list (list, 0);
 
 	return;
 }
@@ -538,7 +538,6 @@ launcher_event (OrchardAppContext *context, const OrchardAppEvent *event)
 
 	list = (struct launcher_list *)context->priv;
 
-#ifdef notdef
 	if (event->type == keyEvent && event->key.flags == keyRelease)
 		return;
 
@@ -591,14 +590,14 @@ launcher_event (OrchardAppContext *context, const OrchardAppEvent *event)
 
 		if (selected >= ((page + 1) * LAUNCHER_PERPAGE)) {
 			page++;
-			redraw_list (list);
+			redraw_list (list, 1);
 			return;
 		}
 
 		if (page > 0) {
 			if (selected < (page * LAUNCHER_PERPAGE)) {
 				page--;
-				redraw_list (list);
+				redraw_list (list, 2);
 				return;
 			}
 		}
@@ -612,7 +611,7 @@ launcher_event (OrchardAppContext *context, const OrchardAppEvent *event)
 		draw_box (list, GFX_RED);
 		return;
 	}
-#endif
+
 	pe = event->ugfx.pEvent;
 
 	if (event->type == ugfxEvent && pe->type == GEVENT_GWIN_BUTTON) {

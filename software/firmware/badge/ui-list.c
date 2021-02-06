@@ -100,9 +100,7 @@ static void list_event(OrchardAppContext *context,
 	GEvent * pe;
 	GEventGWinList * ple;
 	OrchardUiContext * ctx;
-#ifdef notdef
 	int16_t selected;
-#endif
 
 	ctx = context->instance->uicontext;
 	p = ctx->priv;
@@ -115,7 +113,6 @@ static void list_event(OrchardAppContext *context,
 		}
 	}
 
-#ifdef notdef
 	/* handle joypad events */
 	if (event->type == keyEvent && event->key.flags == keyPress) {
 		if (event->key.code == keyADown ||
@@ -143,7 +140,6 @@ static void list_event(OrchardAppContext *context,
 			chEvtBroadcast (&ui_completed);
 		}
 	}
-#endif
 
 	if (event->type != ugfxEvent)
 		return;

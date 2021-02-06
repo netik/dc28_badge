@@ -63,11 +63,6 @@ typedef struct stm32_id {
 	uint8_t		stm32_lotnum[7];
 } STM32_ID;
 
-/* Temporary, for compatibility with DC27 orchard code */
-typedef struct _ble_evt_t {
-	uint32_t	ble_evt_dummy;
-} ble_evt_t;
-
 #define BADGE_ADDR_LEN	6
 
 /*
