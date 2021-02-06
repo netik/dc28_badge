@@ -149,7 +149,9 @@ static void ltdc_force_reload_s(LTDCDriver *ltdcp) {
 OSAL_IRQ_HANDLER(STM32_LTDC_EV_HANDLER) {
 
   LTDCDriver *const ltdcp = &LTDCD1;
+#if (TRUE == LTDC_USE_WAIT)
   thread_t *tp = NULL;
+#endif
 
   OSAL_IRQ_PROLOGUE();
 
