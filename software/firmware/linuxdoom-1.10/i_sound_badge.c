@@ -704,6 +704,7 @@ I_InitSound(void)
 void I_InitMusic(void)		{ }
 void I_ShutdownMusic(void)	{ }
 
+__attribute__((section(".ram7")))
 static int	looping=0;
 static int	musicdies=-1;
 

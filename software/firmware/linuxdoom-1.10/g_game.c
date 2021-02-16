@@ -1068,7 +1068,9 @@ int cpars[32] =
 //
 // G_DoCompleted 
 //
+__attribute__((section(".ram7")))
 boolean		secretexit; 
+__attribute__((section(".ram7")))
 extern char*	pagename; 
  
 void G_ExitLevel (void) 
@@ -1404,8 +1406,11 @@ void G_DoSaveGame (void)
 // Can be called by the startup code or the menu task,
 // consoleplayer, displayplayer, playeringame[] should be set. 
 //
+__attribute__((section(".ram7")))
 skill_t	d_skill; 
+__attribute__((section(".ram7")))
 int     d_episode; 
+__attribute__((section(".ram7")))
 int     d_map; 
  
 void
@@ -1650,6 +1655,7 @@ void G_BeginRecording (void)
 // G_PlayDemo 
 //
 
+__attribute__((section(".ram7")))
 char*	defdemoname; 
  
 void G_DeferedPlayDemo (char* name) 

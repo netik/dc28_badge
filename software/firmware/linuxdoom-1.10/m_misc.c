@@ -166,7 +166,9 @@ M_ReadFile
 //
 // DEFAULTS
 //
+__attribute__((section(".ram7")))
 int		usemouse;
+__attribute__((section(".ram7")))
 int		usejoystick;
 
 extern int	key_right;
@@ -298,7 +300,9 @@ default_t	defaults[] =
 
 };
 
+__attribute__((section(".ram7")))
 int	numdefaults;
+__attribute__((section(".ram7")))
 char*	defaultfile;
 
 

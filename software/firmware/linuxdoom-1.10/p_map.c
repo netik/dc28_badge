@@ -1162,8 +1162,11 @@ void P_UseLines (player_t*	player)
 //
 // RADIUS ATTACK
 //
+__attribute__((section(".ram7")))
 mobj_t*		bombsource;
+__attribute__((section(".ram7")))
 mobj_t*		bombspot;
+__attribute__((section(".ram7")))
 int		bombdamage;
 
 

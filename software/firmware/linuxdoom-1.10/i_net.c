@@ -76,7 +76,9 @@ int			insocket;
 __attribute__((section(".ram7")))
 struct	sockaddr_in	sendaddress[MAXNETNODES];
 
+__attribute__((section(".ram7")))
 void	(*netget) (void);
+__attribute__((section(".ram7")))
 void	(*netsend) (void);
 
 

@@ -49,9 +49,10 @@ rcsid[] = "$Id: m_bbox.c,v 1.1 1997/02/03 22:45:10 b1 Exp $";
 #include "i_system.h"
 
 
-
 static int	mb_used = 6;
+__attribute__((section(".ram7")))
 static byte *	zonebase;
+__attribute__((section(".ram7")))
 static byte *   lowbase;
 
 void
@@ -107,6 +108,7 @@ int  I_GetTime (void)
     struct timeval	tp;
     struct timezone	tzp;
     int			newtics;
+__attribute__((section(".ram7")))
     static int		basetime=0;
   
     gettimeofday(&tp, &tzp);

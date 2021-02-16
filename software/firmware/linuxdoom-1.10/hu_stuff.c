@@ -299,6 +299,7 @@ char *mapnamest[] =	// TNT WAD map names.
 };
 
 
+__attribute__((section(".ram7")))
 const char*	shiftxform;
 
 const char french_shiftxform[] =
@@ -636,7 +637,9 @@ boolean HU_Responder(event_t *ev)
     static char		lastmessage[HU_MAXLINELENGTH+1];
     char*		macromessage;
     boolean		eatkey = false;
+__attribute__((section(".ram7")))
     static boolean	shiftdown = false;
+__attribute__((section(".ram7")))
     static boolean	altdown = false;
     unsigned char 	c;
     int			i;

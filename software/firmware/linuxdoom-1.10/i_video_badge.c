@@ -214,6 +214,7 @@ void I_UpdateNoBlit (void)
 //
 void I_FinishUpdate (void)
 {
+__attribute__((section(".ram7")))
 	static int	lasttic;
 	int		tics;
 	int		i;

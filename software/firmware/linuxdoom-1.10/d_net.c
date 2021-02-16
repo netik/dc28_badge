@@ -643,9 +643,13 @@ void D_QuitNetGame (void)
 //
 // TryRunTics
 //
+__attribute__((section(".ram7")))
 int	frametics[4];
+__attribute__((section(".ram7")))
 int	frameon;
+__attribute__((section(".ram7")))
 int	frameskip[4];
+__attribute__((section(".ram7")))
 int	oldnettics;
 
 extern	boolean	advancedemo;

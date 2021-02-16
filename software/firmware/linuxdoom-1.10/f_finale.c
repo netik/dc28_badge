@@ -363,12 +363,19 @@ castinfo_t	castorder[] = {
     {NULL,0}
 };
 
+__attribute__((section(".ram7")))
 int		castnum;
+__attribute__((section(".ram7")))
 int		casttics;
+__attribute__((section(".ram7")))
 state_t*	caststate;
+__attribute__((section(".ram7")))
 boolean		castdeath;
+__attribute__((section(".ram7")))
 int		castframes;
+__attribute__((section(".ram7")))
 int		castonmelee;
+__attribute__((section(".ram7")))
 boolean		castattacking;
 
 
@@ -653,6 +660,7 @@ void F_BunnyScroll (void)
     patch_t*	p2;
     char	name[10];
     int		stage;
+__attribute__((section(".ram7")))
     static int	laststage;
 		
     p1 = W_CacheLumpName ("PFUB2", PU_LEVEL);
