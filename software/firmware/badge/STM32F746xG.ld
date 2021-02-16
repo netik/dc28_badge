@@ -98,7 +98,7 @@ INCLUDE rules_stacks.ld
 REGION_ALIAS("NOCACHE_RAM", ram3);
 
 /* RAM region to be used for eth segment.*/
-REGION_ALIAS("ETH_RAM", ram3);
+REGION_ALIAS("ETH_RAM", ram7);
 
 SECTIONS
 {
