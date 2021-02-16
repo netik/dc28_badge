@@ -21,6 +21,9 @@
 #include "usbh/internal.h"
 #include <string.h>
 
+#define TRDT_VALUE_FS		5
+#define TRDT_VALUE_HS		9
+
 #if STM32_USBH_USE_OTG1
 #if !defined(STM32_OTG1_CHANNELS_NUMBER)
 #error "STM32_OTG1_CHANNELS_NUMBER must be defined"
@@ -1246,6 +1249,8 @@ static inline void _hprtint_int(USBHDriver *host) {
 			}
 
 			/* configure speed */
+
+#if !defined(BOARD_OTG2_USES_ULPI)
 			if ((hprt & HPRT_PSPD_MASK) == HPRT_PSPD_LS) {
 				host->rootport.lld_status |= USBH_PORTSTATUS_LOW_SPEED;
 				otg->HFIR = 6000;
@@ -1259,8 +1264,13 @@ static inline void _hprtint_int(USBHDriver *host) {
 				host->check_ls_activity = TRUE;
 				otg->GINTMSK |= GINTMSK_SOFM;
 			} else {
+#else
+			{
+#endif
 				otg->HFIR = 48000;
+#if !defined(BOARD_OTG2_USES_ULPI)
 				otg->HCFG = (otg->HCFG & ~HCFG_FSLSPCS_MASK) | HCFG_FSLSPCS_48;
+#endif
 				host->check_ls_activity = FALSE;
 
 				/* enable channel and rx interrupts */
@@ -1476,7 +1486,7 @@ static void _usbh_start(USBHDriver *host) {
 #endif
 	{
 		/* OTG FS clock enable and reset.*/
-		rccEnableOTG_FS(FALSE);
+		rccEnableOTG_FS(TRUE);
 		rccResetOTG_FS();
 
 		otgp->GINTMSK = 0;
@@ -1492,8 +1502,12 @@ static void _usbh_start(USBHDriver *host) {
 #endif
 	{
 		/* OTG HS clock enable and reset.*/
-		rccEnableOTG_HS(FALSE); // Disable HS clock when cpu is in sleep mode
+		rccEnableOTG_HS(TRUE); // Disable HS clock when cpu is in sleep mode
+#if defined(BOARD_OTG2_USES_ULPI)
+		rccEnableOTG_HSULPI(TRUE)
+#else
 		rccDisableOTG_HSULPI();
+#endif
 		rccResetOTG_HS();
 
 		otgp->GINTMSK = 0;
@@ -1503,15 +1517,30 @@ static void _usbh_start(USBHDriver *host) {
 	}
 #endif
 
-	otgp->GUSBCFG = GUSBCFG_PHYSEL | GUSBCFG_TRDT(5);
-
-	otg_core_reset(host);
-
+#if !defined(BOARD_OTG2_USES_ULPI)
 	otgp->GCCFG = GCCFG_PWRDWN;
+#endif
 
+#if defined(BOARD_OTG2_USES_ULPI)
+
+	/* High speed ULPI PHY.*/
+	otgp->GUSBCFG = GUSBCFG_FHMOD | GUSBCFG_TRDT(TRDT_VALUE_HS) |
+			GUSBCFG_SRPCAP | GUSBCFG_HNPCAP;
+#if STM32_USE_USB_OTG2_HS
+	/* USB 2.0 High Speed PHY in HS mode.*/
+	otgp->DCFG = 0x02200000 | DCFG_DSPD_HS;
+#else
+	/* USB 2.0 High Speed PHY in FS mode.*/
+	otgp->DCFG = 0x02200000 | DCFG_DSPD_HS_FS;
+#endif
+
+#else
 	/* Forced host mode. */
-	otgp->GUSBCFG = GUSBCFG_FHMOD | GUSBCFG_PHYSEL | GUSBCFG_TRDT(5);
+	otgp->GUSBCFG = GUSBCFG_FHMOD | GUSBCFG_PHYSEL |
+			GUSBCFG_TRDT(TRDT_VALUE_FS);
+#endif
 
+#if !defined(BOARD_OTG2_USES_ULPI)
 	/* PHY enabled.*/
 	otgp->PCGCCTL = 0;
 
@@ -1530,8 +1559,12 @@ static void _usbh_start(USBHDriver *host) {
 #endif
 
 #endif
+
 	/* 48MHz 1.1 PHY.*/
 	otgp->HCFG = HCFG_FSLSS | HCFG_FSLSPCS_48;
+#endif
+
+	otg_core_reset(host);
 
 	/* Interrupts on FIFOs half empty.*/
 	otgp->GAHBCFG = 0;
