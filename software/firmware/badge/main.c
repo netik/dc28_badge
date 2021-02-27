@@ -37,6 +37,7 @@
 #include "sddetect_lld.h"
 #include "touch_lld.h"
 #include "sx1262_lld.h"
+#include "usbhid_lld.h"
 #include "wm8994.h"
 
 #include "gfx.h"
@@ -171,10 +172,11 @@ static const SDRAMConfig sdram_cfg =
  * radio's SPI interface can handle. According to the manual, the
  * minimum SCK period is 62.5nS, which works out to 16MHz. In theory
  * that means a speed of 13.5MHz should work. However experimentation
- * experimentation has shown that communication with the chip is not
- * stable at that frequency. Looking at the sample LoRaWAN code from
- * SemTech, they always program the SPI bus clock for 10MHz instead,
- * which suggests that the datasheets may be a little overzealous.
+ * has shown that communication with the chip is not stable at that
+ * frequency. Looking at the sample LoRaWAN code from SemTech, they
+ * always program the SPI bus clock for 10MHz instead, which suggests
+ * that the datasheets may be a little overzealous.
+ *
  * Unfortunately the ST Micro SPI controller doesn't provide enough
  * granularity to select a 10MHz clock, so we have to settle for
  * 6.75MHz, which is the next increment down.
@@ -712,6 +714,13 @@ main (void)
 
 	printf ("Analog to digital converter ADC1 enabled\n");
 
+	/* Initialize host USB controller */
+
+	usbhStart (&USBHD2);
+	usbHostStart ();
+
+	printf ("USB host controller enabled\n");
+
 	/*
 	 * Initialize serial-over-USB CDC driver.
 	 */
@@ -729,7 +738,7 @@ main (void)
 	usbStart (serusbcfg.usbp, &usbcfg);
 	usbConnectBus (serusbcfg.usbp);
 
-	printf ("USB controller enabled\n");
+	printf ("USB client controller enabled\n");
 
 	/*
 	 * Initialize the SDIO driver.

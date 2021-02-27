@@ -64,7 +64,7 @@ static char inbuf[INBUF_LEN + 2];
 static int incnt;
 static int indir;
 
-#define QUEUE_MAX	4
+#define QUEUE_MAX	8
 #define QUEUE_INC(x)	(((x) + 1) & (QUEUE_MAX - 1))
 
 static int queueprod;
@@ -73,7 +73,7 @@ static int queuecnt;
 static uint32_t queue[QUEUE_MAX];
 static mutex_t queuemutex;
 
-static void
+void
 capture_queue_put (uint32_t code)
 {
 	bool appEvent = TRUE;

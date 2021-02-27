@@ -172,6 +172,7 @@ CSRC = $(ALLCSRC) \
        crc32.c \
        newlib_syscall.c \
        nullprot_lld.c \
+       usbhid_lld.c \
        badge_console.c \
        badge_finder.c \
        badge_vectors.c \

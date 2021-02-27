@@ -30,54 +30,46 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _CAPTURE_H_
+#ifndef _USBHID_LLD_H_
+#define _USBHID_LLD_H_
 
-#define CAPTURE_CHAR_UP		'Y'
-#define CAPTURE_CHAR_DOWN	'X'
-#define CAPTURE_CHAR_EXIT	'Z'
+#define UKBD_KEYS		6	/* 6 bytes of key data */
+#define UKBD_MODIFIERS		8	/* 8 bits of modifier data */
+#define UKBD_SCANCODES		256	/* scancodes are only 8 bits wide */
 
-#define CAPTURE_KEY_DOWN	0x08000000
-#define CAPTURE_KEY_UP		0x04000000
-#define CAPTURE_DIR(x)		((x) & 0x0C000000)
-#define CAPTURE_CODE(x)		((x) & 0xF3FFFFFF)
+#define UKBD_CODE_RESERVED	0x00
+#define UKBD_CODE_ERR_ROLLOVER	0x01
+#define UKBD_CODE_ERR_POSTFAIL	0x02
+#define UKBD_CODE_ERR_UNDEFINED	0x03
 
-#define CAP_BACKSPACE		0x00000008
-#define CAP_TAB			0x00000009
-#define CAP_RETURN		0x0000000D
-#define CAP_ESCAPE		0x0000001B
-#define CAP_MINUS		0x0000002D
-#define CAP_EQUALS		0x0000003D
-#define CAP_DELETE		0x0000007F
+typedef struct _ubkd_report {
+	uint8_t		ukbd_modifiers;
+	uint8_t		ukbd_reserved;
+	uint8_t		ukbd_keys[UKBD_KEYS];
+} ukbd_report;
 
-#define CAP_F1			0x4000003A
-#define CAP_F2			0x4000003B
-#define CAP_F3			0x4000003C
-#define CAP_F4			0x4000003D
-#define CAP_F5			0x4000003E
-#define CAP_F6			0x4000003F
-#define CAP_F7			0x40000040
-#define CAP_F8			0x40000041
-#define CAP_F9			0x40000042
-#define CAP_F10			0x40000043
-#define CAP_F11			0x40000044
-#define CAP_F12			0x40000045
-#define CAP_PAUSE		0x40000048
-#define CAP_RIGHT		0x4000004F
-#define CAP_LEFT		0x40000050
-#define CAP_DOWN		0x40000051
-#define CAP_UP			0x40000052
-#define CAP_KP_MINUS		0x40000056
-#define CAP_LSHIFT		0x400000E1
-#define CAP_RSHIFT		0x400000E5
-#define CAP_LCTRL		0x400000E0
-#define CAP_RCTRL		0x400000E4
-#define CAP_LALT		0x400000E2
-#define CAP_LMETA		0x400000E3
-#define CAP_RALT		0x400000E6
-#define CAP_RMETA		0x400000E7
+/* Modifier bitmasks */
 
-extern void capture_queue_init (void);
-extern int capture_queue_get (uint32_t * code);
-extern void capture_queue_put (uint32_t code);
+#define UKBD_MOD_CTRL_L		0x01
+#define UKBD_MOD_SHIFT_L	0x02
+#define UKBD_MOD_ALT_L		0x04
+#define UKBD_MOD_METAL_L	0x08
+#define UKBD_MOD_CTRL_R		0x10
+#define UKBD_MOD_SHIFT_R	0x20
+#define UKBD_MOD_ALT_R		0x40
+#define UKBD_MOD_METAL_R	0x80
 
-#endif /* _CAPTURE_H_ */
+/* Modifier scancodes */
+
+#define UKBD_KEY_CTRL_L		0xE0
+#define UKBD_KEY_SHIFT_L	0xE1
+#define UKBD_KEY_ALT_L		0xE2
+#define UKBD_KEY_META_L		0xE3
+#define UKBD_KEY_CTRL_R		0xE4
+#define UKBD_KEY_SHIFT_R	0xE5
+#define UKBD_KEY_ALT_R		0xE6
+#define UKBD_KEY_META_R		0xE7
+
+extern void usbHostStart (void);
+
+#endif /* _USBHID_LLD_H_ */

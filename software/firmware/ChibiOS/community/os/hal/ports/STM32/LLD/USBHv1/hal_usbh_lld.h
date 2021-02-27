@@ -61,17 +61,19 @@ typedef struct stm32_hc_management {
 } stm32_hc_management_t;
 
 
-#define _usbhdriver_ll_data											\
-	stm32_otg_t *otg;												\
+#define _usbhdriver_ll_data										\
+	stm32_otg_t *otg;										\
 	/* low-speed port reset bug */									\
-	bool check_ls_activity;											\
-	/* channels */													\
-	uint8_t channels_number;										\
-	stm32_hc_management_t channels[STM32_OTG2_CHANNELS_NUMBER];		\
+	bool check_ls_activity;										\
+	/* thread wakeup handle */									\
+	thread_reference_t thread_ref;									\
+	/* channels */											\
+	uint8_t channels_number;									\
+	stm32_hc_management_t channels[STM32_OTG2_CHANNELS_NUMBER];					\
 	struct list_head ch_free[2];									\
 	/* Enpoints being processed */									\
-	struct list_head ep_active_lists[4];							\
-	/* Pending endpoints */											\
+	struct list_head ep_active_lists[4];								\
+	/* Pending endpoints */										\
 	struct list_head ep_pending_lists[4];
 
 

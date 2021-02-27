@@ -1019,10 +1019,17 @@ static inline void _sof_int(USBHDriver *host) {
 	if (host->check_ls_activity) {
 		stm32_otg_t *const otg = host->otg;
 		uint16_t remaining = otg->HFNUM >> 16;
+#if defined(BOARD_OTG2_USES_ULPI)
+		if (remaining < 47800) {
+			uwarnf("LS: ISR called too late (time=%d)", 48000 - remaining);
+			return;
+		}
+#else
 		if (remaining < 5975) {
 			uwarnf("LS: ISR called too late (time=%d)", 6000 - remaining);
 			return;
 		}
+#endif
 		/* 15us loop during which we check if the core generates an actual keep-alive
 		 * (or activity other than idle) on the DP/DM lines. After 15us, we abort
 		 * the loop and wait for the next SOF. If no activity is detected, the upper
@@ -1038,14 +1045,22 @@ static inline void _sof_int(USBHDriver *host) {
 			}
 			if (line_status != HPRT_PLSTS_DM) {
 				/* success; report that the port is enabled */
+#if defined(BOARD_OTG2_USES_ULPI)
+				uinfof("LS: activity detected, line=%d, time=%d", line_status >> 10,  48000 - remaining);
+#else
 				uinfof("LS: activity detected, line=%d, time=%d", line_status >> 10,  6000 - remaining);
+#endif
 				host->check_ls_activity = FALSE;
 				otg->GINTMSK = (otg->GINTMSK & ~GINTMSK_SOFM) | (GINTMSK_HCM | GINTMSK_RXFLVLM);
 				host->rootport.lld_status |= USBH_PORTSTATUS_ENABLE;
 				host->rootport.lld_c_status |= USBH_PORTSTATUS_C_ENABLE;
 				return;
 			}
+#if defined(BOARD_OTG2_USES_ULPI)
+			if (remaining < 47280) {
+#else
 			if (remaining < 5910) {
+#endif
 				udbg("LS: No activity detected");
 				return;
 			}
@@ -1250,12 +1265,14 @@ static inline void _hprtint_int(USBHDriver *host) {
 
 			/* configure speed */
 
-#if !defined(BOARD_OTG2_USES_ULPI)
 			if ((hprt & HPRT_PSPD_MASK) == HPRT_PSPD_LS) {
 				host->rootport.lld_status |= USBH_PORTSTATUS_LOW_SPEED;
+#if defined(BOARD_OTG2_USES_ULPI)
+				otg->HFIR = 48000;
+#else
 				otg->HFIR = 6000;
 				otg->HCFG = (otg->HCFG & ~HCFG_FSLSPCS_MASK) | HCFG_FSLSPCS_6;
-
+#endif
 				/* Low speed devices connected to the STM32's internal transceiver sometimes
 				 * don't behave correctly. Although HPRT reports a port enable, really
 				 * no traffic is generated, and the core is non-functional. To avoid
@@ -1264,9 +1281,6 @@ static inline void _hprtint_int(USBHDriver *host) {
 				host->check_ls_activity = TRUE;
 				otg->GINTMSK |= GINTMSK_SOFM;
 			} else {
-#else
-			{
-#endif
 				otg->HFIR = 48000;
 #if !defined(BOARD_OTG2_USES_ULPI)
 				otg->HCFG = (otg->HCFG & ~HCFG_FSLSPCS_MASK) | HCFG_FSLSPCS_48;
@@ -1353,6 +1367,8 @@ static void usb_lld_serve_interrupt(USBHDriver *host) {
 	if (gintsts & GINTSTS_IPXFR) {
 		uerr("IPXFRM");
 	}
+
+	osalThreadResumeI (&host->thread_ref, MSG_OK);
 }
 
 
@@ -1735,7 +1751,14 @@ usbh_urbstatus_t usbh_lld_root_hub_request(USBHDriver *host, uint8_t bmRequestTy
 }
 
 uint8_t usbh_lld_roothub_get_statuschange_bitmap(USBHDriver *host) {
-	return host->rootport.lld_c_status ? (1 << 1) : 0;
+	uint8_t bitmask;
+
+	osalSysLock ();
+	osalThreadSuspendS (&host->thread_ref);
+	bitmask =  host->rootport.lld_c_status ? (1 << 1) : 0;
+	osalSysUnlock ();
+
+	return (bitmask);
 }
 
 #endif
