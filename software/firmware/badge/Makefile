@@ -169,6 +169,7 @@ CSRC = $(ALLCSRC) \
        cmd-sleep.c \
        cmd-ping.c \
        cmd-unix.c \
+       cmd-usb.c \
        crc32.c \
        newlib_syscall.c \
        nullprot_lld.c \
