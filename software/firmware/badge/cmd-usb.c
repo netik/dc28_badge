@@ -39,14 +39,23 @@
 #include <string.h>
 #include <stdio.h>
 
+#if defined(BOARD_OTG2_USES_ULPI)
+
+/*
+ * The STM32F746 manual does not document the existence of the PHYCR
+ * register in the USB controller. It exists only for the second controller
+ * instance, which has HS capability. The following definitions were
+ * found buried in the ST Micro Discovery board SDK.
+ */
+
 #define USBULPI_PHYCR		((uint32_t)(0x034))
 #define USBULPI_D07		((uint32_t)0x000000FF)
-#define USBULPI_New		((uint32_t)0x02000000)
+#define USBULPI_START		((uint32_t)0x02000000)
 #define USBULPI_RW		((uint32_t)0x00400000)
 #define USBULPI_S_BUSY		((uint32_t)0x04000000)
 #define USBULPI_S_DONE		((uint32_t)0x08000000)
 
-#if defined(BOARD_OTG2_USES_ULPI)
+#define ULPI_TIMEOUT		1000
 
 static bool phy_is_off = FALSE;
 
@@ -55,15 +64,21 @@ ulpi_read (uint32_t offset)
 {
 	volatile uint32_t val;
 	volatile uint32_t * reg;
+	int i;
 
 	reg = (uint32_t *)((uint8_t *)USBHD2.otg + USBULPI_PHYCR);
 
-	*reg = (USBULPI_New | (offset << 16));
+	*reg = (USBULPI_START | (offset << 16));
 
-	while (1) {
+	for (i = 0; i < ULPI_TIMEOUT; i++) {
 		val = *reg;
 		if (val & USBULPI_S_DONE)
 			break;
+	}
+
+	if (i == ULPI_TIMEOUT) {
+		printf ("ULPI PHY read timed out\n");
+		return (0);
 	}
 
 	return (val & 0xFF);
@@ -74,16 +89,20 @@ ulpi_write (uint32_t offset, uint32_t val)
 {
 	volatile uint32_t * reg;
 	volatile uint32_t v;
+	int i;
 
 	reg = (uint32_t *)((uint8_t *)USBHD2.otg + USBULPI_PHYCR);
 
-	*reg = (USBULPI_New | USBULPI_RW | (offset << 16) | (val & 0xFF));
+	*reg = (USBULPI_START | USBULPI_RW | (offset << 16) | (val & 0xFF));
 
-	while (1) {
+	for (i = 0; i < ULPI_TIMEOUT; i++) {
 		v = *reg;
 		if (v & USBULPI_S_DONE)
 			break;
 	}
+
+	if (i == ULPI_TIMEOUT)
+		printf ("ULPI PHY write timed out\n");
 
 	return;
 }
@@ -95,6 +114,17 @@ ulpi_low (void)
 
 	if (phy_is_off == TRUE)
 		return;
+
+	/*
+	 * Disable VBUS supply. This should cause
+	 * any connected device to disconnect. We wait
+	 * for that to happen before proceeding.
+	 */
+
+	regval = ulpi_read (0x0A);
+	ulpi_write (0x0A, regval & (~0x20));
+
+	chThdSleepMilliseconds (250);
 
 	/* Disable STP pullup */
 
@@ -114,6 +144,8 @@ ulpi_low (void)
 static void
 ulpi_high (void)
 {
+	uint32_t regval;
+
 	if (phy_is_off == FALSE)
 		return;
 
@@ -131,6 +163,16 @@ ulpi_high (void)
 
 	palSetLineMode (LINE_ULPI_STP, PAL_MODE_ALTERNATE(10) |
 	    PAL_STM32_OTYPE_PUSHPULL | PAL_STM32_OSPEED_HIGHEST);
+
+	/* Restore STP pullup */
+
+	regval = ulpi_read (0x07);
+	ulpi_write (0x07, regval & ~(0x80));
+
+	/* Re-enable VBUS supply */
+
+	regval = ulpi_read (0x0A);
+	ulpi_write (0x0A, regval | 0x20);
 
 	phy_is_off = FALSE;
 
