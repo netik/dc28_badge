@@ -105,7 +105,10 @@ static int xlatekey(uint32_t sym)
 			break;
         
 		default:
-			rc = sym;
+			if (sym & 0x40000000)
+				rc = 0;
+			else
+				rc = sym;
 			break;
 	}
 
