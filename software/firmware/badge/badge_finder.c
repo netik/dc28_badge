@@ -195,6 +195,8 @@ THD_FUNCTION(pinger_loop, arg)
 	struct sockaddr_in sin;
 	FINDER_MSG * msg;
 	userconfig * c;
+	uint32_t ur;
+	uint32_t ut;
 
 	c = configGet ();
 
@@ -233,7 +235,10 @@ THD_FUNCTION(pinger_loop, arg)
 		 * amount of milliseconds.
 		 */
 
-		usleep (5000000 + ((random () & 0xFFFF)));
+		ur = ((unsigned long)random () & 0xFFFF);
+		ut = 5000000 + ur;
+
+		usleep (ut);
 	}
 
 	/* NOTREACHED */
