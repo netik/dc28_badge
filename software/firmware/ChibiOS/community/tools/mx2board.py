@@ -144,7 +144,7 @@ def get_gpio_file(proj_file, mx_path):
         print('Could not find GPIO file')
         exit(1)
 
-    print('Opened ' + path)
+    print('Opened ' + path + mcu_name)
 
     for ip in mcu_info.findall("IP"):
         if ip.attrib['Name'] == 'GPIO':
@@ -224,19 +224,17 @@ def read_project(gpio, filename):
         pads[p] = {}
         for i in range(0, 16):
             pads[p][i] = DEFAULT_PAD.copy()
-            pads[p][i]['PUPDR'] = PIN_PUPDR_TRANSLATE[gpio['defaults']['GPIO_PuPdOD']]
+            pads[p][i]['PUPDR'] = PIN_PUPDR_TRANSLATE[gpio['defaults']['GPIO_PuPd']]
             pads[p][i]['OTYPER'] = PIN_OTYPE_TRANSLATE[gpio['defaults']['GPIO_ModeDefaultOutputPP']]
             pads[p][i]['OSPEEDR'] = PIN_OSPEED_TRANSLATE[gpio['defaults']['GPIO_Speed']]
 
     for t in tmp:
-        if re.search(r"^P[A-Z]\d{1,2}(-OSC.+)?\.", t, re.M):
-            split = t.split('=')
-            pad_name = split[0].split(".")[0]
-            pad_port = pad_name[1:2]
-            pad_num = int(pad_name[2:4].replace('.', '').replace('-', ''))
-            pad_prop = split[0].split(".")[-1]
-            prop_value = split[-1].rstrip('\r\n')
-
+        _pad_search = re.match(r"^P([A-Z])(\d{1,2}).*\.([A-Za-z_]+)=(.+)", t, re.M)
+        if _pad_search:
+            pad_port = _pad_search.group(1)
+            pad_num = int(_pad_search.group(2))
+            pad_prop = _pad_search.group(3)
+            prop_value = _pad_search.group(4)
 
             if pad_prop == "Signal":
                 if 'S_TIM' in prop_value:

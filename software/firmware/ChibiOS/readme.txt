@@ -73,6 +73,37 @@
 *** Releases and Change Log                                               ***
 *****************************************************************************
 
+*** 20.3.3 ***
+- NEW: RT, NIL: Renamed _THREADS_QUEUE_DECL to THREADS_QUEUE_DECL for
+       consistency.
+- FIX: Fixed missing STM32F765 from registry (bug #1145).
+- FIX: Fixed wrong macro check on STM32 SPIv3 (bug #1144).
+- FIX: Fixed wrong check on STM32 TIM9 timer (bug #1143).
+- FIX: Fixed FAT time problem in RTC driver (bug #1142).
+- FIX: Fixed Heap allocation of aligned FIFO objects in chFactory (bug #1141).
+- FIX: Fixed chsnprintf() sign mode/filler mode conflict (bug #1140).
+- FIX: Fixed GCC 10 causes warning in factory module (bug #1139).
+- FIX: Fixed C strict aliasing rules violation causes test cases to fail
+       (bug #1138).
+- FIX: Fixed STM32H7xx Missing CRC RCC macros (bug #1137).
+- FIX: Fixed STM32L0x wrong ISR names for USART 4 and 5 (bug #1136).
+- FIX: Fixed OTG_FS error on STM32H7 (bug #1135).
+- FIX: Fixed compile error of STM32 CRYPv1 driver when DMAMU is present
+       (bug #1134).
+- FIX: Fixed moved define into hal_wspi_lld.c (bug #1133).
+- FIX: Fixed various bugs in MDMAv1 driver (bug #1132).
+- FIX: Fixed wrong check on LSI on all STM32 platforms (bug #1131).
+- FIX: Fixed missing EFL driver in platform_l432.mk (bug #1130).
+- FIX: Fixed wrong check in STM32 ST driver (bug #1129).
+- FIX: Fixed OSAL does not allow 64 bits resolution values (bug #1128).
+- FIX: Fixed wrong SDMMC RCC macros for STM32H7xx (bug #1127).
+- FIX: Fixed STM32 ADCv3 hanging on initialization (bug #1126).
+- FIX: Fixed I2S-related problems in STM32F4xx registry (bug #1124).
+- FIX: Fixed STM32 EXTIv1 driver unable to enable/disable fixed lines
+       (bug #1123).
+- FIX: Fixed incorrect STM32 iWDG initialization in windowed mode (bug #1122).
+- FIX: Fixed ignored HSIDIV setting on STM32G0xx (bug #1121)
+
 *** 20.3.2 ***
 - NEW: Support for 3 analog watchdogs in ADCv3 (STM32F3, L4, L4+, G4).
 - NEW: Support for 3 analog watchdogs in ADCv5 (STM32G0).

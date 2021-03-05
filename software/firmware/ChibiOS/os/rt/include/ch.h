@@ -48,7 +48,7 @@
 /**
  * @brief   Kernel version string.
  */
-#define CH_KERNEL_VERSION       "6.1.2"
+#define CH_KERNEL_VERSION       "6.1.3"
 
 /**
  * @brief   Kernel version major number.
@@ -63,11 +63,12 @@
 /**
  * @brief   Kernel version patch number.
  */
-#define CH_KERNEL_PATCH         2
+#define CH_KERNEL_PATCH         3
 /** @} */
 
 /**
  * @name    Constants for configuration options
+ * @{
  */
 /**
  * @brief   Generic 'false' preprocessor boolean constant.
@@ -104,6 +105,7 @@ extern "C" {
 /* Base kernel headers.*/
 #include "chtypes.h" /* CHTODO: Rename and rework.*/
 #include "chsystypes.h"
+#include "chlists.h"
 #include "chdebug.h"
 #include "chtime.h"
 #include "chalign.h"

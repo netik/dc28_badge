@@ -61,19 +61,19 @@ typedef struct stm32_hc_management {
 } stm32_hc_management_t;
 
 
-#define _usbhdriver_ll_data										\
-	stm32_otg_t *otg;										\
-	/* low-speed port reset bug */									\
-	bool check_ls_activity;										\
-	/* thread wakeup handle */									\
-	thread_reference_t thread_ref;									\
-	/* channels */											\
-	uint8_t channels_number;									\
-	stm32_hc_management_t channels[STM32_OTG2_CHANNELS_NUMBER];					\
-	struct list_head ch_free[2];									\
-	/* Enpoints being processed */									\
-	struct list_head ep_active_lists[4];								\
-	/* Pending endpoints */										\
+#define _usbhdriver_ll_data												\
+	stm32_otg_t *otg;												\
+	/* low-speed port reset bug */											\
+	bool check_ls_activity;												\
+	/* thread wakeup handle */											\
+	thread_reference_t thread_ref;											\
+	/* channels */													\
+	uint8_t channels_number;											\
+	stm32_hc_management_t channels[STM32_OTG_HS_CHANNELS_NUMBER];							\
+	struct list_head ch_free[2];											\
+	/* Enpoints being processed */											\
+	struct list_head ep_active_lists[4];										\
+	/* Pending endpoints */												\
 	struct list_head ep_pending_lists[4];
 
 
@@ -134,6 +134,7 @@ typedef struct stm32_hc_management {
 
 void usbh_lld_init(void);
 void usbh_lld_start(USBHDriver *usbh);
+void usbh_lld_stop(USBHDriver *usbh);
 void usbh_lld_ep_object_init(usbh_ep_t *ep);
 void usbh_lld_ep_open(usbh_ep_t *ep);
 void usbh_lld_ep_close(usbh_ep_t *ep);
@@ -155,11 +156,11 @@ uint8_t usbh_lld_roothub_get_statuschange_bitmap(USBHDriver *usbh);
 #endif
 
 
-#if STM32_USBH_USE_OTG1
+#if STM32_USBH_USE_OTG_FS
 extern USBHDriver USBHD1;
 #endif
 
-#if STM32_USBH_USE_OTG2
+#if STM32_USBH_USE_OTG_HS
 extern USBHDriver USBHD2;
 #endif
 
