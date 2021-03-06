@@ -1408,6 +1408,7 @@ static void usb_lld_serve_interrupt(USBHDriver *host) {
 	}
 
 	osalSysLockFromISR ();
+	host->intService = ~host->intService;
 	osalThreadResumeI (&host->thread_ref, MSG_OK);
 	osalSysUnlockFromISR ();
 }
@@ -1486,6 +1487,8 @@ static void _init(USBHDriver *host) {
 	int i;
 
 	usbhObjectInit(host);
+
+	host->intService = 0;
 
 #if STM32_USBH_USE_OTG_FS
 #if STM32_USBH_USE_OTG_HS
@@ -1817,7 +1820,9 @@ uint8_t usbh_lld_roothub_get_statuschange_bitmap(USBHDriver *host) {
 	uint8_t bitmask;
 
 	osalSysLock ();
-	osalThreadSuspendS (&host->thread_ref);
+	if (host->intService == 0)
+		osalThreadSuspendS (&host->thread_ref);
+	host->intService = 0;
 	bitmask =  host->rootport.lld_c_status ? (1 << 1) : 0;
 	osalSysUnlock ();
 
