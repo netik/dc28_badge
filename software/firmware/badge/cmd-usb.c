@@ -122,7 +122,7 @@ ulpi_low (void)
 	 */
 
 	regval = ulpi_read (0x0A);
-	ulpi_write (0x0A, regval & (~0x20));
+	ulpi_write (0x0A, regval & (~0x60));
 
 	chThdSleepMilliseconds (250);
 
@@ -172,7 +172,7 @@ ulpi_high (void)
 	/* Re-enable VBUS supply */
 
 	regval = ulpi_read (0x0A);
-	ulpi_write (0x0A, regval | 0x20);
+	ulpi_write (0x0A, regval | 0x60);
 
 	phy_is_off = FALSE;
 
