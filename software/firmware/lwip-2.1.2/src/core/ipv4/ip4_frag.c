@@ -48,6 +48,9 @@
 #include "lwip/netif.h"
 #include "lwip/stats.h"
 #include "lwip/icmp.h"
+#ifdef DYNAMIC_TIMERS
+#include "lwip/timeouts.h"
+#endif
 
 #include <string.h>
 
@@ -149,6 +152,13 @@ ip_reass_tmr(void)
       ip_reass_free_complete_datagram(tmp, prev);
     }
   }
+
+#ifdef DYNAMIC_TIMERS
+  /* See if reassembly queue is empty */
+  if (reassdatagrams == NULL)
+    sys_untimeout ((sys_timeout_handler)ip_reass_tmr, NULL);
+#endif
+
 }
 
 /**
@@ -281,6 +291,12 @@ ip_reass_enqueue_new_datagram(struct ip_hdr *fraghdr, int clen)
 #if ! IP_REASS_FREE_OLDEST
   LWIP_UNUSED_ARG(clen);
 #endif
+#ifdef DYNAMIC_TIMERS
+  s16_t e = 0;
+
+  if (reassdatagrams == NULL)
+    e = 1;
+#endif
 
   /* No matching previous fragment found, allocate a new reassdata struct */
   ipr = (struct ip_reassdata *)memp_malloc(MEMP_REASSDATA);
@@ -306,6 +322,13 @@ ip_reass_enqueue_new_datagram(struct ip_hdr *fraghdr, int clen)
   /* copy the ip header for later tests and input */
   /* @todo: no ip options supported? */
   SMEMCPY(&(ipr->iphdr), fraghdr, IP_HLEN);
+
+#ifdef DYNAMIC_TIMERS
+  /* If queue was empty, start the reassembly timer */
+  if (e == 1)
+      sys_timeout (IP_TMR_INTERVAL, (sys_timeout_handler)ip_reass_tmr, NULL);
+#endif
+
   return ipr;
 }
 

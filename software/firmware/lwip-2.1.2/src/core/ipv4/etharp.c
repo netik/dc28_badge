@@ -54,6 +54,9 @@
 #include "lwip/autoip.h"
 #include "lwip/prot/iana.h"
 #include "netif/ethernet.h"
+#ifdef DYNAMIC_TIMERS
+#include "lwip/timeouts.h"
+#endif
 
 #include <string.h>
 
@@ -167,6 +170,9 @@ free_etharp_q(struct etharp_q_entry *q)
 static void
 etharp_free_entry(int i)
 {
+#ifdef DYNAMIC_TIMERS
+  s16_t a;
+#endif
   /* remove from SNMP ARP index tree */
   mib2_remove_arp_entry(arp_table[i].netif, &arp_table[i].ipaddr);
   /* and empty packet queue */
@@ -185,6 +191,17 @@ etharp_free_entry(int i)
   ip4_addr_set_zero(&arp_table[i].ipaddr);
   arp_table[i].ethaddr = ethzero;
 #endif /* LWIP_DEBUG */
+
+#ifdef DYNAMIC_TIMERS
+  /* See if table is empty */
+  for (a = 0; a < ARP_TABLE_SIZE; a++)
+    if (arp_table[i].state != ETHARP_STATE_EMPTY)
+      return;
+
+  sys_untimeout ((sys_timeout_handler)etharp_tmr, NULL);
+#endif
+
+  return;
 }
 
 /**
@@ -229,6 +246,15 @@ etharp_tmr(void)
       }
     }
   }
+
+#ifdef DYNAMIC_TIMERS
+  for (i = 0; i < ARP_TABLE_SIZE; ++i)
+    if (arp_table[i].state != ETHARP_STATE_EMPTY)
+      break;
+  if (i != ARP_TABLE_SIZE)
+    sys_timeout (ARP_TMR_INTERVAL, (sys_timeout_handler)etharp_tmr, NULL);
+#endif
+
 }
 
 /**
@@ -262,8 +288,21 @@ etharp_find_entry(const ip4_addr_t *ipaddr, u8_t flags, struct netif *netif)
   s16_t old_queue = ARP_TABLE_SIZE;
   /* its age */
   u16_t age_queue = 0, age_pending = 0, age_stable = 0;
+#ifdef DYNAMIC_TIMERS
+  s16_t e;
+#endif
 
   LWIP_UNUSED_ARG(netif);
+
+#ifdef DYNAMIC_TIMERS
+  /* See if table is empty */
+  e = 0;
+  for (i = 0; i < ARP_TABLE_SIZE; i++)
+    if (arp_table[i].state != ETHARP_STATE_EMPTY)
+      break;
+  if (i == ARP_TABLE_SIZE)
+    e = 1;
+#endif
 
   /**
    * a) do a search through the cache, remember candidates
@@ -397,6 +436,14 @@ etharp_find_entry(const ip4_addr_t *ipaddr, u8_t flags, struct netif *netif)
 #if ETHARP_TABLE_MATCH_NETIF
   arp_table[i].netif = netif;
 #endif /* ETHARP_TABLE_MATCH_NETIF */
+
+#ifdef DYNAMIC_TIMERS
+  /* If table was empty, start the timer */
+
+  if (e == 1)
+    sys_timeout (ARP_TMR_INTERVAL, (sys_timeout_handler)etharp_tmr, NULL);
+#endif
+
   return (s16_t)i;
 }
 

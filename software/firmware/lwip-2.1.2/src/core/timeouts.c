@@ -220,6 +220,8 @@ sys_timeout_abs(u32_t abs_time, sys_timeout_handler handler, void *arg)
   }
 }
 
+#ifndef DYNAMIC_TIMERS
+
 /**
  * Timer callback function that calls cyclic->handler() and reschedules itself.
  *
@@ -259,10 +261,12 @@ lwip_cyclic_timer(void *arg)
 #endif
   }
 }
+#endif
 
 /** Initialize this module */
 void sys_timeouts_init(void)
 {
+#ifndef DYNAMIC_TIMERS
   size_t i;
   /* tcp_tmr() at index 0 is started on demand */
   for (i = (LWIP_TCP ? 1 : 0); i < LWIP_ARRAYSIZE(lwip_cyclic_timers); i++) {
@@ -270,6 +274,7 @@ void sys_timeouts_init(void)
       (this is OK as cyclic_timer() casts back to const* */
     sys_timeout(lwip_cyclic_timers[i].interval_ms, lwip_cyclic_timer, LWIP_CONST_CAST(void *, &lwip_cyclic_timers[i]));
   }
+#endif
 }
 
 /**

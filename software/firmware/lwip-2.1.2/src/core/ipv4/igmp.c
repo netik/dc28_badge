@@ -93,6 +93,9 @@ Steve Reynolds
 #include "lwip/netif.h"
 #include "lwip/stats.h"
 #include "lwip/prot/igmp.h"
+#ifdef DYNAMIC_TIMERS
+#include "lwip/timeouts.h"
+#endif
 
 #include <string.h>
 
@@ -485,6 +488,9 @@ err_t
 igmp_joingroup_netif(struct netif *netif, const ip4_addr_t *groupaddr)
 {
   struct igmp_group *group;
+#ifdef DYNAMIC_TIMERS
+  s16_t e;
+#endif
 
   LWIP_ASSERT_CORE_LOCKED();
 
@@ -494,6 +500,16 @@ igmp_joingroup_netif(struct netif *netif, const ip4_addr_t *groupaddr)
 
   /* make sure it is an igmp-enabled netif */
   LWIP_ERROR("igmp_joingroup_netif: attempt to join on non-IGMP netif", netif->flags & NETIF_FLAG_IGMP, return ERR_VAL;);
+
+#ifdef DYNAMIC_TIMERS
+  e = 1;
+  NETIF_FOREACH(netif) {
+    if (netif_igmp_data(netif) != NULL) {
+      e = 0;
+      break;
+    }
+  }
+#endif
 
   /* find group or create a new one if not found */
   group = igmp_lookup_group(netif, groupaddr);
@@ -527,6 +543,12 @@ igmp_joingroup_netif(struct netif *netif, const ip4_addr_t *groupaddr)
     /* Increment group use */
     group->use++;
     /* Join on this interface */
+
+#ifdef DYNAMIC_TIMERS
+    if (e == 1)
+      sys_timeout (IGMP_TMR_INTERVAL, (sys_timeout_handler)igmp_tmr, NULL);
+#endif
+
     return ERR_OK;
   } else {
     LWIP_DEBUGF(IGMP_DEBUG, ("igmp_joingroup_netif: Not enough memory to join to group\n"));
@@ -641,9 +663,19 @@ void
 igmp_tmr(void)
 {
   struct netif *netif;
+#ifdef DYNAMIC_TIMERS
+  s16_t e;
+
+  e = 0;
+#endif
 
   NETIF_FOREACH(netif) {
     struct igmp_group *group = netif_igmp_data(netif);
+
+#ifdef DYNAMIC_TIMERS
+    if (group != NULL)
+      e = 1;
+#endif
 
     while (group != NULL) {
       if (group->timer > 0) {
@@ -655,6 +687,14 @@ igmp_tmr(void)
       group = group->next;
     }
   }
+
+#ifdef DYNAMIC_TIMERS
+  /* If no interfaces have igmp data, cancel the timeout */
+
+  if (e == 0)
+    sys_untimeout ((sys_timeout_handler)igmp_tmr, NULL);
+#endif
+
 }
 
 /**

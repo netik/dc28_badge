@@ -24,8 +24,11 @@
 #ifndef STATIC_LWIPOPTS_H
 #define STATIC_LWIPOPTS_H
 
+#include <malloc.h>
+
 #define NO_SYS                          0
 
+#define DYNAMIC_TIMERS
 #define LWIP_TIMERS                     1
 #define LWIP_TIMERS_CUSTOM              0
 
@@ -35,7 +38,8 @@
 
 #define SYS_LIGHTWEIGHT_PROT            0
 
-#define MEM_ALIGNMENT                   4
+#define MEM_ALIGNMENT                   CACHE_LINE_SIZE
+#define mem_clib_malloc(x)		memalign (MEM_ALIGNMENT, x)
 
 #endif  /* STATIC_LWIPOPTS_H */
 
