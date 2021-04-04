@@ -115,8 +115,6 @@ static void shout_event (OrchardAppContext *context,
 	if (event->type == uiEvent) {
 		if ((event->ui.code == uiComplete) &&
 		    (event->ui.flags == uiOK)) {
-			int r;
-
 			/* Terminate UI */
 			/* Send the message */
 
@@ -139,7 +137,7 @@ static void shout_event (OrchardAppContext *context,
 
 			s = lwip_socket (AF_INET, SOCK_DGRAM, 0);
 
-			r =  lwip_sendto (s, &shout, sizeof(FINDER_SHOUT), 0,
+			(void)lwip_sendto (s, &shout, sizeof(FINDER_SHOUT), 0,
 			    (struct sockaddr *)&sin, sizeof (sin));
 
 			lwip_close (s);
