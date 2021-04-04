@@ -34,9 +34,8 @@
 #include "hal.h"
 #include "osal.h"
 
-#include "badge.h"
-
 #include "sx1262_lld.h"
+#include "badge.h"
 
 #include <lwip/opt.h>
 #include <lwip/def.h>
@@ -48,10 +47,12 @@
 #include <lwip/tcpip.h>
 #include <netif/etharp.h>
 #include <lwip/netifapi.h>
+#include <lwip/inet.h>
 
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <malloc.h>
 
 /*
  * The radio chip is connected to the following pins in addition
@@ -79,7 +80,7 @@
  * ChibiOS prior to 20.3.1 have this bug in it, so for those versions
  * it's necessary to workaround it by using LINE_ARD_D10 in place of
  * LIND_ARD_D5 where applicable. Fortunately we're now using version
- * 20.3.2.7 where this is fixed.
+ * 20.3.3 where this is fixed.
  */
 
 SX1262_Driver SX1262D1;
@@ -90,9 +91,10 @@ static uint8_t sx1262RegRead (SX1262_Driver *, uint16_t);
 static void sx1262RegWrite (SX1262_Driver *, uint16_t, uint8_t);
 static void sx1262BufRead (SX1262_Driver *, uint8_t *, uint8_t, uint8_t);
 static void sx1262BufWrite (SX1262_Driver *, uint8_t *, uint8_t, uint8_t);
-static void sx1262Enable (SX1262_Driver *);
-static void sx1262Disable (SX1262_Driver *);
+static void sx1262GfskConfig (SX1262_Driver * p);
+static void sx1262LoraConfig (SX1262_Driver * p);
 static void sx1262Reset (SX1262_Driver *);
+static void sx1262ChanSet (SX1262_Driver *);
 static void sx1262Calibrate (SX1262_Driver *);
 static void sx1262CalImg (SX1262_Driver *);
 static bool sx1262IsBusy (SX1262_Driver *);
@@ -102,12 +104,13 @@ static void sx1262ReceiveSet (SX1262_Driver *);
 static void sx1262TransmitSet (SX1262_Driver *);
 static void sx1262StandbySet (SX1262_Driver *);
 static void sx1262CadSet (SX1262_Driver *);
+static err_t sx1262EthernetInit (struct netif *);
+static err_t sx1262LinkOutput (struct netif *, struct pbuf *);
+static err_t sx1262Output (struct netif *, struct pbuf *, const ip4_addr_t *);
+static void sx1262RxHandle (SX1262_Driver *);
 #ifdef debug
 static void sx1262Status (SX1262_Driver *);
 #endif
-static err_t sx1262EthernetInit (struct netif *);
-static err_t sx1262Output (struct netif *, struct pbuf *);
-static void sx1262RxHandle (SX1262_Driver *);
 
 static void
 sx1262Int (void * arg)
@@ -133,8 +136,8 @@ sx1262Status (SX1262_Driver * p)
 	g.sx_opcode = SX_CMD_GETSTS;
 	sx1262CmdExc (p, &g, sizeof(g));
 
-	printf ("CHIPMODE: %x CMDSTS: %x\n", SX_CHIPMODE(g.sx_status),
-	    SX_CMDSTS(g.sx_status));
+	printf ("CHIPMODE: %x CMDSTS: %x (%x) ", SX_CHIPMODE(g.sx_status),
+	    SX_CMDSTS(g.sx_status), g.sx_status);
 
 	return;
 }
@@ -196,7 +199,13 @@ THD_FUNCTION(sx1262Thread, arg)
 
 		i.sx_opcode = SX_CMD_GETIRQ;
 		sx1262CmdExc (p, &i, sizeof(i));
-		irq = __builtin_bswap16(i.sx_irqsts);
+		irq = __builtin_bswap16 (i.sx_irqsts);
+
+		if (i.sx_irqsts) {
+			a.sx_opcode = SX_CMD_ACKIRQ;
+			a.sx_irqsts = i.sx_irqsts;
+			sx1262CmdSend (p, &a, sizeof(a));
+		}
 
 #ifdef debug
 		printf ("got a radio interrupt? (%x)\n", irq);
@@ -206,7 +215,8 @@ THD_FUNCTION(sx1262Thread, arg)
 			/* Ignore packets with bad CRC */
 			if (!(irq & (SX_IRQ_CRCERR | SX_IRQ_HDRERR)))
 				sx1262RxHandle (p);
-			sx1262ReceiveSet (p);
+			else
+				sx1262ReceiveSet (p);
 		}
 
 		if (irq & SX_IRQ_CADDONE) {
@@ -216,20 +226,13 @@ THD_FUNCTION(sx1262Thread, arg)
 				sx1262TransmitSet (p);
 		}
 
-		if (irq & SX_IRQ_TXDONE) {
+		if (irq & (SX_IRQ_TXDONE | SX_IRQ_TIMEO)) {
 			sx1262ReceiveSet (p);
-			osalSysLock ();
-			p->sx_txdone = TRUE;
-			osalThreadResumeS (&p->sx_txwait, MSG_OK);
-			osalSysUnlock ();
+                        osalSysLock ();
+                        p->sx_txdone = TRUE;
+                        osalThreadResumeS (&p->sx_txwait, MSG_OK);
+                        osalSysUnlock ();
 		}
-
-		if (i.sx_irqsts) {
-			a.sx_opcode = SX_CMD_ACKIRQ;
-			a.sx_irqsts = i.sx_irqsts;
-			sx1262CmdSend (p, &a, sizeof(a));
-		}
-
 	}
 
 	/* NOTREACHED */
@@ -244,7 +247,7 @@ sx1262CmdSend (SX1262_Driver * p, void * cmd, uint8_t len)
 	for (i = 0; i < SX_DELAY; i++) {
 		if (sx1262IsBusy (p) == FALSE)
 			break;
-		chThdSleepMilliseconds (1);
+		chThdSleep (1);
 	}
 
 	memcpy (p->sx_cmdbuf, cmd, len);
@@ -265,12 +268,10 @@ sx1262CmdSend (SX1262_Driver * p, void * cmd, uint8_t len)
 	for (i = 0; i < SX_DELAY; i++) {
 		if (sx1262IsBusy (p) == FALSE)
 			break;
-		chThdSleepMilliseconds (1);
+		chThdSleep (1);
 	}
 
 	spiReleaseBus (p->sx_spi);
-
-	memcpy (cmd, p->sx_cmdbuf, len);
 
 	if (i == SX_DELAY) {
 		printf ("Radio command %x timed out\n", c[0]);
@@ -283,16 +284,16 @@ static void
 sx1262CmdExc (SX1262_Driver * p, void * cmd, uint8_t len)
 {
 	int i;
-	uint8_t * c;
+	uint8_t c;
 
 	for (i = 0; i < SX_DELAY; i++) {
 		if (sx1262IsBusy (p) == FALSE)
 			break;
-		chThdSleepMilliseconds (1);
+		chThdSleep (1);
 	}
 
 	memcpy (p->sx_cmdbuf, cmd, len);
-	c = cmd;
+	c = *((uint8_t *)cmd);
 
 	spiAcquireBus (p->sx_spi);
 
@@ -309,7 +310,7 @@ sx1262CmdExc (SX1262_Driver * p, void * cmd, uint8_t len)
 	for (i = 0; i < SX_DELAY; i++) {
 		if (sx1262IsBusy (p) == FALSE)
 			break;
-		chThdSleepMilliseconds (1);
+		chThdSleep (1);
 	}
 
 	spiReleaseBus (p->sx_spi);
@@ -317,7 +318,7 @@ sx1262CmdExc (SX1262_Driver * p, void * cmd, uint8_t len)
 	memcpy (cmd, p->sx_cmdbuf, len);
 
 	if (i == SX_DELAY) {
-		printf ("Radio command exchange %x timed out\n", c[0]);
+		printf ("Radio command exchange %x timed out\n", c);
 	}
 
 	return;
@@ -329,7 +330,7 @@ sx1262RegRead (SX1262_Driver * p, uint16_t reg)
 	SX_REGREAD r;
 
 	r.sx_opcode = SX_CMD_REGREAD;
-	r.sx_address = __builtin_bswap16(reg);
+	r.sx_address = __builtin_bswap16 (reg);
 	r.sx_status = 0;
 	r.sx_val = 0;
 
@@ -344,7 +345,7 @@ sx1262RegWrite (SX1262_Driver * p, uint16_t reg, uint8_t val)
 	SX_REGWRITE r;
 
 	r.sx_opcode = SX_CMD_REGWRITE;
-	r.sx_address = __builtin_bswap16(reg);
+	r.sx_address = __builtin_bswap16 (reg);
 	r.sx_val = val;
 
 	sx1262CmdExc (p, &r, sizeof(r));
@@ -364,7 +365,7 @@ sx1262BufRead (SX1262_Driver * p, uint8_t * buf, uint8_t off, uint8_t len)
 	for (i = 0; i < SX_DELAY; i++) {
 		if (sx1262IsBusy (p) == FALSE)
 			break;
-		chThdSleepMilliseconds (1);
+		chThdSleep (1);
 	}
 
 	spiAcquireBus (p->sx_spi);
@@ -387,7 +388,7 @@ sx1262BufRead (SX1262_Driver * p, uint8_t * buf, uint8_t off, uint8_t len)
 	for (i = 0; i < SX_DELAY; i++) {
 		if (sx1262IsBusy (p) == FALSE)
 			break;
-		chThdSleepMilliseconds (1);
+		chThdSleep (1);
 	}
 
 	spiReleaseBus (p->sx_spi);
@@ -411,7 +412,7 @@ sx1262BufWrite (SX1262_Driver * p, uint8_t * buf, uint8_t off, uint8_t len)
 	for (i = 0; i < SX_DELAY; i++) {
 		if (sx1262IsBusy (p) == FALSE)
 			break;
-		chThdSleepMilliseconds (1);
+		chThdSleep (1);
 	}
 
 	spiAcquireBus (p->sx_spi);
@@ -431,7 +432,7 @@ sx1262BufWrite (SX1262_Driver * p, uint8_t * buf, uint8_t off, uint8_t len)
 	for (i = 0; i < SX_DELAY; i++) {
 		if (sx1262IsBusy (p) == FALSE)
 			break;
-		chThdSleepMilliseconds (1);
+		chThdSleep (1);
 	}
 
 	spiReleaseBus (p->sx_spi);
@@ -451,9 +452,9 @@ sx1262Reset (SX1262_Driver * p)
 	/* Perform a hard reset of the chip. */
 
 	palClearLine (LINE_ARD_A0);
-	chThdSleepMilliseconds (50);
+	chThdSleepMilliseconds (150);
 	palSetLine (LINE_ARD_A0);
-	chThdSleepMilliseconds (50);
+	chThdSleepMilliseconds (150);
 
 	for (i = 0; i < SX_DELAY; i++) {
 		if (sx1262IsBusy (p) == FALSE)
@@ -473,6 +474,20 @@ sx1262IsBusy (SX1262_Driver * p)
 	if (palReadLine (LINE_ARD_D3) == 1)
 		return (TRUE);
 	return (FALSE);
+}
+
+static void
+sx1262ChanSet (SX1262_Driver * p)
+{
+	SX_SETFREQ f;
+
+	sx1262CalImg (p);
+
+	f.sx_opcode = SX_CMD_SETFREQ;
+	f.sx_freq = __builtin_bswap32 (SX_FREQ(p->sx_freq));
+	sx1262CmdSend (p, &f, sizeof(f));
+
+	return;
 }
 
 static void
@@ -498,13 +513,12 @@ sx1262Calibrate (SX1262_Driver * p)
 
 	sx1262CmdExc (p, &ge, sizeof(ge));
 
-	if (__builtin_bswap16(ge.sx_errs) & 0x3F)
+	if (__builtin_bswap16 (ge.sx_errs) & 0x3F)
 		printf ("Calibration error detected (%x).\n",
-		    __builtin_bswap16(ge.sx_errs));
+		    __builtin_bswap16 (ge.sx_errs));
 
 	return;
 }
-
 
 static void
 sx1262CalImg (SX1262_Driver * p)
@@ -536,144 +550,20 @@ sx1262CalImg (SX1262_Driver * p)
 }
 
 static void
-sx1262Enable (SX1262_Driver * p)
+sx1262LoraConfig (SX1262_Driver * p)
 {
 	uint8_t mantissa, exponent, reg;
-	/*
-	 * You might be thinking: "Hey Bill, instead of defining
-	 * each of these structures separately, why not combine them
-	 * into a single union so that you use less storage?"
-	 *
-	 * The answer is: because the way stack space allocation is
-	 * done, the compiler will effectively do that anyway 
-	 * as part of its optimization pass (assuming you don't turn
-	 * optimization off for debugging). And this way the code
-	 * is less confusing to read.
-	 */
 	SX_SETPKT pkt;
 	SX_SETPKTPARAM_LORA pkp;
-	SX_STOPTIMER t;
 	SX_SETLORASYMTO s;
 	SX_SETMODPARAM_LORA m;
-	SX_SETFREQ f;
-	SX_SETDIO2ASRFSW d;
-	SX_SETREGMODE r;
-	SX_SETBUFBASE b;
-	SX_SETPACFG pa;
-	SX_SETTXPARAM tp;
-	SX_SETDIOIRQ di;
-
-	/* Reset the radio and put it in standby */
-
-	sx1262Reset (p);
-
-	sx1262StandbySet (p);
-
-	/* Set DIO2 as RF control switch */
-
-	d.sx_opcode = SX_CMD_SETDIO2ASRFSW;
-	d.sx_enable = SX_DIO2_RFSW;
-	sx1262CmdSend (p, &d, sizeof(d));
-
-	/* Set regulator mode to DCDC */
-
-	r.sx_opcode = SX_CMD_SETREGMODE;
-	r.sx_regparam = SX_REGMODE_LDO_DCDC;
-	sx1262CmdSend (p, &r, sizeof(r));
-
-	/* Set RX and TX buffer base addresses to 0 */
-
-	b.sx_opcode = SX_CMD_SETBUFBASE;
-	b.sx_txbase = 0;
-	b.sx_rxbase = 0;
-	sx1262CmdSend (p, &b, sizeof(b));
-
-	/* Set transmitter PA config */
-
-	pa.sx_opcode = SX_CMD_SETPACFG;
-#ifdef SX_TX_POWER_22DB
-	pa.sx_padutycycle = 0x4;
-	pa.sx_hpmax = 0x7;
-#endif
-#ifdef SX_TX_POWER_14DB
-	pa.sx_padutycycle = 0x2;
-	pa.sx_hpmax = 0x2;
-#endif
-	pa.sx_devsel = 0x0; /* 0 == 1262, 1 == 1261 */
-	pa.sx_palut = 0x1; /* always 1 */
-	sx1262CmdSend (p, &pa, sizeof(pa));
-
-	/* Set overcurrent protection (140mA for whole device) */
-
-	sx1262RegWrite (p, SX_REG_OCPCFG, SX_OCP_1262_140MA);
-
-	/*
-	 * Set TX params
-	 * Power can be as high as 22dB, but current draw
-	 * at that level can be as high as 100mA, so for now
-	 * we keep it down to 14dB.
-	 */
-
-	tp.sx_opcode = SX_CMD_SETTXPARAM;
-#ifdef SX_TX_POWER_22DB
-	tp.sx_power = 22;
-#endif
-#ifdef SX_TX_POWER_14DB
-	tp.sx_power = 14;
-#endif
-	tp.sx_ramptime = SX_RAMPTIME_200US;
-	sx1262CmdSend (p, &tp, sizeof(tp));
-
-	/*
-	 * Set up interrupt event signalling -- we use DIO1.
-	 * Note that we unmask several different IRQ events,
-	 * but we only program DIO1 to toggle for RX and TX
-	 * completions, to limit how often we actually get
-	 * woken up. For RX, we want to be notified if the
-	 * receiver thinks it's actually received a packet,
-	 * but once that happens we also need to check if
-	 * the packet is actually valid by looking for CRC
-	 * or header errors.
-	 */
-
-	di.sx_opcode = SX_CMD_SETDIOIRQ;
-	di.sx_irqmask = __builtin_bswap16 (SX_IRQ_RXDONE |
-	    SX_IRQ_TXDONE | SX_IRQ_CRCERR | SX_IRQ_HDRERR |
-	    SX_IRQ_CADDONE | SX_IRQ_CADDET);
-	di.sx_dio1mask = __builtin_bswap16(SX_IRQ_RXDONE | SX_IRQ_TXDONE |
-	    SX_IRQ_CADDONE | SX_IRQ_CADDET);
-	di.sx_dio2mask = 0;
-	di.sx_dio3mask = 0;
-	sx1262CmdSend (p, &di, sizeof(di));
-
-	sx1262CalImg (p);
-	sx1262Calibrate (p);
-
-	/*
-	 * All four of the above commands may cause the radio to
-	 * change its state (mostly resetting back to standby_rc).
-	 * Put it back into standby_xosc state before continuing.
-	 */
-
-	sx1262StandbySet (p);
-
-	/* Set channel */
-
-	f.sx_opcode = SX_CMD_SETFREQ;
-	f.sx_freq = __builtin_bswap32(SX_FREQ(p->sx_freq));
-	sx1262CmdSend (p, &f, sizeof(f));
-
-	/* Perform RX and TX configuration */
-
-	t.sx_opcode = SX_CMD_STOPTIMER;
-	t.sx_stoptimerparam = SX_STOPTIMER_SYNCWORD;
-	sx1262CmdSend (p, &t, sizeof(t));
+	SX_SETCADPARAMS cad;
 
 	s.sx_opcode = SX_CMD_SETLORASYMTO;
-	s.sx_symbnum = p->sx_symtimeout;
+	s.sx_symbnum = p->sx_lora.sx_symtimeout;
 	sx1262CmdSend (p, &s, sizeof(s));
 
-	mantissa = p->sx_symtimeout >> 1;
+	mantissa = p->sx_lora.sx_symtimeout >> 1;
 	exponent = 0;
 	reg = 0;
 
@@ -695,9 +585,9 @@ sx1262Enable (SX1262_Driver * p)
 	/* Then set modulation parameters. */
 
 	m.sx_opcode = SX_CMD_SETMODPARAM;
-	m.sx_sf = SX_LORA_SF7;
-	m.sx_bw = SX_LORA_BW_500;
-	m.sx_cr = SX_LORA_CR_4_5;
+	m.sx_sf = p->sx_lora.sx_spreadfactor;
+	m.sx_bw = p->sx_lora.sx_bandwidth;
+	m.sx_cr = p->sx_lora.sx_coderate;
 	m.sx_ldopt = SX_LORA_LDOPT_OFF;
 	sx1262CmdSend (p, &m, sizeof(m));
 
@@ -789,28 +679,273 @@ sx1262Enable (SX1262_Driver * p)
 	 */
 
 	pkp.sx_opcode = SX_CMD_SETPKTPARAM;
-	pkp.sx_preamlen = __builtin_bswap16(p->sx_preamlen);
+	pkp.sx_preamlen = __builtin_bswap16 (p->sx_lora.sx_preamlen);
 	pkp.sx_headertype = SX_LORA_HDR_VARIABLE;
 	pkp.sx_payloadlen = p->sx_pktlen;
 	pkp.sx_crctype = SX_LORA_CRCTYPE_ON;
 	pkp.sx_invertiq = SX_LORA_IQ_STANDARD;
 	sx1262CmdSend (p, &pkp, sizeof(pkp));
 
+	/* Then set CAD parameters */
+
+	cad.sx_opcode = SX_CMD_SETCADPARAM;
+	cad.sx_cadsymnum = SX_CAD_SYMB_8;
+	cad.sx_caddetpeak = p->sx_lora.sx_spreadfactor + 13;
+	cad.sx_caddetmin = 10;
+	cad.sx_cadexitmode = SX_CAD_EXITMODE_CADONLY;
+	cad.sx_cadtimeo[0] = 0;
+	cad.sx_cadtimeo[1] = 0;
+	cad.sx_cadtimeo[2] = 0;
+	sx1262CmdSend (p, &cad, sizeof(cad));
+
 	/* Set sync word */
 
-	sx1262RegWrite (p, SX_REG_LORA_SYNC_MSB, p->sx_syncword >> 8);
-	sx1262RegWrite (p, SX_REG_LORA_SYNC_LSB, p->sx_syncword & 0xFF);
+	sx1262RegWrite (p, SX_REG_LORA_SYNC_MSB, p->sx_lora.sx_syncword >> 8);
+	sx1262RegWrite (p, SX_REG_LORA_SYNC_LSB, p->sx_lora.sx_syncword & 0xFF);
 
-	/* Apply workaround for I/Q optimization */
+	return;
+}
 
-	reg = sx1262RegRead (p, SX_REG_IQPOL_SETUP);
-	reg |= 0x04;
-	sx1262RegWrite (p, SX_REG_IQPOL_SETUP, reg);
+static void
+sx1262GfskConfig (SX1262_Driver * p)
+{
+	SX_SETPKT pkt;
+	SX_SETMODPARAM_GFSK m;
+	SX_SETPKTPARAM_GFSK pkp;
+	uint32_t val;
 
-	/* Apply workaround for 500KHz operation quality */
+	/*
+	 * According to the manual, we must perform the following
+	 * operations in order: set packet type, set modulation
+	 * parameters, then finally set packet parameters. (In spite
+	 * of this, some SemTech does the packet parameter setup
+	 * before the modulation parameters.)
+	 */
+
+	/* Set the radio to GFSK mode */
+
+	pkt.sx_opcode = SX_CMD_SETPKT;
+	pkt.sx_pkttype = SX_PKT_GFSK;
+	sx1262CmdSend (p, &pkt, sizeof(pkt));
+
+	/* Then set modulation parameters. */
+
+	m.sx_opcode = SX_CMD_SETMODPARAM;
+	val = SX_GFSKBR(p->sx_gfsk.sx_bitrate);
+	m.sx_gfskbr[0] = (val >> 16) & 0xFF;
+	m.sx_gfskbr[1] = (val >> 8) & 0xFF;
+	m.sx_gfskbr[2] = val & 0xFF;
+	m.sx_bw = p->sx_gfsk.sx_bandwidth;
+	m.sx_pshape = SX_PSHAPE_GAUSSBT1;
+	val = SX_GFSKDEV(p->sx_gfsk.sx_deviation);
+	m.sx_fdev[0] = (val >> 16) & 0xFF;
+	m.sx_fdev[1] = (val >> 8) & 0xFF;
+	m.sx_fdev[2] = val & 0xFF;
+	sx1262CmdSend (p, &m, sizeof(m));
+
+	/*
+	 * Then set packet parameters.
+	 * Note: preamble length and syncword length are specified
+	 * to the chip in bits, so we multiply the supplied byte
+	 * values by 8.
+	 */
+
+	val = p->sx_gfsk.sx_preamlen * 8;
+	pkp.sx_opcode = SX_CMD_SETPKTPARAM;
+	pkp.sx_preamlen = __builtin_bswap16 (val);
+	pkp.sx_preamdetlen = SX_GFSK_PREAM_32BITS;
+	pkp.sx_syncwordlen = p->sx_gfsk.sx_syncwordlen * 8;
+	pkp.sx_addrcomp = SX_GFSK_ADDRCOMP_OFF;
+	pkp.sx_pkttype = SK_GFSK_PKTTYPE_VARIABLE;
+	pkp.sx_paylen = p->sx_pktlen;
+	pkp.sx_crctype = SK_GFSK_CRCTYPE_2BYTEIN;
+	pkp.sx_whitening = SK_GFSK_WHITENING_ON;
+	sx1262CmdSend (p, &pkp, sizeof(pkp));
+
+	/* Set sync word */
+
+	for (val = 0; val < p->sx_gfsk.sx_syncwordlen; val++)
+		sx1262RegWrite (p, SX_REG_SYNCWORD_0 + val,
+		    p->sx_gfsk.sx_syncword[val]);
+
+	/*
+	 * Set whitening seed
+	 *
+	 * Note: In the register table, with regards to the whitening
+	 * initial value MSB register, the manual says "the user
+	 * should not change the value of the 7 MSB of this register."
+	 *
+	 * In reality, this "should" should be a "must." You must read
+	 * whatever value is currently in this register and preserve
+	 * the 7 most significant bits when setting the whitening seed.
+	 *
+	 * If you don't do this, the receiver will actually lock up the
+	 * first time you receive a valid GFSK packet. Curiously though,
+	 * the transmitter will work just fine.
+	 */
+
+	val = SX_WHITENING_SEED;
+	val &= 0x01FF;
+	val |= (sx1262RegRead (p, SX_REG_WHITEINIT_MSB) & 0xFE) << 8;
+
+	sx1262RegWrite (p, SX_REG_WHITEINIT_MSB, (val >> 8) & 0xFF);
+	sx1262RegWrite (p, SX_REG_WHITEINIT_LSB, val & 0xFF);
+
+	/* Set CRC seed */
+
+	sx1262RegWrite (p, SX_REG_CRCINIT_MSB, SX_CRC_SEED_CCITT >> 8);
+	sx1262RegWrite (p, SX_REG_CRCINIT_LSB, SX_CRC_SEED_CCITT & 0xFF);
+
+	/* Set CRC polynomial */
+
+	sx1262RegWrite (p, SX_REG_CRCPOLY_MSB, SX_CRC_POLY_CCITT >> 8);
+	sx1262RegWrite (p, SX_REG_CRCPOLY_LSB, SX_CRC_POLY_CCITT & 0xFF);
+
+	/* Set node and broadcast address */
+
+	sx1262RegWrite (p, SX_REG_NODEADDR, 0xFF);
+	sx1262RegWrite (p, SX_REG_BCASTADDR, 0xFF);
+
+	return;
+}
+
+void
+sx1262Enable (SX1262_Driver * p)
+{
+	/*
+	 * You might be thinking: "Hey Bill, instead of defining
+	 * each of these structures separately, why not combine them
+	 * into a single union so that you use less storage?"
+	 *
+	 * The answer is: because the way stack space allocation is
+	 * done, the compiler will effectively do that anyway 
+	 * as part of its optimization pass (assuming you don't turn
+	 * optimization off for debugging). And this way the code
+	 * is less confusing to read.
+	 */
+	SX_STOPTIMER t;
+	SX_SETDIO2ASRFSW d;
+	SX_SETREGMODE r;
+	SX_SETBUFBASE b;
+	SX_SETPACFG pa;
+	SX_SETTXPARAM tp;
+	SX_SETDIOIRQ di;
+	uint8_t reg;
+
+	/* Reset the radio and put it in standby */
+
+	sx1262Reset (p);
+
+	sx1262StandbySet (p);
+
+	/* Set DIO2 as RF control switch */
+
+	d.sx_opcode = SX_CMD_SETDIO2ASRFSW;
+	d.sx_enable = SX_DIO2_RFSW;
+	sx1262CmdSend (p, &d, sizeof(d));
+
+	/* Set regulator mode to DCDC */
+
+	r.sx_opcode = SX_CMD_SETREGMODE;
+	r.sx_regparam = SX_REGMODE_LDO_DCDC;
+	sx1262CmdSend (p, &r, sizeof(r));
+
+	/* Set RX and TX buffer base addresses to 0 */
+
+	b.sx_opcode = SX_CMD_SETBUFBASE;
+	b.sx_txbase = 0;
+	b.sx_rxbase = 0;
+	sx1262CmdSend (p, &b, sizeof(b));
+
+	/* Set transmitter PA config */
+
+	pa.sx_opcode = SX_CMD_SETPACFG;
+
+	if (p->sx_tx_power == SX_TX_POWER_22DB) {
+		pa.sx_padutycycle = 0x4;
+		pa.sx_hpmax = 0x7;
+	} else {
+		pa.sx_padutycycle = 0x2;
+		pa.sx_hpmax = 0x2;
+	}
+
+	pa.sx_devsel = 0x0; /* 0 == 1262, 1 == 1261 */
+	pa.sx_palut = 0x1; /* always 1 */
+	sx1262CmdSend (p, &pa, sizeof(pa));
+
+	/* Set overcurrent protection (140mA for whole device) */
+
+	sx1262RegWrite (p, SX_REG_OCPCFG, SX_OCP_1262_140MA);
+
+	/*
+	 * Set TX params
+	 * Power can be as high as 22dB, but current draw
+	 * at that level can be as high as 100mA, so for now
+	 * we keep it down to 14dB.
+	 */
+
+	tp.sx_opcode = SX_CMD_SETTXPARAM;
+
+	if (p->sx_tx_power == SX_TX_POWER_22DB)
+		tp.sx_power = 22;
+	else
+		tp.sx_power = 14;
+
+	tp.sx_ramptime = SX_RAMPTIME_40US;
+	sx1262CmdSend (p, &tp, sizeof(tp));
+
+	/*
+	 * Set up interrupt event signalling -- we use DIO1.
+	 * Note that we unmask several different IRQ events,
+	 * but we only program DIO1 to toggle for RX and TX
+	 * completions, to limit how often we actually get
+	 * woken up. For RX, we want to be notified if the
+	 * receiver thinks it's actually received a packet,
+	 * but once that happens we also need to check if
+	 * the packet is actually valid by looking for CRC
+	 * or header errors.
+	 */
+
+	di.sx_opcode = SX_CMD_SETDIOIRQ;
+	di.sx_irqmask = __builtin_bswap16 (SX_IRQ_RXDONE |
+	    SX_IRQ_TXDONE | SX_IRQ_CRCERR | SX_IRQ_HDRERR |
+	    SX_IRQ_CADDONE | SX_IRQ_CADDET | SX_IRQ_TIMEO);
+	di.sx_dio1mask = __builtin_bswap16(SX_IRQ_RXDONE | SX_IRQ_TXDONE |
+	    SX_IRQ_CADDONE | SX_IRQ_CADDET | SX_IRQ_TIMEO);
+	/*di.sx_irqmask = __builtin_bswap16(0x3ff);
+	di.sx_dio1mask = __builtin_bswap16(0x3ff);*/
+	di.sx_dio2mask = 0;
+	di.sx_dio3mask = 0;
+	sx1262CmdSend (p, &di, sizeof(di));
+
+	t.sx_opcode = SX_CMD_STOPTIMER;
+	t.sx_stoptimerparam = SX_STOPTIMER_SYNCWORD;
+	sx1262CmdSend (p, &t, sizeof(t));
+
+	/* Perform calibration */
+
+	sx1262Calibrate (p);
+
+	/* Set channel */
+
+	sx1262ChanSet (p);
+
+	/* Apply workaround for LoRa I/Q optimization */
+
+	if (p->sx_mode == SX_MODE_LORA) {
+		reg = sx1262RegRead (p, SX_REG_IQPOL_SETUP);
+		reg |= 0x04;
+		sx1262RegWrite (p, SX_REG_IQPOL_SETUP, reg);
+	}
+
+	/* Apply workaround for LoRa 500KHz operation quality */
 
 	reg = sx1262RegRead (p, SX_REG_TXMOD);
-	reg &= 0xFB;
+	if (p->sx_mode == SX_MODE_LORA &&
+	    p->sx_lora.sx_bandwidth == SX_LORA_BW_500)
+		reg &= 0xFB;
+	else
+		reg |= 0x04;
 	sx1262RegWrite (p, SX_REG_TXMOD, reg);
 
 	/* Apply workaround for better resistance to antenna mismatch */
@@ -823,14 +958,24 @@ sx1262Enable (SX1262_Driver * p)
 
 	sx1262RegWrite (p, SX_REG_RXGAIN, SX_RXGAIN_BOOSTED);
 
+	/* Perform RX and TX configuration */
+
+	if (p->sx_mode == SX_MODE_LORA)
+		sx1262LoraConfig (p);
+	if (p->sx_mode == SX_MODE_GFSK)
+		sx1262GfskConfig (p);
+
 	/* Make sure radio is in the right standby mode before we exit */
 
 	sx1262StandbySet (p);
 
+	p->sx_service = 0;
+	p->sx_txdone = TRUE;
+
 	return;
 }
 
-static void
+void
 sx1262Disable (SX1262_Driver * p)
 {
 	sx1262Reset (p);
@@ -842,23 +987,22 @@ sx1262Disable (SX1262_Driver * p)
 static void
 sx1262Send (SX1262_Driver * p, uint8_t * buf, uint8_t len)
 {
-	SX_SETPKTPARAM_LORA pkp;
-
-	sx1262BufWrite (p, buf, 0, len);
-
 	/*
-	 * There doesn't seem to be any way to specify the payload
-	 * size during transmit except to issue a separate packet
-	 * params command.
+	 * There is a magic payload size register we can use to specify
+	 * the TX payload size when using variable size packet mode.
+	 * Slightly less overhead is required to set it this way compared
+	 * to the alternative, which is to issue another SETPKTPARAM
+	 * command.
+	 *
+	 * This register is _not_ documented in the SX126x manual, of
+	 * course. I only know about it because SemTech used it in their
+	 * LoRaMac-node example software.
 	 */
 
-	pkp.sx_opcode = SX_CMD_SETPKTPARAM;
-	pkp.sx_preamlen = __builtin_bswap16(p->sx_preamlen);
-	pkp.sx_headertype = SX_LORA_HDR_VARIABLE;
-	pkp.sx_payloadlen = len;
-	pkp.sx_crctype = SX_LORA_CRCTYPE_ON;
-	pkp.sx_invertiq = SX_LORA_IQ_STANDARD;
-	sx1262CmdSend (p, &pkp, sizeof(pkp));
+	if (p->sx_mode == SX_MODE_LORA)
+		sx1262RegWrite (p, SX_REG_PAYLEN, len);
+
+	sx1262BufWrite (p, buf, 0, len);
 
 #ifdef SX_MANUAL_CAD
 	sx1262CadSet (p);
@@ -882,7 +1026,6 @@ sx1262TransmitSet (SX1262_Driver * p)
 	sx1262CmdSend (p, &t, sizeof (t));
 
 	return;
-	
 }
 
 static void
@@ -891,9 +1034,9 @@ sx1262ReceiveSet (SX1262_Driver * p)
 	SX_SETRX r;
 
 	r.sx_opcode = SX_CMD_SETRX;
-	r.sx_timeo0 = 0;
-	r.sx_timeo1 = 0;
-	r.sx_timeo2 = 0;
+	r.sx_timeo0 = 0x00;
+	r.sx_timeo1 = 0x00;
+	r.sx_timeo2 = 0x00;
 
 	sx1262CmdSend (p, &r, sizeof (r));
 
@@ -904,10 +1047,12 @@ static void
 sx1262RxHandle (SX1262_Driver * p)
 {
 	SX_GETRXBUFSTS s;
+	uint16_t len;
 	struct pbuf * q;
 	struct pbuf * pbuf;
-	uint16_t len;
 	struct netif * netif;
+	ip_addr_t * a;
+	struct ip_hdr * i;
 
 	s.sx_opcode = SX_CMD_GETRXBUFSTS;
 	sx1262CmdExc (p, &s, sizeof(s));
@@ -918,23 +1063,30 @@ sx1262RxHandle (SX1262_Driver * p)
 		return;
 
 	sx1262BufRead (p, p->sx_rxbuf, s.sx_rxstbufptr, s.sx_rxpaylen);
+	sx1262ReceiveSet (p);
 
 	len = s.sx_rxpaylen;
 
-#if ETH_PAD_SIZE
-	len += ETH_PAD_SIZE;        /* allow room for Ethernet padding */
-#endif
-
 	netif = p->sx_netif;
+
+	/*
+	 * If the packet isn't for us and it's not a broadcast, ignore it.
+	 * This is our half-baked attempt at RX filtering, since the
+	 * hardware doesn't know how to do it for us.
+	 */
+
+	i = (struct ip_hdr *)p->sx_rxbuf;
+	a = &netif->ip_addr;
+
+	if (ntohl(i->dest.addr) != ntohl(a->addr) &&
+	    ntohl(i->dest.addr) != ntohl(inet_addr ("10.255.255.255"))) {
+		return;
+	}
 
 	/* We allocate a pbuf chain of pbufs from the pool. */
 	pbuf = pbuf_alloc (PBUF_RAW, len, PBUF_POOL);
 
 	if (pbuf != NULL) {
-#if ETH_PAD_SIZE
-		/* drop the padding word */
-		pbuf_header (pbuf, -ETH_PAD_SIZE);
-#endif
 		len = 0;
 		for (q = pbuf; q != NULL; q = q->next) {
 			memcpy (q->payload, p->sx_rxbuf + len, q->len);
@@ -951,13 +1103,7 @@ sx1262RxHandle (SX1262_Driver * p)
 			MIB2_STATS_NETIF_INC(netif, ifinucastpkts);
 		}
 
-#if ETH_PAD_SIZE
-		/* reclaim the padding word */
-		pbuf_header (pbuf, ETH_PAD_SIZE);
-#endif
-
 		netif->input (pbuf, netif);
-
 	} else {
 		LINK_STATS_INC(link.memerr);
 		LINK_STATS_INC(link.drop);
@@ -968,47 +1114,41 @@ sx1262RxHandle (SX1262_Driver * p)
 }
 
 static err_t
-sx1262Output (struct netif * netif, struct pbuf * p)
+sx1262Output (struct netif * netif, struct pbuf * p, const ip4_addr_t * i)
+{
+	(void) i;
+	return (sx1262LinkOutput (netif, p));
+}
+
+static err_t
+sx1262LinkOutput (struct netif * netif, struct pbuf * p)
 {
 	SX1262_Driver * d;
 
 	d = netif->state;
 
 	/* Wait for TX to complete */
-
 	osalSysLock ();
 	if (d->sx_txdone != TRUE)
 		osalThreadSuspendS (&d->sx_txwait);
 	osalSysUnlock ();
 
-#if ETH_PAD_SIZE
-	pbuf_header (p, -ETH_PAD_SIZE);		/* drop the padding word */
-#endif
+        /* Get contiguous copy of data */
+        pbuf_copy_partial (p, d->sx_rxbuf, p->tot_len, 0);
 
-	/* Get contiguous copy of data */
+        d->sx_txdone = FALSE;
+        sx1262Send (d, d->sx_rxbuf, p->tot_len);
 
-	pbuf_copy_partial (p, d->sx_rxbuf, p->tot_len, 0);
+        MIB2_STATS_NETIF_ADD(netif, ifoutoctets, p->tot_len);
 
-	/* Initiate transmission */
-
-	d->sx_txdone = FALSE;
-	sx1262Send (d, d->sx_rxbuf, p->tot_len);
-
-	MIB2_STATS_NETIF_ADD(netif, ifoutoctets, p->tot_len);
-
-	if (((uint8_t *)p->payload)[0] & 1) {
-		/* broadcast or multicast packet*/
-		MIB2_STATS_NETIF_INC(netif, ifoutnucastpkts);
-	} else {
-		/* unicast packet */
-		MIB2_STATS_NETIF_INC(netif, ifoutucastpkts);
-	}
-
-#if ETH_PAD_SIZE
-	pbuf_header (p, ETH_PAD_SIZE);		/* reclaim the padding word */
-#endif
-
-	LINK_STATS_INC(link.xmit);
+        if (((uint8_t *)p->payload)[0] & 1) {
+                /* broadcast or multicast packet*/
+                MIB2_STATS_NETIF_INC(netif, ifoutnucastpkts);
+        } else {
+                /* unicast packet */
+                MIB2_STATS_NETIF_INC(netif, ifoutucastpkts);
+        }
+        LINK_STATS_INC(link.xmit);
 
 	return (ERR_OK);
 }
@@ -1020,20 +1160,12 @@ sx1262EthernetInit (struct netif * netif)
 
 	p = netif->state;
 
-	MIB2_INIT_NETIF(netif, snmp_ifType_ethernet_csmacd, 500000);
+	MIB2_INIT_NETIF(netif, snmp_ifType_other, 0);
 	netif->name[0] = 's';
 	netif->name[1] = 'x';
-	netif->output = etharp_output;
-	netif->linkoutput = sx1262Output;
-	netif->hwaddr_len = ETHARP_HWADDR_LEN;
-	netif->hwaddr[0] = badge_addr[0];
-	netif->hwaddr[1] = badge_addr[1];
-	netif->hwaddr[2] = badge_addr[2];
-	netif->hwaddr[3] = badge_addr[3];
-	netif->hwaddr[4] = badge_addr[4];
-	netif->hwaddr[5] = badge_addr[5];
-	netif->mtu = p->sx_pktlen - 14;
-	netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP |
+	netif->output = sx1262Output;
+	netif->mtu = p->sx_pktlen;
+	netif->flags = NETIF_FLAG_BROADCAST |
 	    NETIF_FLAG_IGMP | NETIF_FLAG_LINK_UP;
 
 	return (ERR_OK);
@@ -1048,13 +1180,38 @@ sx1262Start (SX1262_Driver * p)
 	/* Set the SPI interface */
 
 	p->sx_spi = &SPID2;
-	p->sx_freq = 916000000;
-	p->sx_syncword = SX_LORA_SYNC_PRIVATE;
-	p->sx_symtimeout = 0;
-	p->sx_pktlen = 255;
-	p->sx_preamlen = 8;
-	p->sx_service = 0;
-	p->sx_txdone = TRUE;
+
+	/* Set generic parameters */
+
+	p->sx_freq = SX_FREQ_DEFAULT;
+	p->sx_tx_power = SX_POWER_DEFAULT;
+	p->sx_mode = SX_MODE_DEFAULT;
+	p->sx_pktlen = SX_PKTLEN_DEFAULT;
+
+	/* Set LoRa parameters */
+
+	p->sx_lora.sx_syncword = SX_LORA_SYNC_PRIVATE;
+	p->sx_lora.sx_symtimeout = 0;
+	p->sx_lora.sx_preamlen = 8;
+	p->sx_lora.sx_spreadfactor = SX_LORA_SF7;
+	p->sx_lora.sx_bandwidth = SX_LORA_BW_500;
+	p->sx_lora.sx_coderate = SX_LORA_CR_4_5;
+
+	/* Set GFSK parameters */
+
+	p->sx_gfsk.sx_bitrate = 300000;
+	p->sx_gfsk.sx_deviation = 140000;
+	p->sx_gfsk.sx_bandwidth = SX_RX_BW_373600;
+	p->sx_gfsk.sx_preamlen = 8;
+	p->sx_gfsk.sx_syncwordlen = 6;
+	p->sx_gfsk.sx_syncword[0] = 0x90;
+	p->sx_gfsk.sx_syncword[1] = 0x4e;
+	p->sx_gfsk.sx_syncword[2] = 0xde;
+	p->sx_gfsk.sx_syncword[3] = 0xad;
+	p->sx_gfsk.sx_syncword[4] = 0xbe;
+	p->sx_gfsk.sx_syncword[5] = 0xef;
+	p->sx_gfsk.sx_syncword[6] = 0x00;
+	p->sx_gfsk.sx_syncword[7] = 0x00;
 
 	/* Configure I/O pins */
 
@@ -1077,10 +1234,9 @@ sx1262Start (SX1262_Driver * p)
 	palSetLineCallback (LINE_ARD_D5, sx1262Int, p);
 	palEnableLineEvent (LINE_ARD_D5, PAL_EVENT_MODE_RISING_EDGE);
 
-	p->sx_rxbuf_orig = malloc (SX_MAX_PKT + SX_MAX_CMD + SX_ALIGNMENT);
-	p->sx_rxbuf = (uint8_t *)roundup ((uintptr_t)p->sx_rxbuf_orig,
-	    SX_ALIGNMENT);
+	p->sx_rxbuf = memalign (SX_ALIGNMENT, SX_MAX_PKT + SX_MAX_CMD);
 	p->sx_cmdbuf = p->sx_rxbuf + SX_MAX_PKT;
+
 	/* Reset the chip */
 
 	sx1262Reset (p);
@@ -1096,12 +1252,10 @@ sx1262Start (SX1262_Driver * p)
 	if (ocp == SX_OCP_1261_60MA)
 		printf ("SemTech SX1262 radio enabled\n");
 	else {
-		free (p->sx_rxbuf_orig);
+		free (p->sx_rxbuf);
 		printf ("No radio detected\n");
 		return;
 	}
-
-	p->sx_netif = malloc (sizeof(struct netif));
 
 	/* Set up interrupt event thread */
 
@@ -1111,6 +1265,9 @@ sx1262Start (SX1262_Driver * p)
 	/* Enable the radio */
 
 	sx1262Enable (p);
+	sx1262ReceiveSet (p);
+
+	p->sx_netif = malloc (sizeof(struct netif));
 
 	/* Add this interface to the TCP/IP stack */
 
@@ -1131,8 +1288,8 @@ sx1262Stop (SX1262_Driver * p)
 {
 	sx1262Disable (p);
 	netifapi_netif_remove (p->sx_netif);
-	free (p->sx_rxbuf_orig);
 	free (p->sx_netif);
+	free (p->sx_rxbuf);
 
 	return;
 }

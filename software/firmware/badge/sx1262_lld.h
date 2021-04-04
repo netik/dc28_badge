@@ -1,3 +1,34 @@
+/* 
+ * Copyright (c) 2020
+ *      Bill Paul <wpaul@windriver.com>.  All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *      This product includes software developed by Bill Paul.
+ * 4. Neither the name of the author nor the names of any co-contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY Bill Paul AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL Bill Paul OR THE VOICES IN HIS HEAD
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #ifndef _SX1262_LLDH_
 #define _SX1262_LLDH_
@@ -339,7 +370,8 @@ typedef struct sx_setfreq {
 
 #define SX_XTALFREQ		((double)32000000)
 #define SX_POW			((double)0x2000000)
-#define SX_FREQ(x)	(uint32_t) (((double)(x) * SX_XTALFREQ) / SX_POW)
+#define SX_FSTEP		(double)(SX_XTALFREQ / SX_POW)
+#define SX_FREQ(x)		(uint32_t)((double)(x) / SX_FSTEP)
 
 #pragma pack(1)
 typedef struct sx_setpkt {
@@ -376,7 +408,7 @@ typedef struct sx_settxparam {
 #define SX_RAMPTIME_1700US	0x06
 #define SX_RAMPTIME_3400US	0x07
 
-/* GFSK parameters */
+/* GFSK modulation parameters */
 
 #pragma pack(1)
 typedef struct sx_setmodparam_gfsk {
@@ -388,13 +420,17 @@ typedef struct sx_setmodparam_gfsk {
 } SX_SETMODPARAM_GFSK;
 #pragma pack()
 
-#define SX_GFSKBR(x)		((32 * SX_XTALFREQ) / (x))
+/* Bitrate */
+
+#define SX_GFSKBR(x)		(uint32_t)(32 * (SX_XTALFREQ / (double)(x)))
 
 #define SX_PSHAPE_NONE		0x00
 #define SX_PSHAPE_GAUSSBT0_3	0x08
 #define SX_PSHAPE_GAUSSBT0_5	0x09
 #define SX_PSHAPE_GAUSSBT0_7	0x0A
 #define SX_PSHAPE_GAUSSBT1	0x0B
+
+/* Bandwidth options */
 
 #define SX_RX_BW_4800		0x1F
 #define SX_RX_BW_5800		0x17
@@ -418,7 +454,11 @@ typedef struct sx_setmodparam_gfsk {
 #define SX_RX_BW_373600		0x11
 #define SX_RX_BW_467000		0x09
 
-/* LoRa parameters */
+/* Deviation */
+
+#define SX_GFSKDEV(x)		SX_FREQ(x)
+
+/* LoRa modulation parameters */
 
 #pragma pack(1)
 typedef struct sx_setmodparam_lora {
@@ -484,8 +524,8 @@ typedef struct sx_setpktparam_gfsk {
 #define SX_GFSK_ADDRCOMP_NODE	0x01	/* Filtering on unicast node addr */
 #define SX_GFSK_ADDRCOMP_NODEBR	0x02	/* Filtering on both ucast and bcast */
 
-#define SK_GFSK_PKTTYPE_NOLEN	0x00	/* Length not included in pkt */
-#define SK_GFSK_PKTTYPE_LEN	0x01	/* Length included in pkt */
+#define SK_GFSK_PKTTYPE_FIXED	0x00	/* Length not included in pkt */
+#define SK_GFSK_PKTTYPE_VARIABLE 0x01	/* Length included in pkt */
 
 #define SK_GFSK_CRCTYPE_OFF	0x01	/* No CRC */
 #define SK_GFSK_CRCTYPE_1BYTE	0x00	/* CRC computed on 1 byte */
@@ -704,6 +744,7 @@ typedef struct sx_clrerrs {
 #define SX_REG_DIOX_PULLDWN_CTL	0x0585	/* Non-standard DIO control */
 #define SX_REG_WHITEINIT_MSB	0x06B8	/* Whitening initial value MSB */
 #define SX_REG_WHITEINIT_LSB	0x06B9	/* Whitening initial value LSB */
+#define SX_REG_RXTX_PAYLOAD_LEN	0x06BB	/* RX/TX payload length */
 #define SX_REG_CRCINIT_MSB	0x06BC	/* CRC initial value MSB */
 #define SX_REG_CRCINIT_LSB	0x06BD	/* CRC initial value LSB */
 #define SX_REG_CRCPOLY_MSB	0x06BE	/* CRC polynomial value MSB */
@@ -719,11 +760,15 @@ typedef struct sx_clrerrs {
 #define SX_REG_NODEADDR		0x06CD	/* Node address in FSK mode */
 #define SX_REG_BCASTADDR	0x06CE	/* Broadcast address in FSK mode */
 #define SX_REG_PAYLEN		0x0702	/* Payload length */
-#define SX_REG_PTKPARMS		0x0704	/* Packet configuration */
+#define SX_REG_PKTPARMS		0x0704	/* Packet configuration */
 #define SX_REG_SYNCTIMEOUT	0x0706	/* Recalculated # of symbols */
 #define SX_REG_IQPOL_SETUP	0x0736	/* Optimize inverted IQ operation */
 #define SX_REG_LORA_SYNC_MSB	0x0740	/* LORA sync word MSB */
 #define SX_REG_LORA_SYNC_LSB	0x0741	/* LORA sync word LSB */
+#define SX_REG_LORA_FREQERR_0	0x076B	/* LORA Frequency error */
+#define SX_REG_LORA_FREQERR_1	0x076C	/* LORA Frequency error */
+#define SX_REG_LORA_FREQERR_2	0x076D	/* LORA Frequency error */
+#define SX_REG_RX_ADDR_PTR	0x0803	/* RX address pointer */
 #define SX_REG_RNG_0		0x0819	/* 32-bit random number byte 0 */
 #define SX_REG_RNG_1		0x081A	/* 32-bit random number byte 1 */
 #define SX_REG_RNG_2		0x081B	/* 32-bit random number byte 2 */
@@ -731,6 +776,8 @@ typedef struct sx_clrerrs {
 #define SX_REG_TXMOD		0x0889	/* TX modulation quality */
 #define SX_REG_RXGAIN		0x08AC	/* Set gain in RX mode */
 #define SX_REG_TXCLAMPCFG	0x08D8	/* PA clamping mechanism */
+#define SX_REG_ANA_LNA		0x08E2	/* Analog LNA */
+#define SX_REG_ANA_MIXER	0x08E5	/* Analog mixer */
 #define SX_REG_OCPCFG		0x08E7	/* Overcurrent protection level */
 #define SX_REG_RTCCTL		0x0902	/* Enable or disable RTC timer */
 #define SX_REG_XTATRIM		0x0911	/* Value of XTA trim cap */
@@ -744,7 +791,11 @@ typedef struct sx_clrerrs {
 /* CCITT is the default */
 
 #define SX_CRC_SEED_CCITT	0x1D0F
-#define SX_CRC_POLY_CCITT	0x1201
+#define SX_CRC_POLY_CCITT	0x1021
+
+/* Whitening seed */
+
+#define SX_WHITENING_SEED	0x01FF
 
 #define SX_LORA_SYNC_PUBLIC	0x3444	/* Sync word for public network */
 #define SX_LORA_SYNC_PRIVATE	0x1424	/* Sync word for private network */
@@ -758,30 +809,56 @@ typedef struct sx_clrerrs {
 /* -------------------------- Driver-specific ------------------------------ */
 
 #define SX_DELAY		100
+#define SX_TXQUEUE		50
 
 #define SX_MAX_PKT		256
 #define SX_MAX_CMD		64
 #define SX_ALIGNMENT		CACHE_LINE_SIZE
-#define roundup(x, y)		((((x)+((y)-1))/(y))*(y))
-
-#undef SX_TX_POWER_22DB
-#define SX_TX_POWER_14DB
 
 #undef SX_MANUAL_CAD
+
+typedef struct sx1262_lora {
+	uint16_t		sx_syncword;
+	uint8_t			sx_symtimeout;
+	uint8_t			sx_preamlen;
+	uint8_t			sx_bandwidth;
+	uint8_t			sx_spreadfactor;
+	uint8_t			sx_coderate;
+} SX1262_lora;
+
+typedef struct sx1262_gfsk {
+	uint32_t		sx_bitrate;
+	uint32_t		sx_deviation;
+	uint8_t			sx_bandwidth;
+	uint8_t			sx_preamlen;
+	uint8_t			sx_syncwordlen;
+	uint8_t			sx_syncword[8];
+} SX1262_gfsk;
+
+#define SX_MODE_LORA		1
+#define SX_MODE_GFSK		2
+
+#define SX_TX_POWER_14DB	1
+#define SX_TX_POWER_22DB	2
+
+#define SX_FREQ_DEFAULT		915000000
+#define SX_MODE_DEFAULT		SX_MODE_LORA
+#define SX_POWER_DEFAULT	SX_TX_POWER_14DB
+#define SX_PKTLEN_DEFAULT	254
 
 typedef struct sx1262_driver {
 	SPIDriver *		sx_spi;
 	uint32_t		sx_freq;
-	uint16_t		sx_syncword;
-	uint8_t			sx_symtimeout;
-	uint8_t			sx_preamlen;
+	uint8_t			sx_mode;
+	uint8_t			sx_tx_power;
 	uint8_t			sx_pktlen;
-	thread_reference_t	sx_threadref;
+	SX1262_lora		sx_lora;
+	SX1262_gfsk		sx_gfsk;
 	thread_reference_t	sx_txwait;
+	thread_reference_t	sx_threadref;
 	uint8_t			sx_service;
 	bool			sx_txdone;
 	thread_t *		sx_thread;
-	uint8_t *		sx_rxbuf_orig;
 	uint8_t *		sx_rxbuf;
 	uint8_t *		sx_cmdbuf;
 	void *			sx_netif;
@@ -792,6 +869,7 @@ extern SX1262_Driver SX1262D1;
 extern void sx1262Start (SX1262_Driver *);
 extern void sx1262Stop (SX1262_Driver *);
 extern uint32_t sx1262Random (SX1262_Driver *);
+extern void sx1262Enable (SX1262_Driver *);
+extern void sx1262Disable (SX1262_Driver *);
 
 #endif /* _SX1262_LLDH_ */
-
