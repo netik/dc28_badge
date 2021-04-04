@@ -804,7 +804,7 @@ badge_cpu_speed_set (int speed)
 	 * is to compensate for the fact that while we're able to
 	 * maintain the same APB bus speed for the SPI controller,
 	 * we proportionally reduce the AHB bus clock for the DMA
-	 * DMA controller, and at the slow CPU speed (54MHz) the
+	 * controller, and at the slow CPU speed (54MHz) the
 	 * DMA controller seems too slow to keep up with the
 	 * required SPI signalling rate, and we end up triggering
 	 * DMA errors. This causes problems using the radio when
@@ -837,7 +837,6 @@ badge_cpu_speed_set (int speed)
 	rccDisableDMA1 ();
 	rccDisableDMA2 ();
 	rccDisableSDMMC1 ();
-	RCC->APB2ENR &= ~RCC_APB2ENR_LTDCEN;
 	rccDisableDMA2D ();
 	rccDisableAPB2 (RCC_APB2ENR_SAI2EN);
 
@@ -979,7 +978,6 @@ badge_cpu_speed_set (int speed)
 	rccEnableDMA1 (TRUE);
 	rccEnableDMA2 (TRUE);
 	rccEnableSDMMC1 (TRUE);
-	RCC->APB2ENR |= RCC_APB2ENR_LTDCEN;
 	rccEnableDMA2D (TRUE);
 	rccEnableAPB2 (RCC_APB2ENR_SAI2EN, TRUE);
 
