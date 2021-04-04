@@ -37,6 +37,10 @@
 #include "userconfig.h"
 #include "crc32.h"
 
+#include "badge.h"
+
+#include "orchard-app.h"
+
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -62,7 +66,7 @@ static thread_t * ager_loop_thread;
  */
 
 static void
-badge_peer_add (FINDER_MSG * m, struct in_addr * addr)
+badge_peer_add (FINDER_PING * m, struct in_addr * addr)
 {
 	FINDER_PEER * p;
 	int firstfree;
@@ -103,7 +107,7 @@ badge_peer_add (FINDER_MSG * m, struct in_addr * addr)
 
 	p = &badge_peers[firstfree];
 
-	memcpy (&p->finder_msg, m, sizeof (FINDER_MSG));
+	memcpy (&p->finder_msg, m, sizeof (FINDER_PING));
 	memcpy (&p->finder_addr, addr, sizeof (struct in_addr));
 	p->finder_ttl = FINDER_TTL;
 	p->finder_used = 1;
@@ -135,7 +139,7 @@ badge_peer_age (void)
 		p->finder_ttl--;
 
 		if (p->finder_ttl == 0)
-			memset (p, 0, sizeof (FINDER_MSG));
+			memset (p, 0, sizeof (FINDER_PING));
 	}
 
 	osalMutexUnlock (&badge_peer_mutex);
@@ -160,7 +164,7 @@ badge_peer_show (void)
 			continue;
 
 		printf ("[%s]: [%s] [%d]\n", inet_ntoa (p->finder_addr),
-		    p->finder_msg.finder_name, p->finder_ttl);
+		    p->finder_msg.finder_hdr.finder_name, p->finder_ttl);
 	}
 
 	osalMutexUnlock (&badge_peer_mutex);
@@ -193,7 +197,7 @@ THD_FUNCTION(pinger_loop, arg)
 {
 	int s;
 	struct sockaddr_in sin;
-	FINDER_MSG * msg;
+	FINDER_PING * msg;
 	userconfig * c;
 	uint32_t ur;
 	uint32_t ut;
@@ -205,29 +209,30 @@ THD_FUNCTION(pinger_loop, arg)
 	memset (&sin, 0, sizeof(sin));
 
 	sin.sin_addr.s_addr = inet_addr ("10.255.255.255");
-	sin.sin_port = lwip_htons (12345);
+	sin.sin_port = lwip_htons (FINDER_PORT);
 	sin.sin_family = AF_INET;
 
 	s = lwip_socket (AF_INET, SOCK_DGRAM, 0);
 
-	msg = malloc (sizeof(FINDER_MSG));
+	msg = malloc (sizeof(FINDER_PING));
 
-	memset (msg, 0, sizeof(FINDER_MSG));
+	memset (msg, 0, sizeof(FINDER_PING));
 
 	while (1) {
 		/*
 		 * In case the user changes their name while
 		 * the badge is running.
 		 */
-		strcpy (msg->finder_name, c->cfg_name);
+		strcpy (msg->finder_hdr.finder_name, c->cfg_name);
+		msg->finder_hdr.finder_type = FINDER_TYPE_PING;
 
 		/* Add a checksum for integrity checking. */
 
 		msg->finder_salt = (uint32_t)random ();
 		msg->finder_csum = crc32_le ((uint8_t *)msg,
-		    sizeof (FINDER_MSG) - sizeof(uint32_t), 0);
+		    sizeof (FINDER_PING) - sizeof(uint32_t), 0);
 
-		(void) lwip_sendto (s, msg, sizeof(FINDER_MSG), 0,
+		(void) lwip_sendto (s, msg, sizeof(FINDER_PING), 0,
 		    (struct sockaddr *)&sin, sizeof (sin));
 
 		/*
@@ -245,6 +250,54 @@ THD_FUNCTION(pinger_loop, arg)
 	return;
 }
 
+static void
+badge_handle_ping (FINDER_PING * p, int len, struct sockaddr_in * from)
+{
+	uint32_t crc;
+
+	/* check the length */
+
+	if (len != sizeof (FINDER_PING))
+		return;
+
+	/* check the checksum */
+
+	crc = crc32_le ((uint8_t *)p,
+	    sizeof (FINDER_PING) - sizeof(uint32_t), 0);
+
+	if (crc != p->finder_csum)
+		return;
+
+	badge_peer_add (p, &from->sin_addr);
+
+	return;
+}
+
+static void
+badge_handle_shout (FINDER_SHOUT * p, int len, struct sockaddr_in * from)
+{
+	uint32_t crc;
+
+	(void)from;
+
+	/* check the length */
+
+	if (len != sizeof (FINDER_SHOUT))
+		return;
+
+	/* check the checksum */
+
+	crc = crc32_le ((uint8_t *)p,
+	    sizeof (FINDER_SHOUT) - sizeof(uint32_t), 0);
+
+	if (crc != p->finder_csum)
+		return;
+
+	orchardAppRadioCallback (shoutEvent, 0, p, sizeof(FINDER_SHOUT));
+
+	return;
+}
+
 static
 THD_FUNCTION(finder_loop, arg)
 {
@@ -256,15 +309,14 @@ THD_FUNCTION(finder_loop, arg)
 	struct timeval tv;
 #endif
 	uint8_t * buf;
-	uint32_t crc;
-	FINDER_MSG * msg;
+	FINDER_HDR * hdr;
 
 	(void)arg;
 
 	memset (&sin, 0, sizeof(sin));
 
 	sin.sin_addr.s_addr = inet_addr ("10.255.255.255");
-	sin.sin_port = lwip_htons (12345);
+	sin.sin_port = lwip_htons (FINDER_PORT);
 	sin.sin_family = AF_INET;
 
 	s = lwip_socket (AF_INET, SOCK_DGRAM, 0);
@@ -278,31 +330,22 @@ THD_FUNCTION(finder_loop, arg)
 	(void) lwip_setsockopt (s, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 #endif
 
-	buf = malloc (128);
-	msg = (FINDER_MSG *)buf;
+	buf = malloc (FINDER_MAXPKT);
+	hdr = (FINDER_HDR *)buf;
 
 	while (1) {
 		len = sizeof (sin);
-		r = lwip_recvfrom (s, buf, 128, 0,
+		r = lwip_recvfrom (s, buf, FINDER_MAXPKT, 0,
 		    (struct sockaddr *)&from, &len);
 
 		if (r == -1)
 			continue;
 
-		/* check the length */
+		if (hdr->finder_type == FINDER_TYPE_SHOUT)
+			badge_handle_shout ((FINDER_SHOUT *)buf, r, &from);
 
-		if (r != sizeof (FINDER_MSG))
-			continue;
-
-		/* check the checksum */
-
-		crc = crc32_le ((uint8_t *)msg,
-		    sizeof (FINDER_MSG) - sizeof(uint32_t), 0);
-
-		if (crc != msg->finder_csum)
-			continue;
-
-		badge_peer_add (msg, &from.sin_addr);
+		if (hdr->finder_type == FINDER_TYPE_PING)
+			badge_handle_ping ((FINDER_PING *)buf, r, &from);
 	}
 
 	/* NOTREACHED */

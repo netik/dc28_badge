@@ -193,6 +193,8 @@ static void radio_event(eventid_t id) {
             strcmp (instance.app->name, "Launcher") == 0) &&
             (r_evt->type == chatEvent ||
             r_evt->type == challengeEvent ||
+            r_evt->type == doomEvent ||
+            r_evt->type == shoutEvent ||
             r_evt->type == fwEvent))
           r = app_radio_notify (r_evt);
 

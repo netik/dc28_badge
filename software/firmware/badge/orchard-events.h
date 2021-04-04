@@ -11,7 +11,7 @@
    table, hook an event, and then dispatch events.
 
   static void shell_termination_handler(eventid_t id) {
-    chprintf(stream, "Shell exited.  Received id %d\r\n", id);
+    printf ("Shell exited.  Received id %d\n", id);
   }
 
   void main(int argc, char **argv) {
@@ -152,6 +152,8 @@ typedef enum _OrchardAppRadioEventType {
    txEvent,			/* Data sent */
    chatEvent,			/* Chat request received */
    challengeEvent,		/* Challenge request received */
+   doomEvent,			/* Doom challenge request received */
+   shoutEvent,			/* Shout request received */
    fwEvent,			/* Firmware update request received */
    exitEvent			/* App should exit */
 } OrchardAppRadioEventType;

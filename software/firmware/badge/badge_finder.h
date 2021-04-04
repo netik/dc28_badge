@@ -39,6 +39,16 @@
 #define FINDER_NAME_MAXLEN	CONFIG_NAME_MAXLEN
 #define FINDER_MAXPEERS		512
 #define FINDER_TTL		16
+#define FINDER_PORT		12345
+#define FINDER_MAXPKT		256
+
+#define FINDER_TYPE_PING	1
+#define FINDER_TYPE_CHALLENGE	2
+#define FINDER_TYPE_DOOM	3
+#define FINDER_TYPE_SHOUT	4
+#define FINDER_TYPE_OTA		5
+
+#define FINDER_PAYLOAD		128
 
 /*
  * This message structure contains all the user info we
@@ -49,19 +59,44 @@
  */
 
 #pragma pack(1)
-typedef struct finder_msg {
+typedef struct finder_hdr {
 	char		finder_name[FINDER_NAME_MAXLEN];
-	uint32_t	finder_dummy;
+	uint8_t		finder_type;
+} FINDER_HDR;
+#pragma pack()
+
+#pragma pack(1)
+typedef struct finder_ping {
+	FINDER_HDR	finder_hdr;
 	uint32_t	finder_salt;
 	uint32_t	finder_csum;
-} FINDER_MSG;
+} FINDER_PING;
+#pragma pack()
+
+#pragma pack(1)
+typedef struct finder_pkt {
+	FINDER_HDR	finder_hdr;
+	uint8_t		finder_payload[FINDER_PAYLOAD];
+	uint32_t	finder_salt;
+	uint32_t	finder_csum;
+} FINDER_SHOUT;
+#pragma pack()
+
+#pragma pack(1)
+typedef struct finder_doom {
+	FINDER_HDR	finder_hdr;
+	uint32_t	finder_frequency;
+	uint8_t		finder_payload[FINDER_PAYLOAD];
+	uint32_t	finder_salt;
+	uint32_t	finder_csum;
+} FINDER_DOOM;
 #pragma pack()
 
 typedef struct finder_peer {
 	struct in_addr	finder_addr;
 	uint8_t		finder_ttl;
 	uint8_t		finder_used;
-	FINDER_MSG	finder_msg;
+	FINDER_PING	finder_msg;
 } FINDER_PEER;
 
 extern FINDER_PEER * badge_peers;
