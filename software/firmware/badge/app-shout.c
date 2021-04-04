@@ -138,11 +138,9 @@ static void shout_event (OrchardAppContext *context,
 			    sizeof (FINDER_SHOUT) - sizeof(uint32_t), 0);
 
 			s = lwip_socket (AF_INET, SOCK_DGRAM, 0);
-printf ("SOCKET CREATE: %d\n", s);
 
 			r =  lwip_sendto (s, &shout, sizeof(FINDER_SHOUT), 0,
 			    (struct sockaddr *)&sin, sizeof (sin));
-printf ("SOCKET SEND: %d\n", r);
 
 			lwip_close (s);
 
