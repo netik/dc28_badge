@@ -306,7 +306,7 @@ void W_InitMultipleFiles (char** filenames)
     numlumps = 0;
 
     // will be realloced as lumps are added
-    lumpinfo = malloc(1);	
+    lumpinfo = NULL;
 
     for ( ; *filenames ; filenames++)
 	W_AddFile (*filenames);
