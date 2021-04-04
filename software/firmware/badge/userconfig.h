@@ -45,6 +45,10 @@
 
 #define CONFIG_RADIO_ON		0
 #define CONFIG_RADIO_OFF	1
+#define CONFIG_RADIO_MODE_LORA	1
+#define CONFIG_RADIO_MODE_GFSK	2
+#define CONFIG_RADIO_PWR_LO	0
+#define CONFIG_RADIO_PWR_HI	1
 
 #define CONFIG_ORIENT_PORTRAIT	1
 #define CONFIG_ORIENT_LANDSCAPE	0
@@ -62,7 +66,8 @@ typedef struct _userconfig {
 	uint8_t		cfg_sound;			/* Sound on or off */
 	uint8_t		cfg_airplane;			/* Radio on or off */
 	uint8_t		cfg_orientation;
-
+	uint8_t		cfg_radio_mode;			/* Radio LORA/GFSK */
+	uint8_t		cfg_radio_power;		/* Radio 14dBm/22dBm */
 	uint32_t	cfg_unlocks;			/* unlock bits */
 
 	uint8_t		cfg_touch_data_present;

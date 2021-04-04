@@ -95,6 +95,8 @@ init_config (void)
 	new->cfg_version = CONFIG_VERSION;
 	new->cfg_sound = CONFIG_SOUND_ON;
 	new->cfg_airplane = CONFIG_RADIO_ON;
+	new->cfg_radio_mode = CONFIG_RADIO_MODE_LORA;
+	new->cfg_radio_power = CONFIG_RADIO_PWR_LO;
 	new->cfg_touch_data_present = 0;
 
 	return;

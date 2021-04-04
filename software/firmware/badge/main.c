@@ -415,6 +415,7 @@ main (void)
 	uint32_t crc;
 	unsigned seed;
 	const flash_descriptor_t * pFlash;
+	userconfig * cfg;
 
 	/*
 	 * System initializations.
@@ -822,6 +823,21 @@ main (void)
 		i2sWait ();
 	} else
 		configStart (CONFIG_LOAD);
+
+	/* Take into account and custom radio settings */
+
+	sx1262Disable (&SX1262D1);
+
+	cfg = configGet ();
+
+	if (cfg->cfg_radio_mode == CONFIG_RADIO_MODE_GFSK)
+		SX1262D1.sx_mode = SX_MODE_GFSK;
+
+	if (cfg->cfg_radio_power == CONFIG_RADIO_PWR_HI)
+		SX1262D1.sx_tx_power = SX_TX_POWER_22DB;
+
+	if (cfg->cfg_airplane == CONFIG_RADIO_ON)
+		sx1262Enable (&SX1262D1);
 
 	/* Start the badge finder/pinger service. */
 
