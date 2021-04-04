@@ -61,6 +61,9 @@ default_start (OrchardAppContext *context)
 	geventAttachSource (&gl, gs, GLISTEN_MOUSEMETA);
 	geventRegisterCallback (&gl, orchardAppUgfxCallback, &gl);
 
+	badge_lpidle_enable();
+	badge_cpu_speed_set (BADGE_CPU_SPEED_SLOW);
+
 	return;
 }
 
@@ -78,11 +81,7 @@ default_event (OrchardAppContext *context, const OrchardAppEvent *event)
 	 */
 
 	if (event->type == appEvent) {
-		if (event->app.event == appStart)
-			badge_cpu_speed_set (BADGE_CPU_SPEED_SLOW);
-
 		if (event->app.event == appTerminate) {
-			badge_cpu_speed_set (BADGE_CPU_SPEED_NORMAL);
 			i2sPlay ("sound/click.snd");
 		}
 	}
@@ -102,6 +101,9 @@ static void
 default_exit(OrchardAppContext *context)
 {
 	(void) context;
+
+	badge_cpu_speed_set (BADGE_CPU_SPEED_NORMAL);
+	badge_lpidle_disable ();
 
 	geventRegisterCallback (&gl, NULL, NULL);
 	geventDetachSource (&gl, NULL);
