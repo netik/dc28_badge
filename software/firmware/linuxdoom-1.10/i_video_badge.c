@@ -45,7 +45,9 @@ rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
 
 #include "doomdef.h"
 
+__attribute__((section(".ram7")))
 static palette_color_t * palettebuf;
+__attribute__((section(".ram7")))
 static int buttontmp;
 
 //
@@ -260,6 +262,11 @@ void I_SetPalette (byte* palette)
 {
 	int i;
 	int c;
+
+	if (palettebuf == NULL) {
+		/* Go home Doom, you're drunk. */
+		return;
+	}
 
 	for (i = 0; i < 256; i++) {
 		palettebuf[i].a = 0;
