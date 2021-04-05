@@ -413,7 +413,7 @@ void HU_Init(void)
     int		j;
     char	buffer[9];
 
-    if (french)
+    if (language == french)
 	shiftxform = french_shiftxform;
     else
 	shiftxform = english_shiftxform;
@@ -746,7 +746,7 @@ __attribute__((section(".ram7")))
 	}
 	else
 	{
-	    if (french)
+	    if (language == french)
 		c = ForeignTranslation(c);
 	    if (shiftdown || (c >= 'a' && c <= 'z'))
 		c = shiftxform[c];
