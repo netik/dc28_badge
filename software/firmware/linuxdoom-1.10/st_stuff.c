@@ -702,6 +702,7 @@ ST_Responder (event_t* ev)
       // 'mypos' for player position
       else if (cht_CheckCheat(&cheat_mypos, ev->data1))
       {
+        __attribute__((section(".ram7")))
 	static char	buf[ST_MSGWIDTH];
 	sprintf(buf, "ang=0x%x;x,y=(0x%x,0x%x)",
 		players[consoleplayer].mo->angle,
@@ -768,7 +769,9 @@ ST_Responder (event_t* ev)
 int ST_calcPainOffset(void)
 {
     int		health;
+__attribute__((section(".ram7")))
     static int	lastcalc;
+__attribute__((section(".ram7")))
     static int	oldhealth = -1;
     
     health = plyr->health > 100 ? 100 : plyr->health;
@@ -793,7 +796,9 @@ void ST_updateFaceWidget(void)
     int		i;
     angle_t	badguyangle;
     angle_t	diffang;
+__attribute__((section(".ram7")))
     static int	lastattackdown = -1;
+__attribute__((section(".ram7")))
     static int	priority = 0;
     boolean	doevilgrin;
 
@@ -962,6 +967,7 @@ void ST_updateFaceWidget(void)
 
 void ST_updateWidgets(void)
 {
+__attribute__((section(".ram7")))
     static int	largeammo = 1994; // means "n/a"
     int		i;
 
@@ -1034,6 +1040,7 @@ void ST_Ticker (void)
 
 }
 
+__attribute__((section(".ram7")))
 static int st_palette = 0;
 
 void ST_doPaletteStuff(void)
@@ -1477,6 +1484,7 @@ void ST_createWidgets(void)
 
 }
 
+__attribute__((section(".ram7")))
 static boolean	st_stopped = true;
 
 
