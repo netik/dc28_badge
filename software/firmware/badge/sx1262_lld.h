@@ -862,6 +862,9 @@ typedef struct sx1262_driver {
 	uint8_t *		sx_rxbuf;
 	uint8_t *		sx_cmdbuf;
 	void *			sx_netif;
+	virtual_timer_t		sx_timer;
+	bool			sx_reset;
+	mutex_t			sx_mutex;
 } SX1262_Driver;
 
 extern SX1262_Driver SX1262D1;

@@ -108,6 +108,7 @@ static err_t sx1262EthernetInit (struct netif *);
 static err_t sx1262LinkOutput (struct netif *, struct pbuf *);
 static err_t sx1262Output (struct netif *, struct pbuf *, const ip4_addr_t *);
 static void sx1262RxHandle (SX1262_Driver *);
+static void sx1262TxTimeout (void *);
 #ifdef debug
 static void sx1262Status (SX1262_Driver *);
 #endif
@@ -121,7 +122,22 @@ sx1262Int (void * arg)
 
 	osalSysLockFromISR ();
 	osalThreadResumeI (&p->sx_threadref, MSG_OK);
-	p->sx_service = 1;
+	p->sx_service |= 0x00000001;
+	osalSysUnlockFromISR ();
+
+	return;
+}
+
+static void
+sx1262TxTimeout (void * arg)
+{
+	SX1262_Driver * p;
+
+	p = arg;
+
+	osalSysLockFromISR ();
+	osalThreadResumeI (&p->sx_threadref, MSG_OK);
+	p->sx_service |= 0x00000002;
 	osalSysUnlockFromISR ();
 
 	return;
@@ -136,7 +152,7 @@ sx1262Status (SX1262_Driver * p)
 	g.sx_opcode = SX_CMD_GETSTS;
 	sx1262CmdExc (p, &g, sizeof(g));
 
-	printf ("CHIPMODE: %x CMDSTS: %x (%x) ", SX_CHIPMODE(g.sx_status),
+	printf ("CHIPMODE: %x CMDSTS: %x (%x)\n", SX_CHIPMODE(g.sx_status),
 	    SX_CMDSTS(g.sx_status), g.sx_status);
 
 	return;
@@ -187,6 +203,7 @@ THD_FUNCTION(sx1262Thread, arg)
 	SX_GETIRQ i;
 	SX_ACKIRQ a;
 	uint16_t irq;
+	uint32_t service;
 
 	p = arg;
 
@@ -194,17 +211,32 @@ THD_FUNCTION(sx1262Thread, arg)
 		osalSysLock ();
 		if (p->sx_service == 0)
 			osalThreadSuspendS (&p->sx_threadref);
+		service = p->sx_service;
 		p->sx_service = 0;
 		osalSysUnlock ();
 
-		i.sx_opcode = SX_CMD_GETIRQ;
-		sx1262CmdExc (p, &i, sizeof(i));
-		irq = __builtin_bswap16 (i.sx_irqsts);
+		irq = 0;
 
-		if (i.sx_irqsts) {
-			a.sx_opcode = SX_CMD_ACKIRQ;
-			a.sx_irqsts = i.sx_irqsts;
-			sx1262CmdSend (p, &a, sizeof(a));
+		/* Handle regular interrupts */
+
+		if (service & 0x00000001) {
+			i.sx_opcode = SX_CMD_GETIRQ;
+			i.sx_irqsts = 0;
+			sx1262CmdExc (p, &i, sizeof(i));
+			irq = __builtin_bswap16 (i.sx_irqsts);
+
+			if (i.sx_irqsts) {
+				a.sx_opcode = SX_CMD_ACKIRQ;
+				a.sx_irqsts = i.sx_irqsts;
+				sx1262CmdSend (p, &a, sizeof(a));
+			}
+		}
+
+		/* Handle chip TX timeout */
+
+		if (service & 0x00000002) {
+			irq = SX_IRQ_TXDONE;
+			p->sx_reset = TRUE;
 		}
 
 #ifdef debug
@@ -226,12 +258,12 @@ THD_FUNCTION(sx1262Thread, arg)
 				sx1262TransmitSet (p);
 		}
 
-		if (irq & (SX_IRQ_TXDONE | SX_IRQ_TIMEO)) {
-			sx1262ReceiveSet (p);
-                        osalSysLock ();
-                        p->sx_txdone = TRUE;
-                        osalThreadResumeS (&p->sx_txwait, MSG_OK);
-                        osalSysUnlock ();
+		if (irq & SX_IRQ_TXDONE || irq & SX_IRQ_TIMEO) {
+			chVTReset (&p->sx_timer);
+			osalSysLock ();
+			p->sx_txdone = TRUE;
+			osalThreadResumeS (&p->sx_txwait, MSG_OK);
+			osalSysUnlock ();
 		}
 	}
 
@@ -912,8 +944,6 @@ sx1262Enable (SX1262_Driver * p)
 	    SX_IRQ_CADDONE | SX_IRQ_CADDET | SX_IRQ_TIMEO);
 	di.sx_dio1mask = __builtin_bswap16(SX_IRQ_RXDONE | SX_IRQ_TXDONE |
 	    SX_IRQ_CADDONE | SX_IRQ_CADDET | SX_IRQ_TIMEO);
-	/*di.sx_irqmask = __builtin_bswap16(0x3ff);
-	di.sx_dio1mask = __builtin_bswap16(0x3ff);*/
 	di.sx_dio2mask = 0;
 	di.sx_dio3mask = 0;
 	sx1262CmdSend (p, &di, sizeof(di));
@@ -971,6 +1001,8 @@ sx1262Enable (SX1262_Driver * p)
 
 	p->sx_service = 0;
 	p->sx_txdone = TRUE;
+	p->sx_reset = FALSE;
+	chVTReset (&p->sx_timer);
 
 	return;
 }
@@ -1034,9 +1066,9 @@ sx1262ReceiveSet (SX1262_Driver * p)
 	SX_SETRX r;
 
 	r.sx_opcode = SX_CMD_SETRX;
-	r.sx_timeo0 = 0x00;
-	r.sx_timeo1 = 0x00;
-	r.sx_timeo2 = 0x00;
+	r.sx_timeo0 = 0;
+	r.sx_timeo1 = 0;
+	r.sx_timeo2 = 0;
 
 	sx1262CmdSend (p, &r, sizeof (r));
 
@@ -1127,17 +1159,42 @@ sx1262LinkOutput (struct netif * netif, struct pbuf * p)
 
 	d = netif->state;
 
+	/* There may be many sending threads */
+
+	osalMutexLock (&d->sx_mutex);
+
+        /* Get contiguous copy of data */
+
+        pbuf_copy_partial (p, d->sx_rxbuf, p->tot_len, 0);
+
+	d->sx_txdone = FALSE;
+
+	sx1262Send (d, d->sx_rxbuf, p->tot_len);
+
+	/* Set a timeout in case the transmitter gets stuck. */
+
+	if (d->sx_mode == SX_MODE_LORA)
+		chVTSet (&d->sx_timer, TIME_MS2I(100), sx1262TxTimeout, d);
+	else
+		chVTSet (&d->sx_timer, TIME_MS2I(25), sx1262TxTimeout, d);
+
 	/* Wait for TX to complete */
+
 	osalSysLock ();
 	if (d->sx_txdone != TRUE)
 		osalThreadSuspendS (&d->sx_txwait);
 	osalSysUnlock ();
 
-        /* Get contiguous copy of data */
-        pbuf_copy_partial (p, d->sx_rxbuf, p->tot_len, 0);
+	/* If the timeout expired, reset the radio. */
 
-        d->sx_txdone = FALSE;
-        sx1262Send (d, d->sx_rxbuf, p->tot_len);
+	if (d->sx_reset == TRUE) {
+		sx1262Disable (d);
+		sx1262Enable (d);
+	}
+
+	/* Turn receiver back on */
+
+	sx1262ReceiveSet (d);
 
         MIB2_STATS_NETIF_ADD(netif, ifoutoctets, p->tot_len);
 
@@ -1149,6 +1206,8 @@ sx1262LinkOutput (struct netif * netif, struct pbuf * p)
                 MIB2_STATS_NETIF_INC(netif, ifoutucastpkts);
         }
         LINK_STATS_INC(link.xmit);
+
+	osalMutexUnlock (&d->sx_mutex);
 
 	return (ERR_OK);
 }
@@ -1199,8 +1258,8 @@ sx1262Start (SX1262_Driver * p)
 
 	/* Set GFSK parameters */
 
-	p->sx_gfsk.sx_bitrate = 300000;
-	p->sx_gfsk.sx_deviation = 140000;
+	p->sx_gfsk.sx_bitrate = 350000;
+	p->sx_gfsk.sx_deviation = 150000;
 	p->sx_gfsk.sx_bandwidth = SX_RX_BW_373600;
 	p->sx_gfsk.sx_preamlen = 8;
 	p->sx_gfsk.sx_syncwordlen = 6;
@@ -1221,7 +1280,7 @@ sx1262Start (SX1262_Driver * p)
 
 	/* Busy */
 	palSetLineMode (LINE_ARD_D3, PAL_STM32_PUPDR_PULLDOWN |
-	     PAL_STM32_MODE_INPUT);
+	    PAL_STM32_MODE_INPUT);
 
 	/* Antenna switch */
 	palSetLineMode (LINE_ARD_D8, PAL_STM32_PUPDR_PULLUP |
@@ -1230,7 +1289,7 @@ sx1262Start (SX1262_Driver * p)
 
 	/* DIO1 */
 	palSetLineMode (LINE_ARD_D5, PAL_STM32_PUPDR_PULLDOWN |
-	     PAL_STM32_MODE_INPUT);
+	    PAL_STM32_MODE_INPUT);
 	palSetLineCallback (LINE_ARD_D5, sx1262Int, p);
 	palEnableLineEvent (LINE_ARD_D5, PAL_EVENT_MODE_RISING_EDGE);
 
@@ -1261,6 +1320,8 @@ sx1262Start (SX1262_Driver * p)
 
 	p->sx_thread = chThdCreateFromHeap (NULL, THD_WORKING_AREA_SIZE(512),
             "RadioEvent", LWIP_THREAD_PRIORITY, sx1262Thread, p);
+
+	osalMutexObjectInit (&p->sx_mutex);
 
 	/* Enable the radio */
 
