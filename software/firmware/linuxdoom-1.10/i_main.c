@@ -32,6 +32,7 @@ rcsid[] = "$Id: i_main.c,v 1.4 1997/02/03 22:45:10 b1 Exp $";
 #include "m_argv.h"
 #include "d_main.h"
 
+#include "i_net.h"
 #include "i_system.h"
 #include "w_wad.h"
 #include "doomstat.h"
@@ -70,6 +71,8 @@ doom_exit:
 
     for (i = 3; i < 8; i++)
 	close (i);
+
+    I_ShutdownNetwork ();
 
     return 0;
 } 

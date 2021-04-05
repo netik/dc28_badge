@@ -344,3 +344,17 @@ void I_NetCmd (void)
 	I_Error ("Bad net cmd: %i\n",doomcom->command);
 }
 
+void I_ShutdownNetwork (void)
+{
+    if (insocket) {
+        lwip_close (insocket);
+        insocket = 0;
+    }
+    
+    if (sendsocket) {
+        lwip_close (sendsocket);
+        sendsocket = 0;
+    }
+    
+    return;
+}
