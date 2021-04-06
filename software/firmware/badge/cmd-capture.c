@@ -34,6 +34,9 @@
 #include "hal.h"
 #include "shell.h"
 
+#include "portab.h"
+#include "usbcfg.h"
+
 #include "badge.h"
 #include "badge_console.h"
 #include "capture.h"
@@ -47,8 +50,11 @@ extern event_source_t orchard_app_key;
 #include <string.h>
 #include <stdlib.h>
 
-static const struct BaseSequentialStreamVMT * vmt1;
-static struct BaseSequentialStreamVMT vmt2;
+static const struct BaseSequentialStreamVMT * vmtSDOrig;
+static struct BaseSequentialStreamVMT vmtSDNew;
+
+static const struct BaseSequentialStreamVMT * vmtUSBOrig;
+static struct BaseSequentialStreamVMT vmtUSBNew;
 
 #define KEY_DOWN	1
 #define KEY_UP		2
@@ -59,6 +65,8 @@ static struct BaseSequentialStreamVMT vmt2;
 #define CAPTURE_CHAR_EXIT	'Z'
 
 extern OrchardAppEvent joyEvent;
+
+static bool capture_enabled = FALSE;
 
 static char inbuf[INBUF_LEN + 2];
 static int incnt;
@@ -72,6 +80,8 @@ static int queuecons;
 static int queuecnt;
 static uint32_t queue[QUEUE_MAX];
 static mutex_t queuemutex;
+
+static size_t capture_con_read (void * instance, uint8_t * c, size_t n);
 
 void
 capture_queue_put (uint32_t code)
@@ -144,7 +154,26 @@ capture_queue_get (uint32_t * code)
 void
 capture_queue_init (void)
 {
+	BaseSequentialStream * con;
+
 	osalMutexObjectInit (&queuemutex);
+
+	osalMutexLock (&conmutex);
+
+	con = (BaseSequentialStream *)&SD1;
+	vmtSDOrig = con->vmt;
+	memcpy (&vmtSDNew, vmtSDOrig, sizeof (vmtSDNew));
+	vmtSDNew.read = capture_con_read;
+	con->vmt = &vmtSDNew;
+
+	con = (BaseSequentialStream *)&PORTAB_SDU1;
+	vmtUSBOrig = con->vmt;
+	memcpy (&vmtUSBNew, vmtUSBOrig, sizeof (vmtUSBNew));
+	vmtUSBNew.read = capture_con_read;
+	con->vmt = &vmtSDNew;
+
+	osalMutexUnlock (&conmutex);
+
 	return;
 }
 
@@ -155,18 +184,22 @@ capture_con_read (void * instance, uint8_t * c, size_t n)
 	char input;
 	uint32_t code;
 
-        (void)instance;
+	if (instance == &SD1)
+		r = vmtSDOrig->read (conin, c, n);
+	else if (instance == &PORTAB_SDU1)
+		r = vmtUSBOrig->read (conin, c, n);
+	else
+		return (0);
 
-	r = vmt1->read (conin, c, n);
+	if (capture_enabled == FALSE)
+		return (r);
 
 	if (r == 1) {
 		input = (char)c[0];
 		switch (input) {
 			case '\r':
 			case CAPTURE_CHAR_EXIT:
-				osalMutexLock (&conmutex);
-				conin->vmt = vmt1;
-				osalMutexUnlock (&conmutex);
+				capture_enabled = FALSE;
 				osalMutexLock (&queuemutex);
 				queuecnt = 0;
 				queueprod = 0;
@@ -229,12 +262,7 @@ cmd_capture (BaseSequentialStream *chp, int argc, char *argv[])
 		return;
 	}
 
-	osalMutexLock (&conmutex);
-	vmt1 = conin->vmt;
-	memcpy (&vmt2, vmt1, sizeof (vmt2));
-	vmt2.read = capture_con_read;
-	conin->vmt = &vmt2;
-	osalMutexUnlock (&conmutex);
+	capture_enabled = TRUE;
 
 	strcpy (inbuf, "0x");
 
