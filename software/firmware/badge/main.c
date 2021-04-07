@@ -80,7 +80,7 @@ static thread_t * shell_tp_sd = NULL;
 
 static ShellConfig shell_cfg_usb =
 {
-	(BaseSequentialStream *)&SDU1,
+	(BaseSequentialStream *)&PORTAB_SDU1,
 	orchard_commands()
 };
 static thread_t * shell_tp_usb = NULL;
@@ -352,6 +352,8 @@ static const DMA2DConfig dma2d_cfg = {
 THD_FUNCTION(shellSdThreadStub, p)
 {
 	shellThread (p);
+
+	return;
 }
 
 THD_FUNCTION(shellUsbThreadStub, p)
@@ -370,38 +372,39 @@ THD_FUNCTION(shellUsbThreadStub, p)
 	 * cable is actually plugged in).
 	 */
 
-	if (SDU1.config->usbp->state != USB_ACTIVE) {
+	if (PORTAB_SDU1.config->usbp->state != USB_ACTIVE)
 		osalThreadSuspendS (&shell_ref_usb);
 
-		/*
-		 * This works around what looks like a bug
-		 * in the FreeBSD USB CDC driver. If we print out
-	 	 * data immediately upon USB connection, it will
-		 * fill the RX buffer on the host side with some
-	 	 * data. But there won't be any program running
-	 	 * to consume the data yet. Once we do finally
-		 * connect a terminal program (kermit, tip, etc...),
-		 * the RX and TX paths will appear out of sync.
-		 * In most cases, a USB modem stays idle when
-		 * first connected (instead of printing anything
-	 	 * right away, it waits for the host to send an
-		 * AT command.) To emulate this, we wait here for
-		 * the other side to send a character before we
-		 * send anything ourselves.
-		 */
+	/*
+	 * This works around what looks like a bug
+	 * in the FreeBSD USB CDC driver. If we print out
+ 	 * data immediately upon USB connection, it will
+	 * fill the RX buffer on the host side with some
+ 	 * data. But there won't be any program running
+ 	 * to consume the data yet. Once we do finally
+	 * connect a terminal program (kermit, tip, etc...),
+	 * the RX and TX paths will appear out of sync.
+	 * In most cases, a USB modem stays idle when
+	 * first connected (instead of printing anything
+ 	 * right away, it waits for the host to send an
+	 * AT command.) To emulate this, we wait here for
+	 * the other side to send a character before we
+	 * send anything ourselves.
+	 */
 
-		if (streamRead ((BaseSequentialStream *)&SDU1, &c, 1) == 0) {
-			shellExit (MSG_OK);
-			return;
-		}
+	if (streamRead ((BaseSequentialStream *)&PORTAB_SDU1, &c, 1) == 0) {
+		shellExit (MSG_OK);
+		return;
 	}
 
 	osalMutexLock (&conmutex);
-	conin = (BaseSequentialStream *)&SDU1;
-	conout = (BaseSequentialStream *)&SDU1;
+	conin = (BaseSequentialStream *)&PORTAB_SDU1;
+	conout = (BaseSequentialStream *)&PORTAB_SDU1;
 	osalMutexUnlock (&conmutex);
 
 	shellThread (p);
+
+	return;
 }
 
 /*
