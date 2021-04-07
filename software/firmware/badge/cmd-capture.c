@@ -170,7 +170,7 @@ capture_queue_init (void)
 	vmtUSBOrig = con->vmt;
 	memcpy (&vmtUSBNew, vmtUSBOrig, sizeof (vmtUSBNew));
 	vmtUSBNew.read = capture_con_read;
-	con->vmt = &vmtSDNew;
+	con->vmt = &vmtUSBNew;
 
 	osalMutexUnlock (&conmutex);
 
@@ -185,9 +185,9 @@ capture_con_read (void * instance, uint8_t * c, size_t n)
 	uint32_t code;
 
 	if (instance == &SD1)
-		r = vmtSDOrig->read (conin, c, n);
+		r = vmtSDOrig->read (instance, c, n);
 	else if (instance == &PORTAB_SDU1)
-		r = vmtUSBOrig->read (conin, c, n);
+		r = vmtUSBOrig->read (instance, c, n);
 	else
 		return (0);
 

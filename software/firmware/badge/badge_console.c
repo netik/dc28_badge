@@ -33,6 +33,9 @@
 #include "ch.h"
 #include "hal.h"
 
+#include "portab.h"
+#include "usbcfg.h"
+
 #include "gfx.h"
 #include "src/gwin/gwin_class.h"
 
@@ -44,20 +47,28 @@
 static GHandle ghConsole;
 static gFont font;
 static uint8_t mode;
+static bool console_enabled = FALSE;
 
 static msg_t badge_con_put (void *, uint8_t);
 
-static const struct BaseSequentialStreamVMT * vmt1;
-static struct BaseSequentialStreamVMT vmt2;
+static const struct BaseSequentialStreamVMT * vmtSDOrig;
+static struct BaseSequentialStreamVMT vmtSDNew;
+
+static const struct BaseSequentialStreamVMT * vmtUSBOrig;
+static struct BaseSequentialStreamVMT vmtUSBNew;
 
 static msg_t
 badge_con_put (void * instance, uint8_t b)
 {
-	(void)instance;
+	if (console_enabled)
+		gwinPutChar (ghConsole, (char)b);
 
-	gwinPutChar (ghConsole, (char)b);
-	if (mode == BADGE_CONSOLE_SHARE)
-		vmt1->put (conout, (char)b);
+	if (mode == BADGE_CONSOLE_SHARE || console_enabled == FALSE) {
+		if (instance == &SD1)
+			vmtSDOrig->put (instance, (char)b);
+		else if (instance == &PORTAB_SDU1)
+			vmtUSBOrig->put (instance, (char)b);
+	}
 
 	return (MSG_OK);
 }
@@ -65,6 +76,24 @@ badge_con_put (void * instance, uint8_t b)
 void
 badge_coninit (void) 
 {
+	BaseSequentialStream * con;
+
+	osalMutexLock (&conmutex);
+
+	con = (BaseSequentialStream *)&SD1;
+	vmtSDOrig = con->vmt;
+	memcpy (&vmtSDNew, vmtSDOrig, sizeof (vmtSDNew));
+	vmtSDNew.put = badge_con_put;
+	con->vmt = &vmtSDNew;
+
+	con = (BaseSequentialStream *)&PORTAB_SDU1;
+	vmtUSBOrig = con->vmt;
+	memcpy (&vmtUSBNew, vmtUSBOrig, sizeof (vmtUSBNew));
+	vmtUSBNew.put = badge_con_put;
+	con->vmt = &vmtUSBNew;
+
+	osalMutexUnlock (&conmutex);
+
 	return;
 }
 
@@ -90,12 +119,7 @@ badge_concreate (uint8_t m)
 
 	mode = m;
 
-	osalMutexLock (&conmutex);
-	vmt1 = conout->vmt;
-	memcpy (&vmt2, conout->vmt, sizeof(vmt2));
-	vmt2.put = badge_con_put;
-	conout->vmt = &vmt2;
-	osalMutexUnlock (&conmutex);
+	console_enabled = TRUE;
 
 	return;
 }
@@ -103,12 +127,10 @@ badge_concreate (uint8_t m)
 void
 badge_condestroy (void)
 {
+	console_enabled = FALSE;
+
 	gwinDestroy (ghConsole);
 	gdispCloseFont (font);
-
-	osalMutexLock (&conmutex);
-	conout->vmt = vmt1;
-	osalMutexUnlock (&conmutex);
 
 	return;
 }
