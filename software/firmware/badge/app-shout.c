@@ -143,7 +143,7 @@ static void shout_event (OrchardAppContext *context,
 			lwip_close (s);
 
 			/* Display a confirmation message */
-                        screen_alert_draw(true, "SHOUT SENT");
+                        screen_alert_draw (true, "SHOUT SENT");
                         i2sPlay ("sound/alert1.snd");
 
 			/* Wait for a second, then exit */
