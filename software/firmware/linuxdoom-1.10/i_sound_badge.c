@@ -308,6 +308,14 @@ addsfx
     rightvol =
 	volume - ((volume*seperation*seperation) >> 16);	
 
+    leftvol *= 10;
+    if (leftvol > 127)
+        leftvol = 127;
+
+    rightvol *= 10;
+    if (rightvol > 127)
+        rightvol = 127;
+
     // Sanity check, clamp volume.
     if (rightvol < 0 || rightvol > 127)
 	I_Error("rightvol out of bounds");
@@ -687,8 +695,6 @@ I_InitSound(void)
   
   // Finished initialization.
   fprintf(stderr, "I_InitSound: sound module ready\n");
-
-  snd_SfxVolume = 127;
 
   return;    
 }
