@@ -53,6 +53,7 @@
 #define LWIP_RAND()			rand()
 
 #define IP_REASS_MAX_PBUFS		128
+#define MEMP_NUM_NETCONN		16
 #define MEMP_NUM_FRAG_PBUF		64
 #define MEMP_NUM_PBUF			256
 #define PBUF_POOL_SIZE			256
