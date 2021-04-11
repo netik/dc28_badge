@@ -194,7 +194,7 @@ netdoom_event (OrchardAppContext * context, const OrchardAppEvent * event)
 	if (event->type == ugfxEvent || event->type == keyEvent) {
 
 		me = (GEventMouse *)event->ugfx.pEvent;
-		if (me->buttons & GMETA_MOUSE_DOWN) {
+		if (me != NULL && me->buttons & GMETA_MOUSE_DOWN) {
 			i2sIgnore = FALSE;
 			i2sPlay ("sound/click.snd");
 			orchardAppExit ();
