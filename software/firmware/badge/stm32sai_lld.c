@@ -79,6 +79,7 @@ static uint16_t * i2sBufOrig;
 static uint16_t * i2sBuf;
 
 uint8_t i2sEnabled = TRUE;
+uint8_t i2sIgnore = FALSE;
  
 static char * fname;
 static thread_t * pThread = NULL;
@@ -520,6 +521,9 @@ i2sPlay (char * file)
 void
 i2sLoopPlay (char * file, uint8_t loop)
 {
+	if (i2sIgnore)
+		return;
+
         play = 0;
         i2sloop = loop;
         fname = file;

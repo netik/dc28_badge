@@ -202,6 +202,7 @@ CSRC = $(ALLCSRC) \
        app-music.c \
        app-name.c \
        app-nes.c \
+       app-netdoom.c \
        app-notify.c \
        app-setup.c \
        app-shout.c \

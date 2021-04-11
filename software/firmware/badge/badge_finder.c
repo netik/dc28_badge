@@ -41,6 +41,8 @@
 
 #include "orchard-app.h"
 
+#include "sx1262_lld.h"
+
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -49,7 +51,7 @@
 #include <lwip/opt.h>
 #include <lwip/sys.h>
 #include <lwip/timeouts.h>
-
+#include <lwip/netifapi.h>
 #include <lwip/sockets.h>
 #include <lwip/inet.h>
 
@@ -59,6 +61,41 @@ mutex_t badge_peer_mutex;
 static thread_t * pinger_loop_thread;
 static thread_t * finder_loop_thread;
 static thread_t * ager_loop_thread;
+
+/*
+ * The 900MHz ISM band extends from 902MHz to 928MHz. We split this
+ * up into 500KHz channels, for a total of 52 different frequencies.
+ * One frequency is used as the beacon channel.
+ */
+
+uint32_t badge_finder_channels[FINDER_CHANNELS] = {
+	902000000, 902500000,
+	903000000, 903500000,
+	904000000, 904500000,
+	905000000, 905500000,
+	906000000, 906500000,
+	907000000, 907500000,
+	908000000, 908500000,
+	909000000, 909500000,
+	910000000, 910500000,
+	911000000, 911500000,
+	912000000, 912500000,
+	913000000, 913500000,
+	914000000, 914500000,
+	915000000, 915500000,
+	916000000, 916500000,
+	917000000, 917500000,
+	918000000, 918500000,
+	919000000, 919500000,
+	920000000, 920500000,
+	921000000, 921500000,
+	922000000, 922500000,
+	923000000, 923500000,
+	924000000, 924500000,
+	925000000, 926500000,
+	926000000, 927500000,
+	927000000, 928500000
+};
 
 /*
  * See if a peer can be added to the list. If a match
@@ -298,6 +335,56 @@ badge_handle_shout (FINDER_SHOUT * p, int len, struct sockaddr_in * from)
 	return;
 }
 
+static void
+badge_handle_doom (FINDER_DOOM * p, int len, struct sockaddr_in * from)
+{
+	uint32_t crc;
+
+	/* check the length */
+
+	if (len != sizeof (FINDER_DOOM))
+		return;
+
+	/* check the checksum */
+
+	crc = crc32_le ((uint8_t *)p,
+	    sizeof (FINDER_DOOM) - sizeof(uint32_t), 0);
+
+	if (crc != p->finder_csum)
+		return;
+
+	memcpy (&p->finder_doom_peer, &from->sin_addr, sizeof(struct in_addr));
+
+	orchardAppRadioCallback (doomEvent, 0, p, sizeof(FINDER_DOOM));
+
+	return;
+}
+
+static void
+badge_handle_action (FINDER_ACTION * p, int len, struct sockaddr_in * from)
+{
+	uint32_t crc;
+
+	(void)from;
+
+	/* check the length */
+
+	if (len != sizeof (FINDER_ACTION))
+		return;
+
+	/* check the checksum */
+
+	crc = crc32_le ((uint8_t *)p,
+	    sizeof (FINDER_ACTION) - sizeof(uint32_t), 0);
+
+	if (crc != p->finder_csum)
+		return;
+
+	orchardAppRadioCallback (actionEvent, 0, p, sizeof(FINDER_ACTION));
+
+	return;
+}
+
 static
 THD_FUNCTION(finder_loop, arg)
 {
@@ -315,7 +402,7 @@ THD_FUNCTION(finder_loop, arg)
 
 	memset (&sin, 0, sizeof(sin));
 
-	sin.sin_addr.s_addr = inet_addr ("10.255.255.255");
+	sin.sin_addr.s_addr = lwip_htonl(INADDR_ANY);
 	sin.sin_port = lwip_htons (FINDER_PORT);
 	sin.sin_family = AF_INET;
 
@@ -344,12 +431,102 @@ THD_FUNCTION(finder_loop, arg)
 		if (hdr->finder_type == FINDER_TYPE_SHOUT)
 			badge_handle_shout ((FINDER_SHOUT *)buf, r, &from);
 
+		if (hdr->finder_type == FINDER_TYPE_DOOM)
+			badge_handle_doom ((FINDER_DOOM *)buf, r, &from);
+
+		if (hdr->finder_type == FINDER_TYPE_ACTION)
+			badge_handle_action ((FINDER_ACTION *)buf, r, &from);
+
 		if (hdr->finder_type == FINDER_TYPE_PING)
 			badge_handle_ping ((FINDER_PING *)buf, r, &from);
 	}
 
 	/* NOTREACHED */
 	return;
+}
+
+void
+badge_finder_radio_mode_set (uint8_t mode)
+{
+	if (SX1262D1.sx_mode == mode)
+		return;
+
+	if (mode != SX_MODE_GFSK && mode != SX_MODE_LORA)
+		return;
+
+	netif_set_down (SX1262D1.sx_netif);
+
+	osalMutexLock (&SX1262D1.sx_mutex);
+	SX1262D1.sx_mode = mode;
+	sx1262Disable (&SX1262D1);
+	sx1262Enable (&SX1262D1);
+	osalMutexUnlock (&SX1262D1.sx_mutex);
+
+	netif_set_up (SX1262D1.sx_netif);
+
+	return;
+}
+
+void
+badge_finder_radio_freq_set (uint32_t freq)
+{
+	if (SX1262D1.sx_freq == freq)
+		return;
+
+	if (freq < FINDER_FREQ_MIN || freq > FINDER_FREQ_MAX)
+		return;
+
+	netif_set_down (SX1262D1.sx_netif);
+
+	osalMutexLock (&SX1262D1.sx_mutex);
+	SX1262D1.sx_freq = freq;
+	sx1262Disable (&SX1262D1);
+	sx1262Enable (&SX1262D1);
+	osalMutexUnlock (&SX1262D1.sx_mutex);
+
+	netif_set_up (SX1262D1.sx_netif);
+
+	return;
+}
+
+void
+badge_finder_radio_restore (void)
+{
+	if (SX1262D1.sx_mode == SX_MODE_DEFAULT &&
+	    SX1262D1.sx_freq == SX_FREQ_DEFAULT)
+		return;
+
+	netif_set_down (SX1262D1.sx_netif);
+
+	osalMutexLock (&SX1262D1.sx_mutex);
+	SX1262D1.sx_mode = SX_MODE_DEFAULT;
+	SX1262D1.sx_freq = SX_FREQ_DEFAULT;
+	sx1262Disable (&SX1262D1);
+	sx1262Enable (&SX1262D1);
+	osalMutexUnlock (&SX1262D1.sx_mutex);
+
+	netif_set_up (SX1262D1.sx_netif);
+
+	return;
+}
+
+uint32_t
+badge_finder_radio_chan_alloc (void)
+{
+	unsigned seed;
+	int i;
+
+        trngGenerate (&TRNGD1, sizeof (seed), (uint8_t *)&seed);
+	srand (seed);
+
+	i = rand () % (FINDER_CHANNELS + 1);
+
+	/* don't return the beacon channel */
+
+	if (i == 0)
+		i++;
+
+	return (badge_finder_channels[i]);
 }
 
 void

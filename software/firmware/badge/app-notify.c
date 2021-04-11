@@ -33,6 +33,13 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <lwip/opt.h>
+#include <lwip/sys.h>
+#include <lwip/timeouts.h>
+
+#include <lwip/sockets.h>
+#include <lwip/inet.h>
+
 #include "orchard-app.h"
 #include "orchard-ui.h"
 
@@ -42,18 +49,18 @@
 #include "badge_finder.h"
 #include "stm32sai_lld.h"
 
+#include "crc32.h"
+#include "badge.h"
+
 static OrchardAppRadioEvent radio_evt;
-static char buf[128];
 
 typedef struct _NHandles {
 	GListener gl;
 	GHandle	ghACCEPT;
 	GHandle	ghDECLINE;
-	gFont	font;
+	gFont font;
 	char * app;
-	uint8_t response_accept;
-	uint8_t response_decline;
-	uint8_t handle;
+	char buf[128];
 } NotifyHandles;
 
 static bool
@@ -62,6 +69,11 @@ notify_handler (void * arg)
 	OrchardAppRadioEvent * evt;
 
 	evt = arg;
+
+	/*
+	 * These are the events we handle ourselves. Other events are
+	 * forwarded to the currently running app.
+	 */
 
 	if (evt->type != chatEvent &&
 	    evt->type != challengeEvent &&
@@ -78,7 +90,7 @@ notify_handler (void * arg)
 }
 
 static uint32_t
-notify_init (OrchardAppContext *context)
+notify_init (OrchardAppContext * context)
 {
 	(void)context;
 
@@ -91,13 +103,14 @@ notify_init (OrchardAppContext *context)
 }
 
 static void
-notify_start (OrchardAppContext *context)
+notify_start (OrchardAppContext * context)
 {
 	NotifyHandles * p;
 	GWidgetInit wi;
 	int fHeight;
 	FINDER_HDR * pHdr;
 	FINDER_SHOUT * pShout;
+	FINDER_DOOM * pDoom;
 
 	p = malloc (sizeof (NotifyHandles));
 
@@ -109,13 +122,12 @@ notify_start (OrchardAppContext *context)
 	context->priv = p;
 
 	putImageFile ("images/undrattk.rgb", 0, 0);
-	i2sPlay ("sound/klaxon.snd");
 
 	/* Find peer addr or name */
 
 	pHdr = (FINDER_HDR *)radio_evt.pkt;
 
-	sprintf (buf, "Badge %s", pHdr->finder_name);
+	sprintf (p->buf, "Badge %s", pHdr->finder_name);
 
 	p->font = gdispOpenFont (FONT_SM);
 
@@ -124,34 +136,36 @@ notify_start (OrchardAppContext *context)
 	gdispDrawStringBox (0, 50 -
 	    fHeight,
 	    gdispGetWidth(), fHeight,
-	    buf, p->font, GFX_WHITE, gJustifyCenter);
+	    p->buf, p->font, GFX_WHITE, gJustifyCenter);
 
 	if (radio_evt.type == chatEvent) {
 		gdispDrawStringBox (0, 50, gdispGetWidth(), fHeight,
 		    "WANTS TO CHAT", p->font, GFX_WHITE, gJustifyCenter);
-		p->handle = 0;
 		p->app = "Radio Chat";
-		p->response_accept = 0;
-		p->response_decline = 0;
+		i2sPlay ("sound/klaxon.snd");
 	}
 
 	if (radio_evt.type == challengeEvent) {
 		gdispDrawStringBox (0, 50, gdispGetWidth(), fHeight,
 		    "IS CHALLENGING YOU", p->font, GFX_WHITE, gJustifyCenter);
-		p->handle = 1;
 		p->app = "Sea Battle";
-		p->response_accept = 111;
-		p->response_decline = 111;
+		i2sPlay ("sound/klaxon.snd");
 	}
 
 	if (radio_evt.type == doomEvent) {
 		gdispDrawStringBox (0, 50, gdispGetWidth(), fHeight,
-		    "WANTS TO PLAY DOOM YOU", p->font, GFX_WHITE,
+		    "WANTS TO PLAY DOOM", p->font, GFX_WHITE,
 		    gJustifyCenter);
-		p->handle = 1;
 		p->app = "Doom";
-		p->response_accept = 111;
-		p->response_decline = 111;
+		pDoom = (FINDER_DOOM *)radio_evt.pkt;
+		net_doom_freq = pDoom->finder_freq;
+		net_doom_episode = pDoom->finder_doom_episode;
+		net_doom_map = pDoom->finder_doom_map;
+		net_doom_skill = pDoom->finder_doom_skill;
+		net_doom_deathmatch = pDoom->finder_doom_deathmatch;
+		net_doom_node = "2";
+		net_doom_peer = inet_ntoa(pDoom->finder_doom_peer);
+		i2sPlay ("sound/doome1m1.snd");
 	}
 
 	if (radio_evt.type == fwEvent) {
@@ -160,10 +174,8 @@ notify_start (OrchardAppContext *context)
 		gdispDrawStringBox (0, 50 + fHeight, gdispGetWidth(),
 		    fHeight, "FIRMWARE UPDATE", p->font, GFX_WHITE,
 		    gJustifyCenter);
-		p->handle = 2;
 		p->app = "OTA Recv";
-		p->response_accept = 222;
-		p->response_decline = 222;
+		i2sPlay ("sound/klaxon.snd");
 	}
 
 	if (radio_evt.type == shoutEvent) {
@@ -211,24 +223,52 @@ notify_start (OrchardAppContext *context)
 }
 
 static void
-notify_event (OrchardAppContext *context, const OrchardAppEvent *event)
+notify_event (OrchardAppContext * context, const OrchardAppEvent * event)
 {
 	GEvent * pe;
 	GEventGWinButton * be;
 	NotifyHandles * p;
+	userconfig * c;
+	struct sockaddr_in sin;
+	FINDER_ACTION act;
+	int s;
 
 	p = context->priv;
 
 	if (event->type == ugfxEvent) {
 		pe = event->ugfx.pEvent;
 		if (pe->type == GEVENT_GWIN_BUTTON) {
+			memset (&sin, 0, sizeof(sin));
+			memset (&act, 0, sizeof(act));
+
+			sin.sin_addr.s_addr = inet_addr (net_doom_peer);
+			sin.sin_port = lwip_htons (FINDER_PORT);
+			sin.sin_family = AF_INET;
+
+			c = configGet ();
+
+			act.finder_hdr.finder_type = FINDER_TYPE_ACTION;
+			strcpy (act.finder_hdr.finder_name, c->cfg_name);
+
 			be = (GEventGWinButton *)pe;
 			if (be->gwin == p->ghACCEPT) {
+				act.finder_action = FINDER_ACTION_ACCEPT;
 				orchardAppRun (orchardAppByName(p->app));
 			}
 			if (be->gwin == p->ghDECLINE) {
+				net_doom_node = NULL;
+				act.finder_action = FINDER_ACTION_DECLINE;
 				orchardAppExit ();
 			}
+
+			act.finder_salt = (uint32_t)random ();
+			act.finder_csum = crc32_le ((uint8_t *)&act,
+			    sizeof (FINDER_ACTION) - sizeof(uint32_t), 0);
+
+			s = lwip_socket (AF_INET, SOCK_DGRAM, 0);
+			(void)lwip_sendto (s, &act, sizeof(FINDER_ACTION), 0,
+			    (struct sockaddr *)&sin, sizeof (sin));
+			lwip_close (s);
 		}
 	}
 
@@ -236,9 +276,11 @@ notify_event (OrchardAppContext *context, const OrchardAppEvent *event)
 }
 
 static void
-notify_exit (OrchardAppContext *context)
+notify_exit (OrchardAppContext * context)
 {
 	NotifyHandles * p;
+
+	i2sPlay (NULL);
 
 	p = context->priv;
 	context->priv = NULL;

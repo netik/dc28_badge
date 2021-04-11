@@ -150,12 +150,13 @@ typedef enum _OrchardAppRadioEventType {
    connectTimeoutEvent,		/* Connection timed out */
    rxEvent,			/* Data received */
    txEvent,			/* Data sent */
+   exitEvent,			/* App should exit */
    chatEvent,			/* Chat request received */
    challengeEvent,		/* Challenge request received */
    doomEvent,			/* Doom challenge request received */
    shoutEvent,			/* Shout request received */
    fwEvent,			/* Firmware update request received */
-   exitEvent			/* App should exit */
+   actionEvent			/* Accept or decline challenge/etc... */
 } OrchardAppRadioEventType;
 
 typedef struct _OrchardAppRadioEvent {

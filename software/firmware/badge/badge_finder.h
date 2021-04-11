@@ -47,15 +47,23 @@
 #define FINDER_TYPE_DOOM	3
 #define FINDER_TYPE_SHOUT	4
 #define FINDER_TYPE_OTA		5
+#define FINDER_TYPE_ACTION	6
+
+#define FINDER_ACTION_ACCEPT	1
+#define FINDER_ACTION_DECLINE	2
 
 #define FINDER_PAYLOAD		128
+
+#define FINDER_FREQ_MIN		902000000
+#define FINDER_FREQ_MAX		928000000
+#define FINDER_CHANNELS		52
 
 /*
  * This message structure contains all the user info we
  * want to advertise in a badge broadcast. For now it
  * contains mainly just the user's name. Right now it's 
  * unclear what additional data to send (probably some
- * inter-badge game stats.
+ * inter-badge game stats).
  */
 
 #pragma pack(1)
@@ -85,11 +93,24 @@ typedef struct finder_pkt {
 #pragma pack(1)
 typedef struct finder_doom {
 	FINDER_HDR	finder_hdr;
-	uint32_t	finder_frequency;
-	uint8_t		finder_payload[FINDER_PAYLOAD];
+	uint32_t	finder_freq;
+	uint8_t		finder_doom_skill;
+	uint8_t		finder_doom_episode;
+	uint8_t		finder_doom_map;
+	bool		finder_doom_deathmatch;
+	struct in_addr	finder_doom_peer;
 	uint32_t	finder_salt;
 	uint32_t	finder_csum;
 } FINDER_DOOM;
+#pragma pack()
+
+#pragma pack(1)
+typedef struct finder_action {
+	FINDER_HDR	finder_hdr;
+	uint32_t	finder_action;
+	uint32_t	finder_salt;
+	uint32_t	finder_csum;
+} FINDER_ACTION;
 #pragma pack()
 
 typedef struct finder_peer {
@@ -105,5 +126,11 @@ extern mutex_t badge_peer_mutex;
 extern void badge_finder_start (void);
 extern void badge_peer_show (void);
 extern void multiSend (uint8_t *, size_t);
+extern void badge_finder_suspend (void);
+extern void badge_finder_resume (void);
+extern uint32_t badge_finder_radio_chan_alloc (void);
+extern void badge_finder_radio_freq_set (uint32_t);
+extern void badge_finder_radio_mode_set (uint8_t);
+extern void badge_finder_radio_restore (void);
 
 #endif /* _BADGE_FINDERH_ */

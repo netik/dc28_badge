@@ -74,5 +74,6 @@ extern void i2sLoopPlay (char *, uint8_t);
 extern uint16_t * i2sBuf;
 #endif
 extern uint8_t i2sEnabled;
+extern uint8_t i2sIgnore;
 
 #endif /* _STM32SAI_LLDH_ */

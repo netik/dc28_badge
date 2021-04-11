@@ -101,6 +101,16 @@ extern BaseSequentialStream * conout;
 extern mutex_t conmutex;
 extern thread_reference_t shell_ref_usb;
 
+/* Variables for networked Doom support */
+
+extern char * net_doom_peer;
+extern char * net_doom_node;
+extern bool net_doom_deathmatch;
+extern uint8_t net_doom_skill;
+extern uint8_t net_doom_episode;
+extern uint8_t net_doom_map;
+extern uint32_t net_doom_freq;
+
 extern void newlibStart (void);
 
 #endif /* _BADGE_H_ */

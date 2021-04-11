@@ -33,10 +33,12 @@
 #include "orchard-app.h"
 #include "orchard-ui.h"
 #include "stm32sai_lld.h"
-
+#include "sx1262_lld.h"
 #include "badge_console.h"
+#include "badge_finder.h"
 
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
 #include <malloc.h>
 
@@ -44,9 +46,17 @@ extern int doom_main (int argc, char * argv[]);
 extern char __ram7_base__; /* Set by linker */
 extern char __ram7_end__; /* Set by linker */
 
+char * net_doom_peer = NULL;
+char * net_doom_node = NULL;
+uint8_t net_doom_skill;
+uint8_t net_doom_episode;
+uint8_t net_doom_map;
+bool net_doom_deathmatch;
+uint32_t net_doom_freq;
+
 static THD_FUNCTION(doomThread, arg)
 {
-	char * args[1];
+	char * args[11];
 	size_t bsslen;
 
 	(void)arg;
@@ -65,8 +75,39 @@ static THD_FUNCTION(doomThread, arg)
 
 	badge_concreate (BADGE_CONSOLE_SHARE);
 
-       	args[0] = "doom";
-       	doom_main (1, args);
+	/*
+	 * If the network parameters are set, then launch a networked
+	 * game, otherwise just launch a single player game.
+	 */
+
+	args[0] = "doom";
+	if (net_doom_node != NULL) {
+		/*
+		 * Switch the radio to GFSK mode and change the
+		 * channel before launching Doom. LoRa mode is too
+		 * slow for the bandwidth Doom needs.
+		 */
+
+		badge_finder_radio_freq_set (net_doom_freq);
+		badge_finder_radio_mode_set (SX_MODE_GFSK);
+
+		args[1] = "-port";
+		args[2] = "9999";
+		args[3] = "-dup";
+		args[4] = "2";
+		args[5] = "-extratic";
+		args[6] = "-skill";
+		args[7] = "3";
+		args[8] = "-net";
+		args[9] = net_doom_node;
+		args[10] = net_doom_peer;
+		doom_main (11, args);
+
+		badge_finder_radio_restore ();
+	} else
+		doom_main (1, args);
+
+	net_doom_node = NULL;
 
 	badge_condestroy ();
 
@@ -77,14 +118,14 @@ static THD_FUNCTION(doomThread, arg)
 }
 
 static uint32_t
-doom_init (OrchardAppContext *context)
+doom_init (OrchardAppContext * context)
 {
 	(void)context;
 	return (0);
 }
 
 static void
-doom_start (OrchardAppContext *context)
+doom_start (OrchardAppContext * context)
 {
 	(void)context;
 	gdispClear (GFX_BLACK);
@@ -93,7 +134,7 @@ doom_start (OrchardAppContext *context)
 }
 
 static void
-doom_event (OrchardAppContext *context, const OrchardAppEvent *event)
+doom_event (OrchardAppContext * context, const OrchardAppEvent * event)
 {
 	thread_t * pThread;
 	void * pWsp;
@@ -125,7 +166,7 @@ doom_event (OrchardAppContext *context, const OrchardAppEvent *event)
 }
 
 static void
-doom_exit(OrchardAppContext *context)
+doom_exit (OrchardAppContext * context)
 {
 	(void) context;
 	return;
