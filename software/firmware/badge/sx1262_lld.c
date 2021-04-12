@@ -1186,7 +1186,7 @@ sx1262LinkOutput (struct netif * netif, struct pbuf * p)
 	 * to issue a new "set packet params" command before transmitting.
 	 * And then you have to issue another "set packet params" command
 	 * after the transmit completes and before you turn the receiver
-	 * pack on. I have no idea why SemTech did it this way.
+	 * back on. I have no idea why SemTech did it this way.
 	 */
 
 	if (d->sx_mode == SX_MODE_GFSK) {
