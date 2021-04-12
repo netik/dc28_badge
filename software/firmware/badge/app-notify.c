@@ -121,7 +121,10 @@ notify_start (OrchardAppContext * context)
 
 	context->priv = p;
 
-	putImageFile ("images/undrattk.rgb", 0, 0);
+	if (radio_evt.type == doomEvent)
+		putImageFile ("images/doom.rgb", 0, 0);
+	else
+		putImageFile ("images/undrattk.rgb", 0, 0);
 
 	/* Find peer addr or name */
 
