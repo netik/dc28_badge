@@ -300,6 +300,8 @@ void I_InitGraphics(void)
 
 	screens[0] = memalign (CACHE_LINE_SIZE, (SCREENWIDTH * SCREENHEIGHT));
 
+	memset (screens[0], 0, (SCREENWIDTH * SCREENHEIGHT));
+
 	/* Drain the input queue */
 
 	while (capture_queue_get (&sym)) {
