@@ -61,7 +61,7 @@
  * work is that the STM32F746 Discovery board has its second USB port
  * configured that way and we'd like to be able to use it for testing
  * (this way the first USB port can be used for the virtual COM port
- * function without).
+ * function without conflicting with USB keyboard support).
  *
  * Dealing with the third issue is a little more complicated. The most
  * obvious approaches would be to either modify the USBHID driver or
