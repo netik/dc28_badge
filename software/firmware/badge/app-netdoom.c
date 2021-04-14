@@ -184,13 +184,6 @@ netdoom_event (OrchardAppContext * context, const OrchardAppEvent * event)
 	ui = context->instance->ui;
 	uiContext = context->instance->uicontext;
 
-	if (event->type == appEvent) {
-
-	}
-
-        if (event->type == ugfxEvent) {
-        }
-
 	if (event->type == ugfxEvent || event->type == keyEvent) {
 
 		me = (GEventMouse *)event->ugfx.pEvent;
