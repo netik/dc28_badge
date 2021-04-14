@@ -202,7 +202,7 @@ main (void)
 		goto done;
         }
 
-	chprintf (chp, "BOOT.BIN image found\r\n");
+	chprintf (chp, "BADGE.BIN image found\r\n");
 
 	/* Erase the flash */
 
