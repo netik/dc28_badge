@@ -242,6 +242,12 @@ notify_event (OrchardAppContext * context, const OrchardAppEvent * event)
 	if (event->type == ugfxEvent) {
 		pe = event->ugfx.pEvent;
 		if (pe->type == GEVENT_GWIN_BUTTON) {
+
+			if (p->ghACCEPT == NULL) {
+				orchardAppExit ();
+				return;
+			}
+
 			memset (&sin, 0, sizeof(sin));
 			memset (&act, 0, sizeof(act));
 
