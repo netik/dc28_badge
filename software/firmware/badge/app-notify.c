@@ -199,6 +199,7 @@ notify_start (OrchardAppContext * context)
 		wi.text = "DISMISS";
 		p->ghDECLINE = gwinButtonCreate(0, &wi);
 		p->ghACCEPT = NULL;
+		i2sPlay ("sound/klaxon.snd");
 	} else {
 		gwinSetDefaultStyle (&RedButtonStyle, FALSE);
 		gwinSetDefaultFont (p->font);
