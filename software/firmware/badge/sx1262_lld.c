@@ -91,7 +91,6 @@ static uint8_t sx1262RegRead (SX1262_Driver *, uint16_t);
 static void sx1262RegWrite (SX1262_Driver *, uint16_t, uint8_t);
 static void sx1262BufRead (SX1262_Driver *, uint8_t *, uint8_t, uint8_t);
 static void sx1262BufWrite (SX1262_Driver *, uint8_t *, uint8_t, uint8_t);
-static void sx1262GfskPktParmSet (SX1262_Driver * p);
 static void sx1262GfskConfig (SX1262_Driver * p);
 static void sx1262LoraConfig (SX1262_Driver * p);
 static void sx1262Reset (SX1262_Driver *);
@@ -740,35 +739,11 @@ sx1262LoraConfig (SX1262_Driver * p)
 }
 
 static void
-sx1262GfskPktParmSet (SX1262_Driver * p)
-{
-	SX_SETPKTPARAM_GFSK pkp;
-
-	/*
-	 * Note: preamble length and syncword length are specified
-	 * to the chip in bits, so we multiply the supplied byte
-	 * values by 8.
-	 */
-
-	pkp.sx_opcode = SX_CMD_SETPKTPARAM;
-	pkp.sx_preamlen = __builtin_bswap16 (p->sx_gfsk.sx_preamlen * 8);
-	pkp.sx_preamdetlen = SX_GFSK_PREAM_32BITS;
-	pkp.sx_syncwordlen = p->sx_gfsk.sx_syncwordlen * 8;
-	pkp.sx_addrcomp = SX_GFSK_ADDRCOMP_OFF;
-	pkp.sx_pkttype = SK_GFSK_PKTTYPE_VARIABLE;
-	pkp.sx_paylen = p->sx_pktlen;
-	pkp.sx_crctype = SK_GFSK_CRCTYPE_2BYTEIN;
-	pkp.sx_whitening = SK_GFSK_WHITENING_ON;
-	sx1262CmdSend (p, &pkp, sizeof(pkp));
-
-	return;
-}
-
-static void
 sx1262GfskConfig (SX1262_Driver * p)
 {
 	SX_SETPKT pkt;
 	SX_SETMODPARAM_GFSK m;
+	SX_SETPKTPARAM_GFSK pkp;
 	uint32_t val;
 
 	/*
@@ -800,9 +775,24 @@ sx1262GfskConfig (SX1262_Driver * p)
 	m.sx_fdev[2] = val & 0xFF;
 	sx1262CmdSend (p, &m, sizeof(m));
 
-	/* Then set packet parameters. */
+	/*
+	 * Then set packet parameters.
+	 * Note: preamble length and syncword length are specified
+	 * to the chip in bits, so we multiply the supplied byte
+	 * values by 8.
+	 */
 
-	sx1262GfskPktParmSet (p);
+	val = p->sx_gfsk.sx_preamlen * 8;
+	pkp.sx_opcode = SX_CMD_SETPKTPARAM;
+	pkp.sx_preamlen = __builtin_bswap16 (val);
+	pkp.sx_preamdetlen = SX_GFSK_PREAM_32BITS;
+	pkp.sx_syncwordlen = p->sx_gfsk.sx_syncwordlen * 8;
+	pkp.sx_addrcomp = SX_GFSK_ADDRCOMP_OFF;
+	pkp.sx_pkttype = SK_GFSK_PKTTYPE_VARIABLE;
+	pkp.sx_paylen = p->sx_pktlen;
+	pkp.sx_crctype = SK_GFSK_CRCTYPE_2BYTEIN;
+	pkp.sx_whitening = SK_GFSK_WHITENING_ON;
+	sx1262CmdSend (p, &pkp, sizeof(pkp));
 
 	/* Set sync word */
 
@@ -1169,30 +1159,24 @@ sx1262LinkOutput (struct netif * netif, struct pbuf * p)
 	sx1262StandbySet (d);
 
 	/*
-	 * When operating in LoRa mode, there is a magic payload size
-	 * register we can use to specify the TX payload size when
-	 * variable size packet mode,
+	 * It turns out there are two magic undocumented registers for
+	 * changing the packet payload size. The first, SX_REG_PAYLEN,
+	 * is for LoRa mode only and seems to only affect the transmit
+	 * payload size. The other, SX_REG_RXTX_PAYLOAD_LEN, is for
+	 * GFSK mode and as the name implies it affects both RX and
+	 * TX, so we have to put it back to its original value before
+	 * we turn the receiver back on.
 	 *
-	 * Slightly less overhead is required to set it this way compared
-	 * to the alternative, which is to issue another SETPKTPARAM
-	 * command.
-	 *
-	 * This register is _not_ documented in the SX126x manual, of
-	 * course. I only know about it because SemTech used it in their
-	 * LoRaMac-node example software.
-         *
-	 * Unfortunately, it doesn't work for GFSK mode. If you want to
-	 * send a frame of a different size than the default, you have
-	 * to issue a new "set packet params" command before transmitting.
-	 * And then you have to issue another "set packet params" command
-	 * after the transmit completes and before you turn the receiver
-	 * back on. I have no idea why SemTech did it this way.
+	 * The SX_REG_PAYLEN register is used in the SemTeck LoraMac
+	 * code, and SX_REG_RXTX_PAYLOAD_LEN is used in the sample
+	 * code that goes with SemTech application node AN1200.53 (which
+	 * shows how to exchange packets larger than 255 bytes with
+	 * the SX126x in GFSK mode).
 	 */
 
-	if (d->sx_mode == SX_MODE_GFSK) {
-		d->sx_pktlen = p->tot_len;
-		sx1262GfskPktParmSet (d);
-	} else if (d->sx_mode == SX_MODE_LORA)
+	if (d->sx_mode == SX_MODE_GFSK)
+		sx1262RegWrite (d, SX_REG_RXTX_PAYLOAD_LEN, p->tot_len);
+	else if (d->sx_mode == SX_MODE_LORA)
 		sx1262RegWrite (d, SX_REG_PAYLEN, p->tot_len);
 
 	sx1262Send (d, d->sx_rxbuf, p->tot_len);
@@ -1217,10 +1201,8 @@ sx1262LinkOutput (struct netif * netif, struct pbuf * p)
 		sx1262Disable (d);
 		sx1262Enable (d);
 		goto skiprx;
-	} else if (d->sx_mode == SX_MODE_GFSK) {
-		d->sx_pktlen = SX_PKTLEN_DEFAULT;
-		sx1262GfskPktParmSet (d);
-	}
+	} else if (d->sx_mode == SX_MODE_GFSK)
+		sx1262RegWrite (d, SX_REG_RXTX_PAYLOAD_LEN, SX_PKTLEN_DEFAULT);
 
 	/* Turn receiver back on */
 
