@@ -451,13 +451,17 @@ badge_finder_radio_mode_set (uint8_t mode)
 	if (SX1262D1.sx_mode == mode)
 		return;
 
-	if (mode != SX_MODE_GFSK && mode != SX_MODE_LORA)
+	if (mode != FINDER_RADIO_MODE_SLOW &&
+	    mode != FINDER_RADIO_MODE_FAST)
 		return;
 
 	netif_set_down (SX1262D1.sx_netif);
 
 	osalMutexLock (&SX1262D1.sx_mutex);
-	SX1262D1.sx_mode = mode;
+	if (mode == FINDER_RADIO_MODE_SLOW)
+		SX1262D1.sx_mode = SX_MODE_LORA;
+	if (mode == FINDER_RADIO_MODE_FAST)
+		SX1262D1.sx_mode = SX_MODE_GFSK;
 	sx1262Disable (&SX1262D1);
 	sx1262Enable (&SX1262D1);
 	osalMutexUnlock (&SX1262D1.sx_mutex);

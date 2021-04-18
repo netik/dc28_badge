@@ -57,6 +57,8 @@
 #define FINDER_FREQ_MIN		902000000
 #define FINDER_FREQ_MAX		928000000
 #define FINDER_CHANNELS		52
+#define FINDER_RADIO_MODE_SLOW	1
+#define FINDER_RADIO_MODE_FAST	2
 
 /*
  * This message structure contains all the user info we

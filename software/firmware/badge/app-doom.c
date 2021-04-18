@@ -33,7 +33,6 @@
 #include "orchard-app.h"
 #include "orchard-ui.h"
 #include "stm32sai_lld.h"
-#include "sx1262_lld.h"
 #include "badge_console.h"
 #include "badge_finder.h"
 
@@ -89,7 +88,7 @@ static THD_FUNCTION(doomThread, arg)
 		 */
 
 		badge_finder_radio_freq_set (net_doom_freq);
-		badge_finder_radio_mode_set (SX_MODE_GFSK);
+		badge_finder_radio_mode_set (FINDER_RADIO_MODE_FAST);
 
 		args[1] = "-port";
 		args[2] = "9999";
