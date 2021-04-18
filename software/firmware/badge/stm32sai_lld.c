@@ -114,12 +114,12 @@ saiDmaInt (void * arg, uint32_t flags)
 void
 saiSend (SAIDriver * saip, void * buf, uint32_t size)
 {
+	cacheBufferFlush (buf, size);
+
 	dmaStreamSetMemory0 (saip->dma, buf);
 	dmaStreamSetTransactionSize (saip->dma, size / sizeof (uint16_t));
 	dmaStreamSetMode (saip->dma, saip->dmamode);
 	dmaStreamEnable (saip->dma);
-
-	cacheBufferFlush (buf, size);
 
 	osalSysLock ();
 	i2sState = I2S_STATE_BUSY;
