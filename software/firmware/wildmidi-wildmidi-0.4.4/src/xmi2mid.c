@@ -469,7 +469,7 @@ int _WM_xmi2midi(const uint8_t *in, uint32_t insize,
     int ret = -1;
 
     if (convert_type > XMIDI_CONVERT_MT32_TO_GS) {
-        _WM_ERROR_NEW("%s:%i:  %d is an invalid conversion type.", __FUNCTION__, __LINE__, convert_type);
+        _WM_ERROR_NEW("%s:%i:  %ld is an invalid conversion type.", __FUNCTION__, __LINE__, convert_type);
         return (ret);
     }
 
@@ -1097,7 +1097,7 @@ static int ExtractTracks(struct xmi_ctx *ctx) {
     i = ExtractTracksFromXmi(ctx);
 
     if (i != ctx->info.tracks) {
-        _WM_ERROR_NEW("XMI error: extracted only %u out of %u tracks from XMIDI",
+        _WM_ERROR_NEW("XMI error: extracted only %u out of %lu tracks from XMIDI",
                 ctx->info.tracks, i);
         return (-1);
     }

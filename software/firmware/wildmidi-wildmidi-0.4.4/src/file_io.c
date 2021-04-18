@@ -142,7 +142,7 @@ void *_WM_BufferFileImpl(const char *filename, uint32_t *size) {
     char buffer_dir[1024];
 
     if (strncmp(filename, "~/", 2) == 0) {
-        pwd_ent = getpwuid(getuid());
+        pwd_ent = NULL /*getpwuid(getuid())*/;
         if (pwd_ent) {
             home = pwd_ent->pw_dir;
         } else {

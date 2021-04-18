@@ -102,7 +102,10 @@ struct _mdi_patches {
 
 
 /* Gauss Interpolation code adapted from code supplied by Eric. A. Welsh */
+#ifdef notdef
 static double newt_coeffs[58][58];  /* for start/end of samples */
+#endif
+static double ** newt_coeffs;
 #define MAX_GAUSS_ORDER 34          /* 34 is as high as we can go before errors crop up */
 static double *gauss_table = NULL;  /* *gauss_table[1<<FPBITS] */
 static int gauss_n = MAX_GAUSS_ORDER;
@@ -124,6 +127,8 @@ static void init_gauss(void) {
         _WM_Unlock(&gauss_lock);
         return;
     }
+
+    newt_coeffs = malloc (sizeof(double) * 58 * 58);
 
     newt_coeffs[0][0] = 1;
     for (i = 0; i <= n; i++) {
@@ -175,6 +180,8 @@ static void free_gauss(void) {
     _WM_Lock(&gauss_lock);
     free(gauss_table);
     gauss_table = NULL;
+    free(newt_coeffs);
+    newt_coeffs = NULL;
     _WM_Unlock(&gauss_lock);
 }
 
