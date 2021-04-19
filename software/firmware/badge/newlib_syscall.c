@@ -538,25 +538,39 @@ sysconf (int name)
 void * __malloc_free_list;
 void * __malloc_sbrk_start;
 
+extern void * dlrealloc (void *, size_t);
+extern void * dlmalloc (size_t);
+extern void * dlfree (void *);
+extern void * dlmemalign (size_t, size_t);
+extern void * dlcalloc (size_t, size_t);
+extern void dlmalloc_stats (void);
+
 void *
 _realloc_r (struct _reent * unused, void * ptr, size_t size)
 {
 	(void)unused;
-	return (realloc(ptr, size));
+	return (dlrealloc (ptr, size));
 }
 
 void *
 _malloc_r (struct _reent * unused, size_t size)
 {
 	(void)unused;
-	return (malloc(size));
+	return (dlmalloc (size));
+}
+
+void *
+_memalign_r (struct _reent * unused, size_t align, size_t size)
+{
+	(void)unused;
+	return (dlmemalign (align, size));
 }
 
 void
 _free_r (struct _reent * unused, void * ptr)
 {
 	(void)unused;
-	free (ptr);
+	dlfree (ptr);
 	return;
 }
 
@@ -564,13 +578,13 @@ void *
 _calloc_r (struct _reent * unused, size_t number, size_t size)
 {
 	(void)unused;
-	return (calloc (number, size));
+	return (dlcalloc (number, size));
 }
 
 void
 _malloc_stats_r (struct _reent * unused)
 {
 	(void)unused;
-	malloc_stats ();
+	dlmalloc_stats ();
 	return;
 }
