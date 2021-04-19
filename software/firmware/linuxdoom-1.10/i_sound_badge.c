@@ -47,6 +47,8 @@ rcsid[] = "$Id: i_unix.c,v 1.5 1997/02/03 22:45:10 b1 Exp $";
 
 #include "doomdef.h"
 
+#include "wildmidi_lib.h"
+
 // The number of internal mixing channels,
 //  the samples calculated for each mixing step,
 //  the size of the 16bit, 2 hardware channel (stereo)
@@ -57,11 +59,14 @@ rcsid[] = "$Id: i_unix.c,v 1.5 1997/02/03 22:45:10 b1 Exp $";
 #define SAMPLECOUNT		512
 #define NUM_CHANNELS		8
 // It is 2 for 16bit, and 2 for two channels.
-#define BUFMUL                  4
+#define BUFMUL                  2
 #define MIXBUFFERSIZE		(SAMPLECOUNT*BUFMUL)
 
 #define SAMPLERATE		11025	// Hz
 #define SAMPLESIZE		2   	// 16bit
+
+__attribute__((section(".ram7")))
+static midi * songhandle;
 
 // The actual lengths of all sound effects.
 __attribute__((section(".ram7")))
@@ -74,6 +79,8 @@ static int	lengths[NUMSFX];
 __attribute__((section(".ram7")))
 static signed short	mixbuffer[MIXBUFFERSIZE];
 
+__attribute__((section(".ram7")))
+static signed short	mixbuffer2[MIXBUFFERSIZE];
 
 // The channel step amount...
 __attribute__((section(".ram7")))
@@ -394,10 +401,19 @@ void I_SetSfxVolume(int volume)
 // MUSIC API - dummy. Some code from DOS version.
 void I_SetMusicVolume(int volume)
 {
+  int v;
+
   // Internal state variable.
   snd_MusicVolume = volume;
   // Now set volume on output device.
   // Whatever( snd_MusciVolume );
+
+  v = volume * 10;
+  if (v > 127)
+    v = 127;
+
+  if (songhandle != NULL)
+    WildMidi_MasterVolume (v);
 }
 
 
@@ -503,6 +519,11 @@ void I_UpdateSound( void )
   // Mixing channel index.
   int				chan;
     
+    /* if there's a song playing, get the samples for it */
+
+    if (songhandle != NULL)
+      WildMidi_GetOutput (songhandle, (int8_t *)mixbuffer, MIXBUFFERSIZE * 2);
+
     // Left and right channel
     //  are in global mixbuffer, alternating.
     leftout = mixbuffer;
@@ -551,6 +572,13 @@ void I_UpdateSound( void )
 	    }
 	}
 	
+        /* Mix in music samples */
+
+        if (songhandle) {
+          dr += (*rightout * 3);
+          dl += (*leftout * 3);
+        }
+
 	// Clamp to range. Left hardware channel.
 	// Has been char instead of short.
 	// if (dl > 127) *leftout = 127;
@@ -588,12 +616,38 @@ void I_UpdateSound( void )
 // Mixing now done synchronous, and
 //  only output be done asynchronous?
 //
+
 void
 I_SubmitSound(void)
 {
+  uint32_t * s, * d;
+
   // Write it to DSP device.
+  int i;
+
+  /* Check that previous transfer finished before we start a new one. */
+
   i2sSamplesWait ();
-  i2sSamplesPlay (mixbuffer, SAMPLECOUNT * 2);
+
+  /*
+   * We have to move the sample data to a separate buffer before
+   * initiating the DMA transfer to the SAI controller. To improve
+   * performance, we want to be able generate new sample for a
+   * future transfer at the same time that the current transfer
+   * is in progress. However we don't want to put the new sample
+   * data in the buffer that's currently being transfered, because
+   * that will cause the data to change while it's playing, which
+   * makes it sound garbled.
+   */
+
+  s = (uint32_t *)mixbuffer;
+  d = (uint32_t *)mixbuffer2;
+  for (i = 0; i < SAMPLECOUNT; i++)
+      d[i] = s[i];
+
+  /* Start new DMA transfer. */
+
+  i2sSamplesPlay (mixbuffer2, SAMPLECOUNT * 2);
 }
 
 
@@ -626,8 +680,14 @@ void I_ShutdownSound(void)
   int done = 0;
   int i;
   
+  songhandle = NULL;
+
+  WildMidi_Shutdown ();
 
   // FIXME (below).
+  for (i = 0; i < NUMMUSIC; i++)
+    S_music[i].handle = 0;
+
   fprintf( stderr, "I_ShutdownSound: NOT finishing pending sounds\n");
   fflush( stderr );
   
@@ -712,14 +772,38 @@ void I_ShutdownMusic(void)	{ }
 
 __attribute__((section(".ram7")))
 static int	looping=0;
+__attribute__((section(".ram7")))
 static int	musicdies=-1;
 
 void I_PlaySong(int handle, int looping)
 {
+  int i;
+  musicinfo_t * p;
+
   // UNUSED.
   (void)handle;
   (void)looping;
   musicdies = gametic + TICRATE*30;
+
+  for (i = 0; i < NUMMUSIC; i++) {
+    if (S_music[i].handle == handle)
+      break;
+  }
+
+  if (i == NUMMUSIC)
+    return;
+
+  p = &S_music[i];
+
+  WildMidi_Init ("/midi/wildmidi.cfg", SAMPLERATE, WM_MO_LOOP);
+
+  songhandle = WildMidi_OpenBuffer (p->data, W_LumpLength (p->lumpnum));
+  i = snd_MusicVolume * 10;
+  if (i > 127)
+    i = 127;
+  WildMidi_MasterVolume (i);
+
+  return;
 }
 
 void I_PauseSong (int handle)
@@ -741,12 +825,30 @@ void I_StopSong(int handle)
   
   looping = 0;
   musicdies = 0;
+
+  songhandle = NULL;
+  WildMidi_Shutdown ();
+
+  return;
 }
 
 void I_UnRegisterSong(int handle)
 {
+  int i;
   // UNUSED.
   (void)handle;
+
+  for (i = 0; i < NUMMUSIC; i++) {
+    if (S_music[i].handle == handle)
+        break;
+  }
+
+  if (i == NUMMUSIC)
+    return;
+
+  S_music[i].handle = 0;
+
+  return;
 }
 
 int I_RegisterSong(void* data)

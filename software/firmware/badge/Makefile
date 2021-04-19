@@ -138,6 +138,10 @@ include $(CHIBIOS)/../lwip_bindings/lwip.mk
 NES = $(CHIBIOS)/../nofrendo-2.0pre1
 include $(NES)/build.mk
 
+# WildMIDI library
+WILDMIDI = $(CHIBIOS)/../wildmidi-wildmidi-0.4.4
+include $(WILDMIDI)/build.mk
+
 # Doom
 DOOM = $(CHIBIOS)/../linuxdoom-1.10
 include $(DOOM)/build.mk
@@ -156,6 +160,7 @@ CSRC = $(ALLCSRC) \
        $(LIBJPEGSRC) \
        $(NESSRC) \
        $(DOOMSRC) \
+       $(WILDMIDISRC) \
        main.c \
        usbcfg.c \
        cmd-adc.c \
@@ -226,7 +231,7 @@ ASMXSRC = $(ALLXASMSRC) badge_fault.S
 # Inclusion directories.
 INCDIR = $(CONFDIR) $(ALLINC) $(CHIBIOS_CONTRIB)/os/various $(FATFSINC)
 INCDIR += $(GFXINC) $(STMINC) $(TJPGDINC) $(WM8994INC) $(LIBJPEGINC)
-INCDIR += $(NESINC) $(DOOMINC)
+INCDIR += $(NESINC) $(DOOMINC) $(WILDMIDIINC)
 
 # Define C warning options here.
 CWARN = -Wall -Wextra -Wundef -Wstrict-prototypes
