@@ -174,6 +174,7 @@ sdcard: dirs tools_dep images sounds video_misc video_dabomb video_civildef
 	-cp rgb/flags/*.rgb $(STAGING_DIR)/flags
 	-cp rgb/doom/*.rgb $(STAGING_DIR)/doom
 	-cp doom/*.wad $(STAGING_DIR)/doom
+	-cp midi/* $(STAGING_DIR)/midi
 	-cp nes/*.nes $(STAGING_DIR)/nes
 	-cp rgb/font/led/*.rgb $(STAGING_DIR)/font/led
 	-cp rgb/font/led_90/*.rgb $(STAGING_DIR)/font/led_90
@@ -225,6 +226,7 @@ dirs:
 	-[ -d $(STAGING_DIR)/videos/civildef ] || mkdir -p $(STAGING_DIR)/videos/civildef
 	-[ -d $(STAGING_DIR)/flags ] || mkdir -p $(STAGING_DIR)/flags
 	-[ -d $(STAGING_DIR)/doom ] || mkdir -p $(STAGING_DIR)/doom
+	-[ -d $(STAGING_DIR)/midi ] || mkdir -p $(STAGING_DIR)/midi
 	-[ -d $(STAGING_DIR)/nes ] || mkdir -p $(STAGING_DIR)/nes
 	-[ -d $(STAGING_DIR)/font/led ] || mkdir -p $(STAGING_DIR)/font/led
 	-[ -d $(STAGING_DIR)/font/led_90 ] || mkdir -p $(STAGING_DIR)/font/led_90
