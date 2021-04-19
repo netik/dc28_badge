@@ -520,6 +520,24 @@ sysconf (int name)
 	return (0);
 }
 
+/*
+ * We want to override the newlib malloc()/free() routines with
+ * our own, because the newlib heap allocator suffers from fragmentation
+ * issues that cause problems with the WildMIDI library. The thing is,
+ * internally some newlib routines like strdup() make reference to
+ * malloc() et al using internal function names, e.g. _malloc_r()
+ * instead of malloc(). We need to override these, otherwise there
+ * will be a clash between strdup() using the newlib malloc() and
+ * the rest of the system using the Doug Lea malloc().
+ *
+ * The newlib mallocr.o object also includes the two global pointers
+ * below. We need to define these here too in order to avoid a linker
+ * dependency on the newlib mallocr.o object code.
+ */
+
+void * __malloc_free_list;
+void * __malloc_sbrk_start;
+
 void *
 _realloc_r (struct _reent * unused, void * ptr, size_t size)
 {
@@ -547,4 +565,12 @@ _calloc_r (struct _reent * unused, size_t number, size_t size)
 {
 	(void)unused;
 	return (calloc (number, size));
+}
+
+void
+_malloc_stats_r (struct _reent * unused)
+{
+	(void)unused;
+	malloc_stats ();
+	return;
 }
