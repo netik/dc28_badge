@@ -397,22 +397,22 @@ badge_sleep_disable (void)
 void
 badge_lpidle_enable (void)
 {
-	__enable_irq ();
+	__disable_irq ();
 	badge_lpidle = TRUE;
 	rccEnableFSMC (FALSE);
 	rccEnableLTDC (FALSE);
-	__disable_irq ();
+	__enable_irq ();
 	return;
 }
 
 void
 badge_lpidle_disable (void)
 {
-	__enable_irq ();
+	__disable_irq ();
 	badge_lpidle = FALSE;
 	rccEnableFSMC (TRUE);
 	rccEnableLTDC (TRUE);
-	__disable_irq ();
+	__enable_irq ();
 	return;
 }
 
@@ -421,7 +421,7 @@ badge_lpidle_suspend (void)
 {
 	uint16_t lp;
 
-	__enable_irq ();
+	__disable_irq ();
 
 	lp = badge_lpidle;
 	badge_lpidle <<= 8;
@@ -433,7 +433,7 @@ badge_lpidle_suspend (void)
 
 	__ISB();
 
-	__disable_irq ();
+	__enable_irq ();
 
 	return;
 }
@@ -443,7 +443,7 @@ badge_lpidle_resume (void)
 {
 	uint16_t lp;
 
-	__enable_irq ();
+	__disable_irq ();
 
 	lp = badge_lpidle;
 	badge_lpidle >>= 8;
@@ -455,7 +455,7 @@ badge_lpidle_resume (void)
 
 	__ISB();
 
-	__disable_irq ();
+	__enable_irq ();
 
 	return;
 }
