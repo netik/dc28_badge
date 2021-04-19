@@ -6,7 +6,6 @@ NESSRC+=				\
 	$(NES)/src/intro.o		\
 	$(NES)/src/log.o		\
 	$(NES)/src/pcx.o		\
-	$(NES)/src/memguard.o		\
 	$(NES)/src/nes_bitmap.o		\
 	$(NES)/src/nofrendo.o		\
 	$(NES)/src/vid_drv.o		\
