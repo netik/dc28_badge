@@ -11,7 +11,7 @@ endif
 
 # C specific options here (added to USE_OPT).
 ifeq ($(USE_COPT),)
-  USE_COPT = 
+  USE_COPT = -DHAVE_MORECORE=1 -DHAVE_MMAP=0 -DUSE_LOCKS=2
 endif
 
 # C++ specific options here (added to USE_OPT).
@@ -186,6 +186,7 @@ CSRC = $(ALLCSRC) \
        sx1262_lld.c \
        touch_lld.c \
        scroll_lld.c \
+       malloc.c \
        orchard-app.c \
        orchard-ui.c \
        fix_fft.c \

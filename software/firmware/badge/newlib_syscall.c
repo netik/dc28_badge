@@ -509,3 +509,42 @@ _sbrk (int incr)
 
 	return (void *) prev_heap_end;
 }
+
+__attribute__((used))
+long
+sysconf (int name)
+{
+	if (name == _SC_PAGE_SIZE)
+		return (4096);
+
+	return (0);
+}
+
+void *
+_realloc_r (struct _reent * unused, void * ptr, size_t size)
+{
+	(void)unused;
+	return (realloc(ptr, size));
+}
+
+void *
+_malloc_r (struct _reent * unused, size_t size)
+{
+	(void)unused;
+	return (malloc(size));
+}
+
+void
+_free_r (struct _reent * unused, void * ptr)
+{
+	(void)unused;
+	free (ptr);
+	return;
+}
+
+void *
+_calloc_r (struct _reent * unused, size_t number, size_t size)
+{
+	(void)unused;
+	return (calloc (number, size));
+}

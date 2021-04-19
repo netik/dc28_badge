@@ -1817,6 +1817,30 @@ static FORCEINLINE int win32munmap(void* ptr, size_t size) {
 /* #define TRY_LOCK(lk) ... */
 /* static MLOCK_T malloc_global_mutex = ... */
 
+#undef NOINLINE
+
+#include "ch.h"
+#include "hal.h"
+#include "osal.h"
+
+#define MLOCK_T mutex_t
+#define INITIAL_LOCK		osalMutexObjectInit
+#define DESTROY_LOCK(x)
+#define TRY_LOCK(x)
+#define ACQUIRE_LOCK		osalMutexLock
+#define RELEASE_LOCK		osalMutexUnlock
+static MLOCK_T malloc_global_mutex;
+static volatile int malloc_global_mutex_status;
+
+#define NEED_GLOBAL_LOCK_INIT
+
+/* Use spin loop to initialize global lock */
+static void init_malloc_global_mutex(void) {
+  INITIAL_LOCK(&malloc_global_mutex);
+  malloc_global_mutex_status = 1;
+  return;
+}
+
 #elif USE_SPIN_LOCKS
 
 /* First, define CAS_LOCK and CLEAR_LOCK on ints */
@@ -2738,7 +2762,8 @@ static int has_segment_link(mstate m, msegmentptr ss) {
 */
 
 #if USE_LOCKS
-#define PREACTION(M)  ((use_lock(M))? ACQUIRE_LOCK(&(M)->mutex) : 0)
+/*#define PREACTION(M)  ((use_lock(M)) ? ACQUIRE_LOCK(&(M)->mutex) : 0)*/
+#define PREACTION(M)  ((use_lock(M)) ? ACQUIRE_LOCK(&(M)->mutex),0 : 0)
 #define POSTACTION(M) { if (use_lock(M)) RELEASE_LOCK(&(M)->mutex); }
 #else /* USE_LOCKS */
 
