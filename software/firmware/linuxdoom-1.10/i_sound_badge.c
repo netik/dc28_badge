@@ -67,6 +67,8 @@ rcsid[] = "$Id: i_unix.c,v 1.5 1997/02/03 22:45:10 b1 Exp $";
 
 __attribute__((section(".ram7")))
 static midi * songhandle;
+__attribute__((section(".ram7")))
+bool song_paused = FALSE;
 
 // The actual lengths of all sound effects.
 __attribute__((section(".ram7")))
@@ -521,8 +523,10 @@ void I_UpdateSound( void )
     
     /* if there's a song playing, get the samples for it */
 
-    if (songhandle != NULL)
+    if (songhandle != NULL && song_paused == FALSE)
       WildMidi_GetOutput (songhandle, (int8_t *)mixbuffer, MIXBUFFERSIZE * 2);
+    else
+      memset (mixbuffer, 0, MIXBUFFERSIZE * 2);
 
     // Left and right channel
     //  are in global mixbuffer, alternating.
@@ -798,6 +802,7 @@ void I_PlaySong(int handle, int looping)
   WildMidi_Init ("/midi/wildmidi.cfg", SAMPLERATE, WM_MO_LOOP);
 
   songhandle = WildMidi_OpenBuffer (p->data, W_LumpLength (p->lumpnum));
+
   i = snd_MusicVolume * 10;
   if (i > 127)
     i = 127;
@@ -810,12 +815,20 @@ void I_PauseSong (int handle)
 {
   // UNUSED.
   (void)handle;
+
+  song_paused = TRUE;
+
+  return;
 }
 
 void I_ResumeSong (int handle)
 {
   // UNUSED.
   (void)handle;
+
+  song_paused = FALSE;
+
+  return;
 }
 
 void I_StopSong(int handle)
