@@ -544,6 +544,7 @@ extern void * dlfree (void *);
 extern void * dlmemalign (size_t, size_t);
 extern void * dlcalloc (size_t, size_t);
 extern void dlmalloc_stats (void);
+extern struct mallinfo dlmallinfo (void);
 
 void *
 _realloc_r (struct _reent * unused, void * ptr, size_t size)
@@ -587,4 +588,11 @@ _malloc_stats_r (struct _reent * unused)
 	(void)unused;
 	dlmalloc_stats ();
 	return;
+}
+
+struct mallinfo
+_mallinfo_r (struct _reent * unused)
+{
+	(void)unused;
+	return (dlmallinfo ());
 }
