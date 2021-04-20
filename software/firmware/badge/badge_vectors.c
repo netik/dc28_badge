@@ -291,17 +291,16 @@ badge_idle (void)
 		 * SDRAM controller clock is shut down.
 		 */
 
+		__disable_irq ();
 		if (badge_lpidle & 0xFF) {
-			__disable_irq ();
 			sdram_lld_selfrefresh (&SDRAMD1);
 		}
 		__DSB();
 		__ISB();
 		__WFI();
-		if (badge_lpidle & 0xFF) {
+		if (badge_lpidle & 0xFF)
 			sdram_lld_normal (&SDRAMD1);
-			__enable_irq ();
-		}
+		__enable_irq ();
 	}
 	return;
 }
