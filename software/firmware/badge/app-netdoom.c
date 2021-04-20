@@ -155,6 +155,7 @@ netdoom_start (OrchardAppContext * context)
 	gdispClear (GFX_BLACK);
 
 	p = malloc (sizeof(DoomHandles));
+	memset (p, 0, sizeof(DoomHandles));
 
 	context->priv = p;
 
@@ -280,8 +281,10 @@ netdoom_exit (OrchardAppContext * context)
 
 	p = context->priv;
 
-	geventRegisterCallback (&p->gl, NULL, NULL);
-	geventDetachSource (&p->gl, NULL);
+	if (p->gl.callback != NULL) {
+		geventRegisterCallback (&p->gl, NULL, NULL);
+		geventDetachSource (&p->gl, NULL);
+	}
 
 	for (i = 2; i < p->peers; i++) {
 		free (p->peernames[i]);
