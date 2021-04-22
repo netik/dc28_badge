@@ -37,12 +37,12 @@
 #include "badge.h"
 
 static void
-cmd_reset(BaseSequentialStream *chp, int argc, char *argv[])
+cmd_reset (BaseSequentialStream * chp, int argc, char * argv[])
 {
 	(void)argv;
 	(void)chp;
 	if (argc > 0) {
-		printf ("Usage: reset\r\n");
+		printf ("Usage: reset\n");
 		return;
 	}
 
