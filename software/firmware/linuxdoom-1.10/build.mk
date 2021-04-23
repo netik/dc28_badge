@@ -66,6 +66,6 @@ DOOMINC+= $(DOOM)
 
 DOOMDEFS+= -DNORMALUNIX
 USE_COPT+= $(DOOMDEFS) -Drcsid="volatile rcsid" -fsigned-char
-ifeq ($USE_LTO),yes)
+ifeq ($(USE_LTO),yes)
   USE_OPT += -Wno-lto-type-mismatch
 endif
