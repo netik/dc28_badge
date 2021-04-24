@@ -79,10 +79,13 @@ static int	lengths[NUMSFX];
 //  are modifed and added, and stored in the buffer
 //  that is submitted to the audio device.
 __attribute__((section(".ram7")))
-static signed short	mixbuffer[MIXBUFFERSIZE];
+static signed short *   mixbuffer;
 
 __attribute__((section(".ram7")))
-static signed short	mixbuffer2[MIXBUFFERSIZE];
+static signed short	mixbuffer0[MIXBUFFERSIZE];
+
+__attribute__((section(".ram7")))
+static signed short	mixbuffer1[MIXBUFFERSIZE];
 
 // The channel step amount...
 __attribute__((section(".ram7")))
@@ -624,34 +627,22 @@ void I_UpdateSound( void )
 void
 I_SubmitSound(void)
 {
-  uint32_t * s, * d;
-
   // Write it to DSP device.
-  int i;
 
   /* Check that previous transfer finished before we start a new one. */
 
   i2sSamplesWait ();
 
-  /*
-   * We have to move the sample data to a separate buffer before
-   * initiating the DMA transfer to the SAI controller. To improve
-   * performance, we want to be able generate new sample for a
-   * future transfer at the same time that the current transfer
-   * is in progress. However we don't want to put the new sample
-   * data in the buffer that's currently being transfered, because
-   * that will cause the data to change while it's playing, which
-   * makes it sound garbled.
-   */
-
-  s = (uint32_t *)mixbuffer;
-  d = (uint32_t *)mixbuffer2;
-  for (i = 0; i < SAMPLECOUNT; i++)
-      d[i] = s[i];
-
   /* Start new DMA transfer. */
 
-  i2sSamplesPlay (mixbuffer2, SAMPLECOUNT * 2);
+  i2sSamplesPlay (mixbuffer, SAMPLECOUNT * 2);
+
+  if (mixbuffer == mixbuffer0)
+    mixbuffer = mixbuffer1;
+  else
+    mixbuffer = mixbuffer0;
+
+  return;
 }
 
 
@@ -754,8 +745,11 @@ I_InitSound(void)
   fprintf( stderr, " pre-cached all sound data\n");
   
   // Now initialize mixbuffer with zero.
-  for ( i = 0; i< MIXBUFFERSIZE; i++ )
-    mixbuffer[i] = 0;
+  for ( i = 0; i< MIXBUFFERSIZE; i++ ) {
+    mixbuffer0[i] = 0;
+    mixbuffer1[i] = 0;
+  }
+  mixbuffer = mixbuffer0;
   
   // Finished initialization.
   fprintf(stderr, "I_InitSound: sound module ready\n");
