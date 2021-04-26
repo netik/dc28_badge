@@ -843,7 +843,9 @@ static int WM_GetOutput_Linear(midi * handle, int8_t *buffer, uint32_t size) {
     _WM_Lock(&mdi->lock);
 
     buffer_used = 0;
+#ifdef notdef
     memset(buffer, 0, size);
+#endif
 
     if ( (size / 2) > mdi->mix_buffer_size) {
         if ( (size / 2) <= ( mdi->mix_buffer_size * 2 )) {
@@ -856,7 +858,9 @@ static int WM_GetOutput_Linear(midi * handle, int8_t *buffer, uint32_t size) {
 
     tmp_buffer = mdi->mix_buffer;
 
+#ifdef notdef
     memset(tmp_buffer, 0, ((size / 2) * sizeof(int32_t)));
+#endif
     out_buffer = tmp_buffer;
 
     do {
@@ -1573,9 +1577,9 @@ static int _WM_Init(const struct _WM_VIO *callbacks,
     }
     _WM_MixerOptions = mixer_options;
 
-    if (rate < 11025) {
+    if (rate < 5000) {
         _WM_GLOBAL_ERROR(__FUNCTION__, __LINE__, WM_ERR_INVALID_ARG,
-                "(rate out of bounds, range is 11025 - 65535)", 0);
+                "(rate out of bounds, range is 5000 - 65535)", 0);
         WM_FreePatches();
         return (-1);
     }
