@@ -64,7 +64,22 @@ FixedDiv
     return FixedDiv2 (a,b);
 }
 
+#ifdef notdef
 
+/*
+ * On Intel, FixedMul() and FixedDiv2() were written in x86 assembly
+ * for best performance. We have an optimized assembly version of
+ * FixedDiv2() for ARM Cortex-M7 in badge_fault.S. It turns out we
+ * we don't need an optimized assembly version of FixedMul() because
+ * apparently the Cortex-M7 has a 64-bit multiply instruction and the
+ * compiler is able to use it to reduce the function to 3 instructions. 
+ *
+ * Note that if we change the C FixedDiv2() function below to use
+ * float instead of double, the C compiler also generates code using
+ * the FPU which is fairly fast. But the hand-tuned one is a little
+ * more compact, and it removes the divide by zero check (since
+ * that never seems to happen).
+ */
 
 fixed_t
 FixedDiv2
@@ -85,3 +100,5 @@ FixedDiv2
 	I_Error("FixedDiv: divide by zero");
     return (fixed_t) c;
 }
+
+#endif

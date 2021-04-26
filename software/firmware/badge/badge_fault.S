@@ -30,9 +30,9 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-	.cpu		cortex-m4
+	.cpu		cortex-m7
 
-	.fpu		fpv4-sp-d16
+	.fpu		fpv5-sp-d16
 
 	.thumb
 	.thumb_func
@@ -50,11 +50,13 @@
 	.type		BusFault_Handler, %function
 	.type		UsageFault_Handler, %function
 	.type		MemManage_Handler, %function
+	.type		FixedDiv2, %function
 
 	.globl		HardFault_Handler
 	.globl		BusFault_Handler
 	.globl		UsageFault_Handler
 	.globl		MemManage_Handler
+	.globl		FixedDiv2
 
 CommonFault_Handler:
 	/*
@@ -87,3 +89,19 @@ MemManage_Handler:
 	mov	r0, #3
 	mov	r1, lr
 	bl	CommonFault_Handler
+
+/*
+ * This function takes advantage of the ARM FPU to perform
+ * the fixed point division operation needed by Doom using
+ * just 6 instructions. Benchmarks show that this is faster
+ * even than the integer only version.
+ */
+
+FixedDiv2:
+	vmov		d0, r0, r1	/* Move r0,r1 into s0,s1 in one step */
+	vcvt.f32.s32	s0, s0		/* Convert s0 to floating point */
+	vcvt.f32.s32	s1, s1		/* Convert s1 to floating point */
+	vdiv.f32	s1, s0, s1	/* Divide */
+	vcvt.s32.f32	s1, s1, #16	/* Convert result to fixed point */
+	vmov		r0, s1		/* Move result back to r0 */
+	bx		lr
