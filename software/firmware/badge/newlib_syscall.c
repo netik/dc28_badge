@@ -435,8 +435,8 @@ int
 _gettimeofday (struct timeval * ptimeval, void * ptimezone)
 {
 	systime_t now;
-	time_t secs;
-	double usecs;
+	systime_t secs;
+	float usecs;
 
 	(void)ptimezone;
 
