@@ -123,8 +123,8 @@ asyncIoWait (void)
 void
 asyncIoStart (void)
 {
-	pThread = chThdCreateFromHeap (NULL, THD_WORKING_AREA_SIZE(256),
-	    "AsyncIO", NORMALPRIO + 5, asyncIoThread, NULL);
+	pThread = chThdCreateFromHeap (NULL, THD_WORKING_AREA_SIZE(512),
+	    "AsyncIO", NORMALPRIO, asyncIoThread, NULL);
 
 	async_br = (int)ASYNC_THD_READY;
 
