@@ -298,7 +298,9 @@ void R_InitSpriteDefs (char** namelist)
 //
 __attribute__((section(".ram7")))
 vissprite_t	vissprites[MAXVISSPRITES];
+__attribute__((section(".ram7")))
 vissprite_t*	vissprite_p;
+__attribute__((section(".ram7")))
 int		newvissprite;
 
 
@@ -334,6 +336,7 @@ void R_ClearSprites (void)
 //
 // R_NewVisSprite
 //
+__attribute__((section(".ram7")))
 vissprite_t	overflowsprite;
 
 vissprite_t* R_NewVisSprite (void)
