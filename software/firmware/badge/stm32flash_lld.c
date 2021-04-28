@@ -300,6 +300,9 @@ stm32FlashObjectInit(STM32FLASHDriver *devp)
 	devp->vmt = &stm32_vmt;
 	devp->state = FLASH_STOP;
 	devp->port = FLASH;
+
+	stm32_descriptor.size = *(uint16_t *)FLASHSIZE_BASE * 1024;
+
 	osalMutexObjectInit (&devp->mutex);
 
 	return;
