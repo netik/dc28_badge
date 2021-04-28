@@ -101,7 +101,6 @@ saiDmaInt (void * arg, uint32_t flags)
         osalSysLockFromISR ();
 	if (flags & STM32_DMA_ISR_TCIF) {
 		i2sState = I2S_STATE_IDLE;
-		saip->saiblock->CR1 &= ~SAI_xCR1_DMAEN;
 		saip->saiblock->CR2 |= SAI_xCR2_MUTE;
 		osalThreadResumeI (&i2sThreadReference, MSG_OK);
 
@@ -116,15 +115,16 @@ saiSend (SAIDriver * saip, void * buf, uint32_t size)
 {
 	cacheBufferFlush (buf, size);
 
+	osalSysLock ();
+
+	i2sState = I2S_STATE_BUSY;
+	saip->saiblock->CR2 &= ~SAI_xCR2_MUTE;
+
 	dmaStreamSetMemory0 (saip->dma, buf);
 	dmaStreamSetTransactionSize (saip->dma, size / sizeof (uint16_t));
 	dmaStreamSetMode (saip->dma, saip->dmamode);
 	dmaStreamEnable (saip->dma);
 
-	osalSysLock ();
-	i2sState = I2S_STATE_BUSY;
-	saip->saiblock->CR2 &= ~SAI_xCR2_MUTE;
-	saip->saiblock->CR1 |= SAI_xCR1_DMAEN;
 	osalThreadResumeI (&i2sThreadReference, MSG_OK);
 	osalSysUnlock ();
 
@@ -136,11 +136,9 @@ saiStop (SAIDriver * saip)
 {
 	osalSysLock ();
 	i2sState = I2S_STATE_IDLE;
-	saip->saiblock->CR2 &= ~SAI_xCR2_MUTE;
-	saip->saiblock->CR1 &= ~SAI_xCR1_DMAEN;
-	osalSysUnlock ();
-
 	dmaStreamDisable (saip->dma);
+	saip->saiblock->CR2 |= SAI_xCR2_MUTE;
+	osalSysUnlock ();
 
 	return;
 }
@@ -242,8 +240,8 @@ saiStart (SAIDriver * saip)
 			STM32_DMA_CR_MSIZE_HWORD |
 			STM32_DMA_CR_MINC |
 			STM32_DMA_CR_DIR_M2P |
-			STM32_DMA_CR_PBURST_SINGLE |
-			STM32_DMA_CR_MBURST_SINGLE |
+			STM32_DMA_CR_PBURST_INCR4 |
+			STM32_DMA_CR_MBURST_INCR4 |
 			STM32_DMA_CR_TCIE;
 
 	saip->dma = dmaStreamAlloc (STM32_SAI2_A_DMA_STREAM,
@@ -285,7 +283,7 @@ saiStart (SAIDriver * saip)
 	 */
 
 	saip->saiblock->CR2 |= SAI_xCR2_MUTE;
-	saip->saiblock->CR1 |= SAI_xCR1_SAIEN;
+	saip->saiblock->CR1 |= SAI_xCR1_SAIEN | SAI_xCR1_DMAEN;
 	i2sState = I2S_STATE_IDLE;
 
 	/* Give the codec some time to sense the master clock */
