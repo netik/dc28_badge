@@ -1125,7 +1125,9 @@ trapHandle (int type, uint32_t exc_lr, EXC_FRAME * exc_sp)
 	 * to trigger another fault too.
 	 */
 
+#ifndef BOOT_FROM_RAM
 	mpuDisable ();
+#endif
 
 	switch (type) {
 		case HARD_FAULT:
