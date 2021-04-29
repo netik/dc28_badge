@@ -61,6 +61,26 @@ usage:
 }
 
 static void
+cmd_icache (BaseSequentialStream *chp, int argc, char *argv[])
+{
+	(void)chp;
+
+	if (argc != 1)
+		goto usage;
+
+	if (strcmp (argv[0], "on") == 0)
+		badge_cpu_icache (TRUE);
+	else if (strcmp (argv[0], "off") == 0)
+		badge_cpu_icache (FALSE);
+	else {
+usage:
+		printf ("Usage: icache [on|off]\n");
+	}
+
+	return;
+}
+
+static void
 cmd_cpu (BaseSequentialStream *chp, int argc, char *argv[])
 {
 	(void)chp;
@@ -84,5 +104,6 @@ usage:
 	return;
 }
 
+orchard_command("icache", cmd_icache);
 orchard_command("dcache", cmd_dcache);
 orchard_command("cpu", cmd_cpu);

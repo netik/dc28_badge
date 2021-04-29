@@ -93,6 +93,7 @@ extern void badge_deepsleep_timed (uint16_t);
 extern void badge_cpu_show (void);
 extern uint32_t badge_cpu_speed_get (void);
 extern void badge_cpu_dcache (bool);
+extern void badge_cpu_icache (bool);
 extern void badge_cpu_speed_set (int);
 extern void badge_delay (uint16_t);
 

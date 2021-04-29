@@ -292,9 +292,8 @@ badge_idle (void)
 		 */
 
 		__disable_irq ();
-		if (badge_lpidle & 0xFF) {
+		if (badge_lpidle & 0xFF)
 			sdram_lld_selfrefresh (&SDRAMD1);
-		}
 		__DSB();
 		__ISB();
 		__WFI();
@@ -783,6 +782,24 @@ badge_cpu_dcache (bool on)
 		SCB_EnableDCache();
 	else
 		SCB_DisableDCache();
+
+	__enable_irq ();
+
+	return;
+}
+
+void
+badge_cpu_icache (bool on)
+{
+
+	__disable_irq ();
+
+	if (on == TRUE)
+		SCB_EnableICache();
+	else
+		SCB_DisableICache();
+
+	SCB_InvalidateICache ();
 
 	__enable_irq ();
 
