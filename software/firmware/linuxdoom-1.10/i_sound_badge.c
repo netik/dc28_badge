@@ -24,6 +24,8 @@
 static const char
 rcsid[] = "$Id: i_unix.c,v 1.5 1997/02/03 22:45:10 b1 Exp $";
 
+#define ENABLE_DOOM_MUSIC
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -47,7 +49,9 @@ rcsid[] = "$Id: i_unix.c,v 1.5 1997/02/03 22:45:10 b1 Exp $";
 
 #include "doomdef.h"
 
+#ifdef ENABLE_DOOM_MUSIC
 #include "wildmidi_lib.h"
+#endif
 
 // The number of internal mixing channels,
 //  the samples calculated for each mixing step,
@@ -56,19 +60,33 @@ rcsid[] = "$Id: i_unix.c,v 1.5 1997/02/03 22:45:10 b1 Exp $";
 
 
 // Needed for calling the actual sound output.
-#define SAMPLECOUNT		512
+#define SAMPLECOUNT_MAX		600
+#define SAMPLECOUNT_NORMAL	512
+__attribute__((section(".ram7")))
+static int SAMPLECOUNT;
 #define NUM_CHANNELS		8
 // It is 2 for 16bit, and 2 for two channels.
 #define BUFMUL                  2
-#define MIXBUFFERSIZE		(SAMPLECOUNT*BUFMUL)
+#define MIXBUFFERSIZE		(SAMPLECOUNT_MAX*BUFMUL)
 
 #define SAMPLERATE		11025	// Hz
 #define SAMPLESIZE		2   	// 16bit
 
+/*
+ * The best we can come to approximating the original Doom sample
+ * rate is 16000000/6/256 == 10416.66Hz. Unfortunately we can't
+ * really resample the pre-generated Doom sound effects, but we
+ * can at least give the music the right playback speed.
+ */
+
+#define SAI_SAMPLERATE		10417
+
+#ifdef ENABLE_DOOM_MUSIC
 __attribute__((section(".ram7")))
 static midi * songhandle;
 __attribute__((section(".ram7")))
-bool song_paused = FALSE;
+static bool song_paused = FALSE;
+#endif
 
 // The actual lengths of all sound effects.
 __attribute__((section(".ram7")))
@@ -406,19 +424,23 @@ void I_SetSfxVolume(int volume)
 // MUSIC API - dummy. Some code from DOS version.
 void I_SetMusicVolume(int volume)
 {
+#ifdef ENABLE_DOOM_MUSIC
   int v;
+#endif
 
   // Internal state variable.
   snd_MusicVolume = volume;
   // Now set volume on output device.
   // Whatever( snd_MusciVolume );
 
+#ifdef ENABLE_DOOM_MUSIC
   v = volume * 10;
   if (v > 127)
     v = 127;
 
   if (songhandle != NULL)
     WildMidi_MasterVolume (v);
+#endif
 }
 
 
@@ -526,10 +548,13 @@ void I_UpdateSound( void )
     
     /* if there's a song playing, get the samples for it */
 
+#ifdef ENABLE_DOOM_MUSIC
     if (songhandle != NULL && song_paused == FALSE)
-      WildMidi_GetOutput (songhandle, (int8_t *)mixbuffer, MIXBUFFERSIZE * 2);
+      WildMidi_GetOutput (songhandle, (int8_t *)mixbuffer,
+        SAMPLECOUNT * BUFMUL * 2);
     else
-      memset (mixbuffer, 0, MIXBUFFERSIZE * 2);
+      memset (mixbuffer, 0, SAMPLECOUNT * BUFMUL * 2);
+#endif
 
     // Left and right channel
     //  are in global mixbuffer, alternating.
@@ -579,12 +604,14 @@ void I_UpdateSound( void )
 	    }
 	}
 	
+#ifdef ENABLE_DOOM_MUSIC
         /* Mix in music samples */
 
         if (songhandle) {
-          dr += (*rightout * 3);
-          dl += (*leftout * 3);
+          dr += *rightout << 2;
+          dl += *leftout << 2;
         }
+#endif
 
 	// Clamp to range. Left hardware channel.
 	// Has been char instead of short.
@@ -675,9 +702,11 @@ void I_ShutdownSound(void)
   int done = 0;
   int i;
   
+#ifdef ENABLE_DOOM_MUSIC
   songhandle = NULL;
 
   WildMidi_Shutdown ();
+#endif
 
   // FIXME (below).
   for (i = 0; i < NUMMUSIC; i++)
@@ -719,6 +748,7 @@ I_InitSound(void)
   fprintf( stderr, "I_InitSound: ");
 
   saiSpeed (&SAID2, I2S_SPEED_SLOW);
+  SAMPLECOUNT = SAMPLECOUNT_NORMAL;
 
   fprintf(stderr, " configured audio device\n" );
 
@@ -776,13 +806,21 @@ static int	musicdies=-1;
 void I_PlaySong(int handle, int looping)
 {
   int i;
+#ifdef ENABLE_DOOM_MUSIC
   musicinfo_t * p;
+#endif
 
   // UNUSED.
   (void)handle;
   (void)looping;
   musicdies = gametic + TICRATE*30;
 
+  if (ticdup == 2)
+    SAMPLECOUNT = SAMPLECOUNT_MAX;
+  else
+    SAMPLECOUNT = SAMPLECOUNT_NORMAL;
+
+#ifdef ENABLE_DOOM_MUSIC
   for (i = 0; i < NUMMUSIC; i++) {
     if (S_music[i].handle == handle)
       break;
@@ -793,7 +831,10 @@ void I_PlaySong(int handle, int looping)
 
   p = &S_music[i];
 
-  WildMidi_Init ("/midi/wildmidi.cfg", SAMPLERATE, WM_MO_LOOP);
+  if (strcmp (p->name, "intro") == 0)
+    SAMPLECOUNT = SAMPLECOUNT_MAX;
+
+  WildMidi_Init ("/midi/wildmidi.cfg", SAI_SAMPLERATE, WM_MO_LOOP);
 
   songhandle = WildMidi_OpenBuffer (p->data, W_LumpLength (p->lumpnum));
 
@@ -801,6 +842,7 @@ void I_PlaySong(int handle, int looping)
   if (i > 127)
     i = 127;
   WildMidi_MasterVolume (i);
+#endif
 
   return;
 }
@@ -810,7 +852,9 @@ void I_PauseSong (int handle)
   // UNUSED.
   (void)handle;
 
+#ifdef ENABLE_DOOM_MUSIC
   song_paused = TRUE;
+#endif
 
   return;
 }
@@ -820,7 +864,9 @@ void I_ResumeSong (int handle)
   // UNUSED.
   (void)handle;
 
+#ifdef ENABLE_DOOM_MUSIC
   song_paused = FALSE;
+#endif
 
   return;
 }
@@ -833,18 +879,23 @@ void I_StopSong(int handle)
   looping = 0;
   musicdies = 0;
 
+#ifdef ENABLE_DOOM_MUSIC
   songhandle = NULL;
   WildMidi_Shutdown ();
+#endif
 
   return;
 }
 
 void I_UnRegisterSong(int handle)
 {
+#ifdef ENABLE_DOOM_MUSIC
   int i;
+#endif
   // UNUSED.
   (void)handle;
 
+#ifdef ENABLE_DOOM_MUSIC
   for (i = 0; i < NUMMUSIC; i++) {
     if (S_music[i].handle == handle)
         break;
@@ -854,6 +905,7 @@ void I_UnRegisterSong(int handle)
     return;
 
   S_music[i].handle = 0;
+#endif
 
   return;
 }
