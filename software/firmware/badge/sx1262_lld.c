@@ -121,8 +121,8 @@ sx1262Int (void * arg)
 	p = arg;
 
 	osalSysLockFromISR ();
-	osalThreadResumeI (&p->sx_threadref, MSG_OK);
 	p->sx_service |= 0x00000001;
+	osalThreadResumeI (&p->sx_threadref, MSG_OK);
 	osalSysUnlockFromISR ();
 
 	return;
@@ -136,8 +136,8 @@ sx1262TxTimeout (void * arg)
 	p = arg;
 
 	osalSysLockFromISR ();
-	osalThreadResumeI (&p->sx_threadref, MSG_OK);
 	p->sx_service |= 0x00000002;
+	osalThreadResumeI (&p->sx_threadref, MSG_OK);
 	osalSysUnlockFromISR ();
 
 	return;
@@ -1138,11 +1138,13 @@ sx1262Output (struct netif * netif, struct pbuf * p, const ip4_addr_t * i)
 	return (sx1262LinkOutput (netif, p));
 }
 
+int txwaits = 0;
+
 static err_t
 sx1262LinkOutput (struct netif * netif, struct pbuf * p)
 {
 	SX1262_Driver * d;
-	struct ip_hdr * i;
+	struct ip_hdr * ip;
 
 	d = netif->state;
 
@@ -1173,6 +1175,7 @@ sx1262LinkOutput (struct netif * netif, struct pbuf * p)
 	 * shows how to exchange packets larger than 255 bytes with
 	 * the SX126x in GFSK mode).
 	 */
+retry:
 
 	if (d->sx_mode == SX_MODE_GFSK)
 		sx1262RegWrite (d, SX_REG_RXTX_PAYLOAD_LEN, p->tot_len);
@@ -1186,7 +1189,7 @@ sx1262LinkOutput (struct netif * netif, struct pbuf * p)
 	if (d->sx_mode == SX_MODE_LORA)
 		chVTSet (&d->sx_timer, TIME_MS2I(100), sx1262TxTimeout, d);
 	else
-		chVTSet (&d->sx_timer, TIME_MS2I(20), sx1262TxTimeout, d);
+		chVTSet (&d->sx_timer, TIME_MS2I(10), sx1262TxTimeout, d);
 
 	/* Wait for TX to complete */
 
@@ -1198,9 +1201,8 @@ sx1262LinkOutput (struct netif * netif, struct pbuf * p)
 	/* If the timeout expired, reset the radio. */
 
 	if (d->sx_reset == TRUE) {
-		sx1262Disable (d);
 		sx1262Enable (d);
-		goto skiprx;
+		goto retry;
 	} else if (d->sx_mode == SX_MODE_GFSK)
 		sx1262RegWrite (d, SX_REG_RXTX_PAYLOAD_LEN, SX_PKTLEN_DEFAULT);
 
@@ -1208,13 +1210,11 @@ sx1262LinkOutput (struct netif * netif, struct pbuf * p)
 
 	sx1262ReceiveSet (d);
 
-skiprx:
-
         MIB2_STATS_NETIF_ADD(netif, ifoutoctets, p->tot_len);
 
-	i = (struct ip_hdr *)d->sx_rxbuf;
+	ip = (struct ip_hdr *)d->sx_rxbuf;
 
-	if (ntohl(i->dest.addr) == ntohl(inet_addr ("10.255.255.255"))) {
+	if (ntohl(ip->dest.addr) == ntohl(inet_addr ("10.255.255.255"))) {
                 /* broadcast or multicast packet*/
                 MIB2_STATS_NETIF_INC(netif, ifoutnucastpkts);
         } else {
@@ -1274,9 +1274,9 @@ sx1262Start (SX1262_Driver * p)
 
 	/* Set GFSK parameters */
 
-	p->sx_gfsk.sx_bitrate = 350000;
-	p->sx_gfsk.sx_deviation = 150000;
-	p->sx_gfsk.sx_bandwidth = SX_RX_BW_373600;
+	p->sx_gfsk.sx_bitrate = 500000;
+	p->sx_gfsk.sx_deviation = 175000;
+	p->sx_gfsk.sx_bandwidth = SX_RX_BW_467000;
 	p->sx_gfsk.sx_preamlen = 8;
 	p->sx_gfsk.sx_syncwordlen = 6;
 	p->sx_gfsk.sx_syncword[0] = 0x90;
