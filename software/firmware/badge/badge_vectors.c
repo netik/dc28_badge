@@ -814,22 +814,17 @@ badge_cpu_speed_set (int speed)
 	__disable_irq ();
 
 	/*
-	 * As a hack, when we're in slow speed mode, we divide the
+	 * As a hack, when we're not in high speed mode, we divide the
 	 * SPI bus clock by a factor of 4 instead of 2. This reduces
-	 * the bus SPI clock speed from 6.75MHz to 3.375MHz. This
+	 * the bus SPI clock speed from 6.75MHz to 1.6875MHz. This
 	 * is to compensate for the fact that while we're able to
 	 * maintain the same APB bus speed for the SPI controller,
 	 * we proportionally reduce the AHB bus clock for the DMA
-	 * controller, and at the slow CPU speed (54MHz) the
-	 * DMA controller seems too slow to keep up with the
+	 * controller, and at the slow CPU speeds the DMA
+	 * controller seems too slow to keep up with the
 	 * required SPI signalling rate, and we end up triggering
 	 * DMA errors. This causes problems using the radio when
 	 * operating in slow CPU mode.
-	 *
-	 * It might have been possible to avoid this if only
-	 * ST Micro had used SPI bus 1 for the Arduino headers
-	 * on the STM32F746 Discovery board, since that controller
-	 * is on ABP2 instead of ABP1. *sigh*
 	 *
 	 * Note that we have to do this before we turn off the
 	 * SPI2 clock below, since the controller won't respond to
@@ -837,8 +832,8 @@ badge_cpu_speed_set (int speed)
 	 */
 
 	SPI2->CR1 &= ~(SPI_CR1_SPE | SPI_CR1_BR);
-	if (speed == BADGE_CPU_SPEED_SLOW)
-		SPI2->CR1 |= SPI_CR1_BR_1;
+	if (speed != BADGE_CPU_SPEED_NORMAL)
+		SPI2->CR1 |= SPI_CR1_BR_2;
 	else
 		SPI2->CR1 |= SPI_CR1_BR_0;
 	SPI2->CR1 |= SPI_CR1_SPE;
@@ -1011,8 +1006,9 @@ _putc (char c)
 {
 	USART1->TDR = (uint32_t)c;
 	(void)USART1->TDR;
-	while ((USART1->ISR & USART_ISR_TXE) == 0)
+	while ((USART1->ISR & USART_ISR_TC) == 0)
 		;
+	USART1->ICR |= USART_ICR_TCCF;
 
 	return;
 }
