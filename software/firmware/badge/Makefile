@@ -5,8 +5,16 @@
 
 # Compiler options here.
 ifeq ($(USE_OPT),)
-#  USE_OPT = -Os -ggdb -fomit-frame-pointer -falign-functions=16
   USE_OPT = -Os -ggdb -fomit-frame-pointer -falign-functions=16
+endif
+
+# Build image to boot from RAM (yes) for from flash (no)
+ifeq ($(BOOT_FROM_RAM),)
+  BOOT_FROM_RAM = no
+endif
+
+ifeq ($(BOOT_FROM_RAM),yes)
+  USE_OPT += -DBOOT_FROM_RAM=1
 endif
 
 # C specific options here (added to USE_OPT).
@@ -147,7 +155,11 @@ DOOM = $(CHIBIOS)/../linuxdoom-1.10
 include $(DOOM)/build.mk
 
 # Define linker script file here
+ifeq ($(BOOT_FROM_RAM),yes)
+LDSCRIPT= STM32F746xG.ld.SDRAM
+else
 LDSCRIPT= STM32F746xG.ld
+endif
 
 # C sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.

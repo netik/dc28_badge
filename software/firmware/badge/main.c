@@ -111,6 +111,8 @@ static const SDCConfig sdccfg =
 
 static const SRAMConfig sram_cfg;
 
+#ifndef BOOT_FROM_RAM
+
 /*
  * SDRAM configuration
  */
@@ -158,6 +160,8 @@ static const SDRAMConfig sdram_cfg =
 	/* SDTR register */
 	(0x603 << 1),
 };
+
+#endif
 
 /*
  * Maximum speed SPI configuration (13.5MHz, CPHA=0, CPOL=0, MSB first).
@@ -419,6 +423,10 @@ main (void)
 	unsigned seed;
 	const flash_descriptor_t * pFlash;
 	userconfig * cfg;
+	uint32_t i;
+#ifdef BOOT_FROM_RAM
+	uint32_t sdmap = 0xFFFFFFFF;
+#endif
 
 	/*
 	 * System initializations.
@@ -430,17 +438,6 @@ main (void)
 
 	halInit();
 	chSysInit();
-
-	/*
-	 * Enable NULL pointer protection. We use the MPU to make the first
-	 * 256 bytes of the address space unreadable and unwritable. If someone
-	 * tries to dereference a NULL pointer, it will result in a load
-	 * or store at that location, and we'll get a memory manager trap
-	 * right away instead of possibly dying somewhere else further
-	 * on down the line.
-	 */
-
-	nullProtStart ();
 
 	/*
 	 * Enable division by 0 traps. We don't enable unaligned access
@@ -481,10 +478,109 @@ main (void)
 	conout = (BaseSequentialStream *)&SD1;
 	osalMutexObjectInit (&conmutex);
 
+	/* Configure memory mappings. */
+
+	__disable_irq ();
+
+	/* Delete any existing MPU configuration. */
+
+	for (i = 0; i < MPU_TYPE_DREGION(MPU->TYPE); i++) {
+#ifdef BOOT_FROM_RAM
+		MPU->RNR = ((uint32_t)i);
+
+		/*
+		 * If we've been booted from U-Boot, we'll be running
+		 * from SDRAM, and U-Boot will have set up an MPU mapping
+		 * for the SDRAM window. If so, avoid clobbering it.
+		 * According to section 2.2.3 of the Cortex-M7 Generic
+		 * User's Guide, default behavior for the region from
+		 * 0xA0000000 to 0xDFFFFFFF is eXecute Never (XN), and
+		 * the SDRAM bank starts at 0xC0000000. So if we turn
+		 * off that MPU entry and we're running out of RAM,
+		 * we will die screaming. We will create out own mapping
+		 * below though, and at that point we can safely remove
+		 * the previous one.
+		 */
+
+		if ((MPU->RBAR & MPU_RBAR_ADDR_MASK) == FSMC_Bank5_MAP_BASE) {
+			sdmap = i;
+			continue;
+		}
+#endif
+		mpuConfigureRegion (i, 0, 0);
+	}
+
+	/*
+	 * By default, the SDRAM region won't be cached. We want
+	 * it to be because this improves performance.
+	 */
+
+	mpuConfigureRegion (MPU_REGION_3, FSMC_Bank5_MAP_BASE,
+	    MPU_RASR_ATTR_AP_RW_RW | MPU_RASR_ATTR_CACHEABLE_WB_WA |
+	    MPU_RASR_SIZE_8M | MPU_RASR_ENABLE);
+
+#ifdef BOOT_FROM_RAM
+
+	/*
+	 * If we were booted by U-Boot, there will be a pre-existing
+	 * mapping for the SRAM in slot 0. We can delete it now.
+	 */
+
+	if (sdmap != 0xFFFFFFFF)
+		mpuConfigureRegion (sdmap, 0, 0);
+
+#endif
+
+	/*
+	 * The portion of the SDRAM that's used for the
+	 * graphics frame buffer should be uncached. (Per the
+	 * Cortex-M7 manual, when two MPU regions overlap, the
+	 * one with the highest number takes precedence, so the
+	 * two entries below will override the one above.)
+	 *
+	 * To try to gain maybe a little bit of performance,
+	 * we map the graphics frame buffers as write-through
+	 * cached. This means that writes to the frame buffer
+	 * will be written out immediately, and reads will be
+	 * cached.
+	 */
+
+	mpuConfigureRegion (MPU_REGION_4, FB_BASE,
+	    MPU_RASR_ATTR_AP_RW_RW | MPU_RASR_ATTR_CACHEABLE_WT_NWA |
+	    MPU_RASR_SIZE_64K | MPU_RASR_ENABLE);
+
+	mpuConfigureRegion (MPU_REGION_5, FB_BASE + 0x10000,
+	    MPU_RASR_ATTR_AP_RW_RW | MPU_RASR_ATTR_CACHEABLE_WT_NWA |
+	    MPU_RASR_SIZE_256K | MPU_RASR_ENABLE);
+
+	SCB_CleanInvalidateDCache ();
+
+	/*
+	 * Enable NULL pointer protection. We use the MPU to make the first
+	 * 256 bytes of the address space unreadable and unwritable. If someone
+	 * tries to dereference a NULL pointer, it will result in a load
+	 * or store at that location, and we'll get a memory manager trap
+	 * right away instead of possibly dying somewhere else further
+	 * on down the line.
+	 */
+
+	nullProtStart ();
+
+	/* If guard pages aren't turned on, we need to do this ourselves. */
+
+	mpuEnable (MPU_CTRL_PRIVDEFENA);
+
+	__enable_irq ();
+
 	/* Enable SDRAM */
 
 	sdramInit ();
+
+#ifdef BOOT_FROM_RAM
+	SDRAMD1.state = SDRAM_READY;
+#else
 	sdramStart (&SDRAMD1, &sdram_cfg);
+#endif
 
 	/*
 	 * Per the manual, SRAM/PSRAM/NOR bank 1 is always enabled
@@ -540,49 +636,6 @@ main (void)
 	sramInit ();
 	sramStart (&SRAMD1, &sram_cfg);
 	sramStop (&SRAMD1);
-
-	/* Configure memory mappings. */
-
-	__disable_irq ();
-
-	/*
-	 * By default, the SDRAM region won't be cached. We want
-	 * it to be because this improves performance.
-	 */
-
- 	mpuConfigureRegion (MPU_REGION_3, FSMC_Bank5_MAP_BASE,
-	    MPU_RASR_ATTR_AP_RW_RW | MPU_RASR_ATTR_CACHEABLE_WB_WA |
-            MPU_RASR_SIZE_8M | MPU_RASR_ENABLE);
-
-	/*
-	 * The portion of the SDRAM that's used for the
-	 * graphics frame buffer should be uncached. (Per the
-	 * Cortex-M7 manual, when two MPU regions overlap, the
-	 * one with the highest number takes precedence, so the
-	 * two entries below will override the one above.)
-	 *
-	 * To try to gain maybe a little bit of performance,
-	 * we map the graphics frame buffers as write-through
-	 * cached. This means that writes to the frame buffer
-	 * will be written out immediately, and reads will be
-	 * cached.
-	 */
-
- 	mpuConfigureRegion (MPU_REGION_4, FB_BASE,
-	    MPU_RASR_ATTR_AP_RW_RW | MPU_RASR_ATTR_CACHEABLE_WT_NWA |
-            MPU_RASR_SIZE_64K | MPU_RASR_ENABLE);
-
- 	mpuConfigureRegion (MPU_REGION_5, FB_BASE + 0x10000,
-	    MPU_RASR_ATTR_AP_RW_RW | MPU_RASR_ATTR_CACHEABLE_WT_NWA |
-            MPU_RASR_SIZE_256K | MPU_RASR_ENABLE);
-
-	SCB_CleanInvalidateDCache ();
-
-	/* If guard pages aren't turned on, we need to do this ourselves. */
-
-	mpuEnable (MPU_CTRL_PRIVDEFENA);
-
-	__enable_irq ();
 
 	/* Initialize newlib (libc) facilities. */
 

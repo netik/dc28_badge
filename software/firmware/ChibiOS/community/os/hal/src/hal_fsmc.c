@@ -131,7 +131,9 @@ void fsmcStart(FSMCDriver *fsmcp) {
 #if STM32_FSMC_USE_FSMC1
     if (&FSMCD1 == fsmcp) {
 #ifdef rccResetFSMC
+#ifndef BOOT_FROM_RAM
       rccResetFSMC();
+#endif
 #endif
       rccEnableFSMC(TRUE);
 #if HAL_USE_NAND
@@ -156,7 +158,9 @@ void fsmcStop(FSMCDriver *fsmcp) {
   if (fsmcp->state == FSMC_READY) {
     /* Resets the peripheral.*/
 #ifdef rccResetFSMC
+#ifndef BOOT_FROM_RAM
     rccResetFSMC();
+#endif
 #endif
 
     /* Disables the peripheral.*/
