@@ -168,6 +168,7 @@ CSRC = $(ALLCSRC) \
        cmd-capture.c \
        cmd-cpu.c \
        cmd-mem.c \
+       cmd-radio.c \
        cmd-reset.c \
        cmd-video.c \
        cmd-scroll.c \
