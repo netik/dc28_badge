@@ -128,7 +128,9 @@ static void init_gauss(void) {
         return;
     }
 
-    newt_coeffs = malloc (sizeof(double) * 58 * 58);
+    newt_coeffs = malloc (sizeof(double *) * 58);
+    for (i = 0; i < 58; i++)
+        newt_coeffs[i] = malloc (sizeof(double) * 58);
 
     newt_coeffs[0][0] = 1;
     for (i = 0; i <= n; i++) {
@@ -177,9 +179,12 @@ static void init_gauss(void) {
 }
 
 static void free_gauss(void) {
+    int i;
     _WM_Lock(&gauss_lock);
     free(gauss_table);
     gauss_table = NULL;
+    for (i = 0; i < 58; i++)
+        free (newt_coeffs[i]);
     free(newt_coeffs);
     newt_coeffs = NULL;
     _WM_Unlock(&gauss_lock);
