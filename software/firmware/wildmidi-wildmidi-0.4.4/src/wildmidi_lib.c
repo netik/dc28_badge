@@ -183,10 +183,14 @@ static void free_gauss(void) {
     _WM_Lock(&gauss_lock);
     free(gauss_table);
     gauss_table = NULL;
-    for (i = 0; i < 58; i++)
-        free (newt_coeffs[i]);
-    free(newt_coeffs);
-    newt_coeffs = NULL;
+    if (newt_coeffs != NULL) {
+        for (i = 0; i < 58; i++) {
+            if (newt_coeffs[i] != NULL)
+               free (newt_coeffs[i]);
+        }
+        free (newt_coeffs);
+        newt_coeffs = NULL;
+    }
     _WM_Unlock(&gauss_lock);
 }
 
