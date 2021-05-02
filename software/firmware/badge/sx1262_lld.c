@@ -103,12 +103,13 @@ static void sx1262Send (SX1262_Driver *, uint8_t *, uint8_t);
 static void sx1262ReceiveSet (SX1262_Driver *);
 static void sx1262TransmitSet (SX1262_Driver *);
 static void sx1262StandbySet (SX1262_Driver *);
+#ifdef SX_MANUAL_CAD
 static void sx1262CadSet (SX1262_Driver *);
+#endif
 static err_t sx1262EthernetInit (struct netif *);
 static err_t sx1262LinkOutput (struct netif *, struct pbuf *);
 static err_t sx1262Output (struct netif *, struct pbuf *, const ip4_addr_t *);
 static void sx1262RxHandle (SX1262_Driver *);
-static void sx1262TxTimeout (void *);
 #ifdef debug
 static void sx1262Status (SX1262_Driver *);
 #endif
@@ -122,21 +123,6 @@ sx1262Int (void * arg)
 
 	osalSysLockFromISR ();
 	p->sx_service |= 0x00000001;
-	osalThreadResumeI (&p->sx_threadref, MSG_OK);
-	osalSysUnlockFromISR ();
-
-	return;
-}
-
-static void
-sx1262TxTimeout (void * arg)
-{
-	SX1262_Driver * p;
-
-	p = arg;
-
-	osalSysLockFromISR ();
-	p->sx_service |= 0x00000002;
 	osalThreadResumeI (&p->sx_threadref, MSG_OK);
 	osalSysUnlockFromISR ();
 
@@ -180,6 +166,7 @@ sx1262StandbySet (SX1262_Driver * p)
 	return;
 }
 
+#ifdef SC_MANUAL_CAD
 static void
 sx1262CadSet (SX1262_Driver * p)
 {
@@ -195,6 +182,7 @@ sx1262CadSet (SX1262_Driver * p)
 
 	return;
 }
+#endif
 
 static
 THD_FUNCTION(sx1262Thread, arg)
@@ -203,7 +191,6 @@ THD_FUNCTION(sx1262Thread, arg)
 	SX_GETIRQ i;
 	SX_ACKIRQ a;
 	uint16_t irq;
-	uint32_t service;
 
 	p = arg;
 
@@ -211,32 +198,18 @@ THD_FUNCTION(sx1262Thread, arg)
 		osalSysLock ();
 		if (p->sx_service == 0)
 			osalThreadSuspendS (&p->sx_threadref);
-		service = p->sx_service;
 		p->sx_service = 0;
 		osalSysUnlock ();
 
-		irq = 0;
+		i.sx_opcode = SX_CMD_GETIRQ;
+		i.sx_irqsts = 0;
+		sx1262CmdExc (p, &i, sizeof(i));
+		irq = __builtin_bswap16 (i.sx_irqsts);
 
-		/* Handle regular interrupts */
-
-		if (service & 0x00000001) {
-			i.sx_opcode = SX_CMD_GETIRQ;
-			i.sx_irqsts = 0;
-			sx1262CmdExc (p, &i, sizeof(i));
-			irq = __builtin_bswap16 (i.sx_irqsts);
-
-			if (i.sx_irqsts) {
-				a.sx_opcode = SX_CMD_ACKIRQ;
-				a.sx_irqsts = i.sx_irqsts;
-				sx1262CmdSend (p, &a, sizeof(a));
-			}
-		}
-
-		/* Handle chip TX timeout */
-
-		if (service & 0x00000002) {
-			irq = SX_IRQ_TXDONE;
-			p->sx_reset = TRUE;
+		if (i.sx_irqsts) {
+			a.sx_opcode = SX_CMD_ACKIRQ;
+			a.sx_irqsts = i.sx_irqsts;
+			sx1262CmdSend (p, &a, sizeof(a));
 		}
 
 #ifdef debug
@@ -244,27 +217,23 @@ THD_FUNCTION(sx1262Thread, arg)
 #endif
 
 		if (irq & SX_IRQ_RXDONE) {
+			osalMutexLock (&p->sx_mutex);
 			/* Ignore packets with bad CRC */
 			if (!(irq & (SX_IRQ_CRCERR | SX_IRQ_HDRERR)))
 				sx1262RxHandle (p);
 			else
 				sx1262ReceiveSet (p);
+			osalMutexUnlock (&p->sx_mutex);
 		}
 
+#ifdef SX_MANUAL_CAD
 		if (irq & SX_IRQ_CADDONE) {
 			if (irq & SX_IRQ_CADDET)
 				sx1262CadSet (p);
 			else
 				sx1262TransmitSet (p);
 		}
-
-		if (irq & SX_IRQ_TXDONE || irq & SX_IRQ_TIMEO) {
-			chVTReset (&p->sx_timer);
-			osalSysLock ();
-			p->sx_txdone = TRUE;
-			osalThreadResumeS (&p->sx_txwait, MSG_OK);
-			osalSysUnlock ();
-		}
+#endif
 	}
 
 	/* NOTREACHED */
@@ -942,8 +911,12 @@ sx1262Enable (SX1262_Driver * p)
 	di.sx_irqmask = __builtin_bswap16 (SX_IRQ_RXDONE |
 	    SX_IRQ_TXDONE | SX_IRQ_CRCERR | SX_IRQ_HDRERR |
 	    SX_IRQ_CADDONE | SX_IRQ_CADDET | SX_IRQ_TIMEO);
-	di.sx_dio1mask = __builtin_bswap16(SX_IRQ_RXDONE | SX_IRQ_TXDONE |
-	    SX_IRQ_CADDONE | SX_IRQ_CADDET | SX_IRQ_TIMEO);
+	di.sx_dio1mask = __builtin_bswap16(SX_IRQ_RXDONE |
+#ifdef SX_MANUAL_CAD
+	    SX_IRQ_CADDONE | SX_IRQ_CADDET);
+#else
+	    0);
+#endif
 	di.sx_dio2mask = 0;
 	di.sx_dio3mask = 0;
 	sx1262CmdSend (p, &di, sizeof(di));
@@ -997,8 +970,6 @@ sx1262Enable (SX1262_Driver * p)
 
 	p->sx_service = 0;
 	p->sx_txdone = TRUE;
-	p->sx_reset = FALSE;
-	chVTReset (&p->sx_timer);
 
 	/* Enable receiver */
 
@@ -1138,13 +1109,16 @@ sx1262Output (struct netif * netif, struct pbuf * p, const ip4_addr_t * i)
 	return (sx1262LinkOutput (netif, p));
 }
 
-int txwaits = 0;
-
 static err_t
 sx1262LinkOutput (struct netif * netif, struct pbuf * p)
 {
 	SX1262_Driver * d;
 	struct ip_hdr * ip;
+	SX_ACKIRQ a;
+	SX_GETIRQ i;
+	SX_GETSTS g;
+	uint16_t irq;
+	int c;
 
 	d = netif->state;
 
@@ -1159,6 +1133,20 @@ sx1262LinkOutput (struct netif * netif, struct pbuf * p)
 	d->sx_txdone = FALSE;
 
 	sx1262StandbySet (d);
+
+	/* Check for any RX events */
+
+	i.sx_opcode = SX_CMD_GETIRQ;
+	i.sx_irqsts = 0;
+	sx1262CmdExc (d, &i, sizeof(i));
+	irq = __builtin_bswap16 (i.sx_irqsts);
+
+	if (irq & SX_IRQ_RXDONE)
+		sx1262RxHandle (d);
+
+	a.sx_opcode = SX_CMD_ACKIRQ;
+	a.sx_irqsts = __builtin_bswap16 (irq);
+	sx1262CmdExc (d, &a, sizeof(a));
 
 	/*
 	 * It turns out there are two magic undocumented registers for
@@ -1184,23 +1172,33 @@ retry:
 
 	sx1262Send (d, d->sx_rxbuf, p->tot_len);
 
-	/* Set a timeout in case the transmitter gets stuck. */
-
-	if (d->sx_mode == SX_MODE_LORA)
-		chVTSet (&d->sx_timer, TIME_MS2I(100), sx1262TxTimeout, d);
-	else
-		chVTSet (&d->sx_timer, TIME_MS2I(10), sx1262TxTimeout, d);
-
 	/* Wait for TX to complete */
 
-	osalSysLock ();
-	if (d->sx_txdone != TRUE)
-		osalThreadSuspendS (&d->sx_txwait);
-	osalSysUnlock ();
+	for (c = 0; c < SX_DELAY * 100; c++) {
+		g.sx_opcode = SX_CMD_GETSTS;
+		sx1262CmdExc (d, &g, sizeof(g));
+		if (SX_CHIPMODE(g.sx_status) != SX_CHIPMODE_TX)
+			break;
+		chThdSleep (1);
+	}
+
+	/* Acknowledge interrupt */
+
+	if (c != SX_DELAY) {
+		i.sx_opcode = SX_CMD_GETIRQ;
+		i.sx_irqsts = 0;
+		sx1262CmdExc (d, &i, sizeof(i));
+		irq = __builtin_bswap16 (i.sx_irqsts);
+		if (irq & SX_IRQ_TXDONE) {
+			a.sx_opcode = SX_CMD_ACKIRQ;
+			a.sx_irqsts = __builtin_bswap16 (irq);
+			sx1262CmdExc (d, &a, sizeof(a));
+		}
+	}
 
 	/* If the timeout expired, reset the radio. */
 
-	if (d->sx_reset == TRUE) {
+	if (c == SX_DELAY) {
 		sx1262Enable (d);
 		goto retry;
 	} else if (d->sx_mode == SX_MODE_GFSK)
@@ -1209,6 +1207,8 @@ retry:
 	/* Turn receiver back on */
 
 	sx1262ReceiveSet (d);
+
+	osalMutexUnlock (&d->sx_mutex);
 
         MIB2_STATS_NETIF_ADD(netif, ifoutoctets, p->tot_len);
 
@@ -1222,8 +1222,6 @@ retry:
                 MIB2_STATS_NETIF_INC(netif, ifoutucastpkts);
         }
         LINK_STATS_INC(link.xmit);
-
-	osalMutexUnlock (&d->sx_mutex);
 
 	return (ERR_OK);
 }
