@@ -13,8 +13,13 @@ ifeq ($(BOOT_FROM_RAM),)
   BOOT_FROM_RAM = no
 endif
 
+# Turning off the CRT0_INIT_DATA macro is necessary because the trick
+# that ChibiOS uses to copy initialized data from the flash into
+# SRAM doesn't work when we run from SDRAM. It happens that U-Boot
+# will correctly load the initialized data for us though because it
+# can see it as a loadable segment when we boot using an ELF image.
 ifeq ($(BOOT_FROM_RAM),yes)
-  USE_OPT += -DBOOT_FROM_RAM=1
+  USE_OPT += -DBOOT_FROM_RAM=1 -DCRT0_INIT_DATA=FALSE
 endif
 
 # C specific options here (added to USE_OPT).
