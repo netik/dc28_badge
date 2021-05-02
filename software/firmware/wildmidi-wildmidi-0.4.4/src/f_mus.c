@@ -327,6 +327,23 @@ _WM_ParseNewMus(uint8_t *mus_data, uint32_t mus_size) {
         }
 
     _mus_next_data:
+
+#if 1
+        // Un-do the channel 9/15 swap if we did it before.
+	// Otherwise, the second time we play the same tune,
+	// it'll sound wrong.
+        // DEBUG
+        MUS_EVENT_DEBUG("Before", mus_data[mus_data_ofs], 0);
+
+        if ((mus_data[mus_data_ofs] & 0x0f) == 0x0f) {
+            mus_data[mus_data_ofs] = (mus_data[mus_data_ofs] & 0xf0) | 0x09;
+        } else if ((mus_data[mus_data_ofs] & 0x0f) == 0x09) {
+            mus_data[mus_data_ofs] = (mus_data[mus_data_ofs] & 0xf0) | 0x0f;
+        }
+        // DEBUG
+        MUS_EVENT_DEBUG("After", mus_data[mus_data_ofs], 0);
+#endif
+
         if (!(mus_data[mus_data_ofs] & 0x80)) {
             mus_data_ofs += mus_event_size;
             goto _mus_build_event;
