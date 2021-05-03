@@ -1,6 +1,7 @@
 
 #include <math.h>
 #include <string.h>
+#include <malloc.h>
 #include <noftypes.h>
 #include <nes_bitmap.h>
 #include <nofconfig.h>
@@ -77,7 +78,9 @@ osd_installtimer (int frequency, void *func, int funcsize,
  * the code that generates the samples.
  */
 
-static uint16_t audio_samples[DEFAULT_FRAGSIZE];
+static uint16_t * audio_samples0;
+static uint16_t * audio_samples1;
+static uint16_t * audio_samples;
 static void (*audio_callback)(void *buffer, int length);
 
 void
@@ -182,6 +185,11 @@ badge_blit (nes_bitmap_t * primary, int num_dirties, rect_t *dirty_rects)
 	audio_callback (audio_samples, DEFAULT_FRAGSIZE);
 	i2sSamplesWait ();
 	i2sSamplesPlay (audio_samples, DEFAULT_FRAGSIZE);
+
+	if (audio_samples == audio_samples0)
+		audio_samples = audio_samples1;
+	else
+		audio_samples = audio_samples0;
 
 	return;
 }
@@ -377,6 +385,10 @@ osd_shutdown (void)
 	gptStopTimer (&GPTD5);
 	gptStop (&GPTD5);
 	saiStereo (&SAID2, TRUE);
+
+	free (audio_samples0);
+	free (audio_samples1);
+
 	return;
 }
 
@@ -387,6 +399,13 @@ osd_shutdown (void)
 int
 osd_init (void)
 {
+	audio_samples0 = memalign (CACHE_LINE_SIZE,
+	    DEFAULT_FRAGSIZE * sizeof(uint16_t));
+	audio_samples1 = memalign (CACHE_LINE_SIZE,
+	    DEFAULT_FRAGSIZE * sizeof(uint16_t));
+
+	audio_samples = audio_samples0;
+
 	saiStereo (&SAID2, FALSE);
 	gptStop (&GPTD5);
 	gptStart (&GPTD5, &gptcfg);
