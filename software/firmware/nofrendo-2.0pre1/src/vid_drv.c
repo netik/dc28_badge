@@ -138,6 +138,8 @@ void vid_setpalette(rgb_t *p)
    driver->set_palette(p);
 }
 
+#ifdef DISABLED
+
 /* blits a bitmap onto primary buffer */
 void vid_blit(nes_bitmap_t *bitmap, int src_x, int src_y, int dest_x, int dest_y, 
               int width, int height)
@@ -206,6 +208,8 @@ void vid_blit(nes_bitmap_t *bitmap, int src_x, int src_y, int dest_x, int dest_y
       dest_ptr += primary_pitch;
    }
 }
+
+#endif
 
 static void vid_blitscreen(int num_dirties, rect_t *dirty_rects)
 {

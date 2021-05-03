@@ -12,6 +12,7 @@
 #include <nes_pal.h>
 #include <nesinput.h>
 #include <osd.h>
+#include <vid_drv.h>
 
 #include "ch.h"
 #include "hal.h"
@@ -66,6 +67,42 @@ osd_installtimer (int frequency, void *func, int funcsize,
 	return 0;
 }
 
+/*
+ * blits a bitmap onto primary buffer
+ * This is a custom replacement for the generic vid_blit() function in
+ * vid_drv.c. This version uses the DMA2D engine as a hardware blitter.
+ */
+void vid_blit(nes_bitmap_t *bitmap, int src_x, int src_y,
+              int dest_x, int dest_y, int width, int height)
+{
+	uint8_t * src;
+	uint8_t * dst;
+	nes_bitmap_t * primary_buffer;
+
+	primary_buffer = vid_getbuffer ();
+
+	src = (uint8_t *)bitmap->line[src_y] + src_x;
+	dst = (uint8_t *)primary_buffer->line[dest_y] + dest_x;
+
+	dma2dAcquireBusS (&DMA2DD1);
+
+	dma2dFgSetAddressI (&DMA2DD1, (void *)src);
+	dma2dFgSetWrapOffsetI (&DMA2DD1, bitmap->pitch - width);
+	dma2dOutSetAddressI (&DMA2DD1, (void *)dst);
+	dma2dOutSetWrapOffsetI (&DMA2DD1, primary_buffer->pitch - width);
+	dma2dOutSetPixelFormatI (&DMA2DD1, DMA2D_FMT_L8);
+	dma2dJobSetSizeI (&DMA2DD1, width, height);
+	dma2dJobSetModeI (&DMA2DD1, DMA2D_JOB_COPY);
+	dma2dJobExecute (&DMA2DD1);
+
+	/* Restore output pixel type. */
+
+	dma2dOutSetPixelFormatI (&DMA2DD1, DMA2D_FMT_RGB565);
+
+	dma2dReleaseBusS (&DMA2DD1);
+
+	return;
+}
 
 /*
 ** Audio
