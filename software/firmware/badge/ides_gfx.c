@@ -572,7 +572,7 @@ idesDoubleBufferBlit (gCoord x, gCoord y, gCoord cx, gCoord cy, void * buf)
 
 	/* Exchange layers */
 
-	layer ^= layer;
+	layer ^= 1;
 
 	return;
 }
