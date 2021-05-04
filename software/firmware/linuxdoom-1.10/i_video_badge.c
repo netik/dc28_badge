@@ -133,7 +133,8 @@ void I_ShutdownGraphics (void)
 	idesDoubleBufferStop ();
 
 	free (palettebuf);
-	free (screens[0]);
+	chHeapFree (screens[0]);
+	chHeapFree (screens[1]);
 	screens[0] = NULL;
 	palettebuf = NULL;
 
@@ -296,11 +297,18 @@ void I_InitGraphics(void)
 
 	buttontmp = 0;
 
-	/* Allocate the screen buffer */
+	/*
+	 * Allocate the foreground and background screen buffers. We put
+         * them in the CPU's internal SRAM for better performance,
+	 * since access time for the SRAM is faster than that of
+	 * the external SDRAM.
+	 */
 
-	screens[0] = memalign (CACHE_LINE_SIZE, (SCREENWIDTH * SCREENHEIGHT));
-
+	screens[0] = chHeapAlloc (NULL, (SCREENWIDTH * SCREENHEIGHT));
 	memset (screens[0], 0, (SCREENWIDTH * SCREENHEIGHT));
+
+	screens[1] = chHeapAlloc (NULL, (SCREENWIDTH * SCREENHEIGHT));
+	memset (screens[1], 0, (SCREENWIDTH * SCREENHEIGHT));
 
 	/* Drain the input queue */
 
