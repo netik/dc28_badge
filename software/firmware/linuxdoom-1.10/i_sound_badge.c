@@ -69,17 +69,21 @@ static int SAMPLECOUNT;
 #define BUFMUL                  2
 #define MIXBUFFERSIZE		(SAMPLECOUNT_MAX*BUFMUL)
 
-#define SAMPLERATE		11025	// Hz
-#define SAMPLESIZE		2   	// 16bit
-
 /*
- * The best we can come to approximating the original Doom sample
- * rate is 16000000/6/256 == 10416.66Hz. Unfortunately we can't
- * really resample the pre-generated Doom sound effects, but we
- * can at least give the music the right playback speed.
+ * We come very close to 11025KHz with some careful manipulation of
+ * the SAI PLL. The PLL is set to 192MHz, to which we apply a divisor
+ * of 17 and then another divisor of 2. If we then apply the LRCLK
+ * divisor of 256 and an additional divisor of 2 in the SAI, we
+ * get:
+ *
+ * 192000000 / 17 / 2 / 256 / 2 == 11029.412KHz
+ *
+ * We pretend this is close enough to 11025 that nobody will notice
+ * the difference.
  */
 
-#define SAI_SAMPLERATE		10417
+#define SAMPLERATE		11025	// Hz
+#define SAMPLESIZE		2   	// 16bit
 
 #ifdef ENABLE_DOOM_MUSIC
 __attribute__((section(".ram7")))
@@ -747,7 +751,7 @@ I_InitSound(void)
   // Secure and configure sound device first.
   fprintf( stderr, "I_InitSound: ");
 
-  saiSpeed (&SAID2, I2S_SPEED_SLOW);
+  saiSpeed (&SAID2, I2S_SPEED_DOOM);
   SAMPLECOUNT = SAMPLECOUNT_NORMAL;
 
   fprintf(stderr, " configured audio device\n" );
@@ -834,7 +838,7 @@ void I_PlaySong(int handle, int looping)
   if (strcmp (p->name, "intro") == 0)
     SAMPLECOUNT = SAMPLECOUNT_MAX;
 
-  WildMidi_Init ("/midi/wildmidi.cfg", SAI_SAMPLERATE, WM_MO_LOOP);
+  WildMidi_Init ("/midi/wildmidi.cfg", SAMPLERATE, WM_MO_LOOP);
 
   songhandle = WildMidi_OpenBuffer (p->data, W_LumpLength (p->lumpnum));
 

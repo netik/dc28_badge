@@ -186,19 +186,45 @@ saiSpeed (SAIDriver * saip, int val)
 {
 	chThdSleepMilliseconds (50);
 
+	/*
+	 * We alternate between using the I2S PLL and the SAI PLL.
+	 * The SAI PLL is set to 192MHz. We can get 11025KHz if we
+	 * do:
+	 *
+	 * 192000000 / 12 / 2 / 256 / 2 == 11029.41176470588235294117
+	 *
+	 * This is close enough that nobody will notice the difference.
+	 *
+	 * With the I2S PLL, which is set up to help us get 15625KHz,
+	 * the closest we can get is:
+	 *
+	 * 256000000 / 8 / 2 / 256 / 6 == 10416.66666KHz.
+	 */
+
 	osalSysLock ();
 	saip->saiblock->CR1 &= ~SAI_xCR1_MCKDIV_Msk;
+	RCC->DCKCFGR1 &= (~RCC_DCKCFGR1_SAI2SEL_Msk);
 	switch (val) {
-		case I2S_SPEED_NORMAL:
-			saip->saiblock->CR1 |= 2 << SAI_xCR1_MCKDIV_Pos;
-			break;
 		case I2S_SPEED_SLOW:
+			/* Use I2S PLL */
 			saip->saiblock->CR1 |= 3 << SAI_xCR1_MCKDIV_Pos;
+			RCC->DCKCFGR1 |= STM32_SAI2SEL_I2SPLL;
 			break;
 		case I2S_SPEED_FAST:
+			/* Use I2S PLL */
 			saip->saiblock->CR1 |= 1 << SAI_xCR1_MCKDIV_Pos;
+			RCC->DCKCFGR1 |= STM32_SAI2SEL_I2SPLL;
 			break;
+		case I2S_SPEED_11025:
+			/* Use SAI PLL */
+			saip->saiblock->CR1 |= 1 << SAI_xCR1_MCKDIV_Pos;
+			RCC->DCKCFGR1 |= STM32_SAI2SEL_SAIPLL;
+			break;
+		case I2S_SPEED_NORMAL:
 		default:
+			/* Use I2S PLL */
+			saip->saiblock->CR1 |= 2 << SAI_xCR1_MCKDIV_Pos;
+			RCC->DCKCFGR1 |= STM32_SAI2SEL_I2SPLL;
 			break;
 	}
 	osalSysUnlock ();

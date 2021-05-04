@@ -53,6 +53,8 @@ typedef struct _SAIDriver {
 #define I2S_SPEED_NORMAL	0
 #define I2S_SPEED_SLOW		1
 #define I2S_SPEED_FAST		2
+#define I2S_SPEED_11025		3
+#define I2S_SPEED_DOOM		I2S_SPEED_11025
 
 extern SAIDriver SAID2;
 
