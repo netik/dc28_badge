@@ -61,7 +61,7 @@ rcsid[] = "$Id: i_unix.c,v 1.5 1997/02/03 22:45:10 b1 Exp $";
 
 // Needed for calling the actual sound output.
 #define SAMPLECOUNT_MAX		650
-#define SAMPLECOUNT_NORMAL	340
+#define SAMPLECOUNT_NORMAL	325
 __attribute__((section(".ram7")))
 static int SAMPLECOUNT;
 #define NUM_CHANNELS		8
