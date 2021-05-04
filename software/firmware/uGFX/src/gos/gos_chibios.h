@@ -21,6 +21,13 @@
 #include "ch.h"
 #include "hal.h"
 
+#include "badge.h"
+
+#ifdef NEWLIB_HEAP_SDRAM
+#include <stdlib.h>
+#include <malloc.h>
+#endif
+
 #if CH_CFG_USE_HEAP == FALSE
 #include <stdlib.h>
 #include <malloc.h>
@@ -100,8 +107,13 @@ typedef tprio_t		gThreadpriority;
 #endif
 
 #if CH_CFG_USE_HEAP == TRUE
+#ifdef NEWLIB_HEAP_SDRAM
+#define gfxAlloc(sz)                           malloc(sz)
+#define gfxFree(ptr)                           free(ptr)
+#else
 #define gfxAlloc(sz)				chHeapAlloc(0, sz)
 #define gfxFree(ptr)				chHeapFree(ptr)
+#endif
 #else
 #define gfxAlloc(sz)                           malloc(sz)
 #define gfxFree(ptr)                           free(ptr)

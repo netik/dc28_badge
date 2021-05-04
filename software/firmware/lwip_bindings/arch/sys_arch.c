@@ -52,6 +52,8 @@
  * See http://lwip.wikia.com/wiki/Porting_for_an_OS for instructions.
  */
 
+#include <stdlib.h>
+
 #include "hal.h"
 
 #include "lwip/opt.h"
@@ -68,7 +70,7 @@ void sys_init(void) {
 
 err_t sys_sem_new(sys_sem_t *sem, u8_t count) {
 
-  *sem = chHeapAlloc(NULL, sizeof(semaphore_t));
+  *sem = malloc(sizeof(semaphore_t));
   if (*sem == 0) {
     SYS_STATS_INC(sem.err);
     return ERR_MEM;
@@ -82,7 +84,7 @@ err_t sys_sem_new(sys_sem_t *sem, u8_t count) {
 
 void sys_sem_free(sys_sem_t *sem) {
 
-  chHeapFree(*sem);
+  free(*sem);
   *sem = SYS_SEM_NULL;
   SYS_STATS_DEC(sem.used);
 }
@@ -128,7 +130,7 @@ void sys_sem_set_invalid(sys_sem_t *sem) {
 
 err_t sys_mbox_new(sys_mbox_t *mbox, int size) {
 
-  *mbox = chHeapAlloc(NULL, sizeof(mailbox_t) + sizeof(msg_t) * size);
+  *mbox = malloc(sizeof(mailbox_t) + sizeof(msg_t) * size);
   if (*mbox == 0) {
     SYS_STATS_INC(mbox.err);
     return ERR_MEM;
@@ -154,7 +156,7 @@ void sys_mbox_free(sys_mbox_t *mbox) {
     SYS_STATS_INC(mbox.err);
     chMBReset(*mbox);
   }
-  chHeapFree(*mbox);
+  free(*mbox);
   *mbox = SYS_MBOX_NULL;
   SYS_STATS_DEC(mbox.used);
 }
