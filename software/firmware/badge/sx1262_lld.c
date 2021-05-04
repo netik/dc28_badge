@@ -99,6 +99,7 @@ static void sx1262Calibrate (SX1262_Driver *);
 static void sx1262CalImg (SX1262_Driver *);
 static bool sx1262IsBusy (SX1262_Driver *);
 static void sx1262Int (void *);
+static void sx1262Timeout (void *);
 static void sx1262Send (SX1262_Driver *, uint8_t *, uint8_t);
 static void sx1262ReceiveSet (SX1262_Driver *);
 static void sx1262TransmitSet (SX1262_Driver *);
@@ -123,7 +124,25 @@ sx1262Int (void * arg)
 
 	osalSysLockFromISR ();
 	p->sx_service |= 0x00000001;
-	osalThreadResumeI (&p->sx_threadref, MSG_OK);
+	if (p->sx_dispatch)
+		osalThreadResumeI (&p->sx_threadref, MSG_OK);
+	else
+		osalThreadResumeI (&p->sx_txwait, MSG_OK);
+	osalSysUnlockFromISR ();
+
+	return;
+}
+
+static void
+sx1262Timeout (void * arg)
+{
+	SX1262_Driver * p;
+
+	p = arg;
+
+	osalSysLockFromISR ();
+	p->sx_service |= 0x00000002;
+	osalThreadResumeI (&p->sx_txwait, MSG_OK);
 	osalSysUnlockFromISR ();
 
 	return;
@@ -201,6 +220,8 @@ THD_FUNCTION(sx1262Thread, arg)
 		p->sx_service = 0;
 		osalSysUnlock ();
 
+		osalMutexLock (&p->sx_mutex);
+
 		i.sx_opcode = SX_CMD_GETIRQ;
 		i.sx_irqsts = 0;
 		sx1262CmdExc (p, &i, sizeof(i));
@@ -217,13 +238,11 @@ THD_FUNCTION(sx1262Thread, arg)
 #endif
 
 		if (irq & SX_IRQ_RXDONE) {
-			osalMutexLock (&p->sx_mutex);
 			/* Ignore packets with bad CRC */
 			if (!(irq & (SX_IRQ_CRCERR | SX_IRQ_HDRERR)))
 				sx1262RxHandle (p);
 			else
 				sx1262ReceiveSet (p);
-			osalMutexUnlock (&p->sx_mutex);
 		}
 
 #ifdef SX_MANUAL_CAD
@@ -234,6 +253,8 @@ THD_FUNCTION(sx1262Thread, arg)
 				sx1262TransmitSet (p);
 		}
 #endif
+
+		osalMutexUnlock (&p->sx_mutex);
 	}
 
 	/* NOTREACHED */
@@ -913,10 +934,9 @@ sx1262Enable (SX1262_Driver * p)
 	    SX_IRQ_CADDONE | SX_IRQ_CADDET | SX_IRQ_TIMEO);
 	di.sx_dio1mask = __builtin_bswap16(SX_IRQ_RXDONE |
 #ifdef SX_MANUAL_CAD
-	    SX_IRQ_CADDONE | SX_IRQ_CADDET);
-#else
-	    0);
+	    SX_IRQ_CADDONE | SX_IRQ_CADDET |
 #endif
+	    SX_IRQ_TXDONE);
 	di.sx_dio2mask = 0;
 	di.sx_dio3mask = 0;
 	sx1262CmdSend (p, &di, sizeof(di));
@@ -970,6 +990,8 @@ sx1262Enable (SX1262_Driver * p)
 
 	p->sx_service = 0;
 	p->sx_txdone = TRUE;
+	p->sx_dispatch = TRUE;
+	chVTReset (&p->sx_timer);
 
 	/* Enable receiver */
 
@@ -982,7 +1004,6 @@ void
 sx1262Disable (SX1262_Driver * p)
 {
 	sx1262Reset (p);
-	/*sx1262StandbySet (p);*/
 
 	return;
 }
@@ -1118,7 +1139,7 @@ sx1262LinkOutput (struct netif * netif, struct pbuf * p)
 	SX_GETIRQ i;
 	SX_GETSTS g;
 	uint16_t irq;
-	int c;
+	uint32_t service;
 
 	d = netif->state;
 
@@ -1144,9 +1165,11 @@ sx1262LinkOutput (struct netif * netif, struct pbuf * p)
 	if (irq & SX_IRQ_RXDONE)
 		sx1262RxHandle (d);
 
-	a.sx_opcode = SX_CMD_ACKIRQ;
-	a.sx_irqsts = __builtin_bswap16 (irq);
-	sx1262CmdExc (d, &a, sizeof(a));
+	if (irq) {
+		a.sx_opcode = SX_CMD_ACKIRQ;
+		a.sx_irqsts = __builtin_bswap16 (irq);
+		sx1262CmdExc (d, &a, sizeof(a));
+	}
 
 	/*
 	 * It turns out there are two magic undocumented registers for
@@ -1170,35 +1193,51 @@ retry:
 	else if (d->sx_mode == SX_MODE_LORA)
 		sx1262RegWrite (d, SX_REG_PAYLEN, p->tot_len);
 
+	osalSysLock ();
+	d->sx_service = 0;
+	d->sx_dispatch = FALSE;
+	osalSysUnlock ();
+
 	sx1262Send (d, d->sx_rxbuf, p->tot_len);
+
+	osalSysLock ();
+
+	/* Set a timeout in case the transmitter gets stuck. */
+
+	if (d->sx_mode == SX_MODE_LORA)
+		chVTSetI (&d->sx_timer, TIME_MS2I(100), sx1262Timeout, d);
+	else
+		chVTSetI (&d->sx_timer, TIME_MS2I(20), sx1262Timeout, d);
 
 	/* Wait for TX to complete */
 
-	for (c = 0; c < SX_DELAY * 100; c++) {
-		g.sx_opcode = SX_CMD_GETSTS;
-		sx1262CmdExc (d, &g, sizeof(g));
-		if (SX_CHIPMODE(g.sx_status) != SX_CHIPMODE_TX)
-			break;
-		chThdSleep (1);
-	}
+	if (d->sx_service == 0)
+                osalThreadSuspendS (&d->sx_txwait);
+	service = d->sx_service;
+	d->sx_service = 0;
+	d->sx_dispatch = TRUE;
+	chVTResetI (&d->sx_timer);
+
+	osalSysUnlock ();
+
 
 	/* Acknowledge interrupt */
 
-	if (c != SX_DELAY) {
+	if (service & 0x00000001) {
 		i.sx_opcode = SX_CMD_GETIRQ;
 		i.sx_irqsts = 0;
 		sx1262CmdExc (d, &i, sizeof(i));
 		irq = __builtin_bswap16 (i.sx_irqsts);
-		if (irq & SX_IRQ_TXDONE) {
-			a.sx_opcode = SX_CMD_ACKIRQ;
-			a.sx_irqsts = __builtin_bswap16 (irq);
-			sx1262CmdExc (d, &a, sizeof(a));
-		}
+		a.sx_opcode = SX_CMD_ACKIRQ;
+		a.sx_irqsts = __builtin_bswap16 (irq);
+		sx1262CmdExc (d, &a, sizeof(a));
 	}
 
 	/* If the timeout expired, reset the radio. */
 
-	if (c == SX_DELAY) {
+	if (service & 0x00000002) {
+		g.sx_opcode = SX_CMD_GETSTS;
+		sx1262CmdExc (d, &g, sizeof(g));
 		sx1262Enable (d);
 		goto retry;
 	} else if (d->sx_mode == SX_MODE_GFSK)
