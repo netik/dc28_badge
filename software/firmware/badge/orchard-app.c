@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <malloc.h>
 
 #include "ch.h"
 #include "hal.h"
@@ -372,6 +373,8 @@ static THD_FUNCTION(orchard_app_thread, arg) {
 
   (void)arg;
 
+  chRegSetThreadName (instance->app->name);
+
   ui_override = 0;
   memset(&app_context, 0, sizeof(app_context));
   instance->context = &app_context;
@@ -520,9 +523,12 @@ void orchardAppRestart(void) {
     osalDbgAssert(chThdTerminatedX(instance.thr), "App thread still running");
     chThdRelease(instance.thr);
     instance.thr = NULL;
+    free (instance.pWsp);
   }
 
-  instance.thr = chThdCreateFromHeap (NULL, THD_WORKING_AREA_SIZE(3072),
-    instance.app->name, ORCHARD_APP_PRIO, orchard_app_thread,
-    (void *)&instance);
+  instance.pWsp = memalign (PORT_WORKING_AREA_ALIGN,
+    THD_WORKING_AREA_SIZE(3072));
+  instance.thr = chThdCreateStatic (instance.pWsp,
+    THD_WORKING_AREA_SIZE(3072), ORCHARD_APP_PRIO,
+    orchard_app_thread, (void *)&instance);
 }

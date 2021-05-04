@@ -79,6 +79,7 @@ typedef struct orchard_app_instance {
   const OrchardApp      *next_app;
   OrchardAppContext     *context;
   thread_t              *thr;
+  void *                *pWsp;
   uint32_t              keymask;
   virtual_timer_t       timer;
   uint32_t              timer_usecs;
