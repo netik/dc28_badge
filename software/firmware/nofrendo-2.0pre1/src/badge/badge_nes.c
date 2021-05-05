@@ -26,7 +26,7 @@
 
 #include "capture.h"
 
-#define  DEFAULT_SAMPLERATE   15625
+#define  DEFAULT_SAMPLERATE   22050
 #define  DEFAULT_BPS          16
 #define  DEFAULT_FRAGSIZE     ((DEFAULT_SAMPLERATE/NES_REFRESH_RATE) + 2)
 
@@ -422,6 +422,7 @@ osd_shutdown (void)
 	gptStopTimer (&GPTD5);
 	gptStop (&GPTD5);
 	saiStereo (&SAID2, TRUE);
+	saiSpeed (&SAID2, I2S_SPEED_NORMAL);
 
 	free (audio_samples0);
 	free (audio_samples1);
@@ -444,6 +445,7 @@ osd_init (void)
 	audio_samples = audio_samples0;
 
 	saiStereo (&SAID2, FALSE);
+	saiSpeed (&SAID2, I2S_SPEED_NES);
 	gptStop (&GPTD5);
 	gptStart (&GPTD5, &gptcfg);
 

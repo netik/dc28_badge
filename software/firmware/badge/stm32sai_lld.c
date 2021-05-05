@@ -220,6 +220,10 @@ saiSpeed (SAIDriver * saip, int val)
 			saip->saiblock->CR1 |= 1 << SAI_xCR1_MCKDIV_Pos;
 			RCC->DCKCFGR1 |= STM32_SAI2SEL_SAIPLL;
 			break;
+		case I2S_SPEED_22050:
+			/* Use SAI PLL */
+			RCC->DCKCFGR1 |= STM32_SAI2SEL_SAIPLL;
+			break;
 		case I2S_SPEED_NORMAL:
 		default:
 			/* Use I2S PLL */
