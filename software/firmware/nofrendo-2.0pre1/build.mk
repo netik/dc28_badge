@@ -65,7 +65,7 @@ NESSRC+=				\
 	$(NES)/src/sndhrdw/mmc5_snd.o	\
 	$(NES)/src/sndhrdw/vrcvisnd.o	\
 	$(NES)/src/unix/osd.o		\
-	$(NES)/src/badge/badge_nes.c
+	$(NES)/src/badge/badge_nes.o
 
 NESINC+= $(NES)/src $(NES)/src/nes $(NES)/src/sndhrdw	\
 	 $(NES)/src/libsnss $(NES)/src/cpu
