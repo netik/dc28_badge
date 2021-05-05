@@ -1137,7 +1137,6 @@ sx1262LinkOutput (struct netif * netif, struct pbuf * p)
 	struct ip_hdr * ip;
 	SX_ACKIRQ a;
 	SX_GETIRQ i;
-	SX_GETSTS g;
 	uint16_t irq;
 	uint32_t service;
 
@@ -1220,7 +1219,6 @@ retry:
 
 	osalSysUnlock ();
 
-
 	/* Acknowledge interrupt */
 
 	if (service & 0x00000001) {
@@ -1236,8 +1234,6 @@ retry:
 	/* If the timeout expired, reset the radio. */
 
 	if (service & 0x00000002) {
-		g.sx_opcode = SX_CMD_GETSTS;
-		sx1262CmdExc (d, &g, sizeof(g));
 		sx1262Enable (d);
 		goto retry;
 	} else if (d->sx_mode == SX_MODE_GFSK)
