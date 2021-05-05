@@ -299,7 +299,7 @@ void I_InitGraphics(void)
 
 	/*
 	 * Allocate the foreground screen buffer. We put it
-         * in the CPU's internal SRAM for better performance,
+	 * in the CPU's internal SRAM for better performance,
 	 * since access time for the SRAM is faster than that of
 	 * the external SDRAM.
 	 */
