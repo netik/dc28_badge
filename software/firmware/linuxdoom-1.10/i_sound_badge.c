@@ -61,7 +61,7 @@ rcsid[] = "$Id: i_unix.c,v 1.5 1997/02/03 22:45:10 b1 Exp $";
 
 // Needed for calling the actual sound output.
 #define SAMPLECOUNT_MAX		650
-#define SAMPLECOUNT_NORMAL	325
+#define SAMPLECOUNT_NORMAL	315
 __attribute__((section(".ram7")))
 static int SAMPLECOUNT;
 #define NUM_CHANNELS		8
@@ -834,9 +834,6 @@ void I_PlaySong(int handle, int looping)
     return;
 
   p = &S_music[i];
-
-  if (strcmp (p->name, "intro") == 0)
-    SAMPLECOUNT = SAMPLECOUNT_MAX;
 
   WildMidi_Init ("/midi/wildmidi.cfg", SAMPLERATE, WM_MO_LOOP);
 
