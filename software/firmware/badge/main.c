@@ -643,7 +643,7 @@ main (void)
 
 	/* Safe to use printf() from here on. */
 
-	printf ("\n\nUntitled Ides of DEF CON 28 Badge Game\n\n");
+	printf ("\n\nUntitled Ides of DEF CON 30 Badge Game\n\n");
 
 	/*
 	 * The STM32F746 has a 96-bit unique device ID. It's actually
