@@ -47,6 +47,7 @@ static void * async_buf;
 static int async_f;
 static int async_btr;
 static volatile int async_br = (int)ASYNC_THD_READY;
+static volatile bool read_start;
 
 static volatile int * saved_br;
 
@@ -63,7 +64,9 @@ static THD_FUNCTION(asyncIoThread, arg)
 		osalSysLock ();
 		async_br = br;
 		osalThreadResumeS (&wakeReference, MSG_OK);
-		osalThreadSuspendS (&fsReference);
+		if (read_start == FALSE)
+			osalThreadSuspendS (&fsReference);
+		read_start = FALSE;
 		osalSysUnlock ();
 		if (async_br == (int)ASYNC_THD_EXIT)
 			break;
@@ -98,6 +101,7 @@ asyncIoRead (int f, void * buf, size_t btr, int * br)
 	saved_br = br;
 
 	osalSysLock ();
+	read_start = TRUE;
 	async_br = (int)ASYNC_THD_READ;
 	osalThreadResumeS (&fsReference, MSG_OK);
 	osalSysUnlock ();
