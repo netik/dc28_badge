@@ -807,7 +807,7 @@ static int	looping=0;
 __attribute__((section(".ram7")))
 static int	musicdies=-1;
 
-void I_PlaySong(int handle, int looping)
+void I_PlaySong(int handle, int loop)
 {
   int i;
 #ifdef ENABLE_DOOM_MUSIC
@@ -816,7 +816,7 @@ void I_PlaySong(int handle, int looping)
 
   // UNUSED.
   (void)handle;
-  looping = looping;
+  looping = loop;
   musicdies = gametic + TICRATE*30;
 
   if (ticdup == 2)
