@@ -358,9 +358,9 @@ void D_Display (void)
 			       , 0, 0, SCREENWIDTH, SCREENHEIGHT, tics);
 	I_UpdateNoBlit ();
 	M_Drawer ();                            // menu is drawn even on top of wipes
+	I_FinishUpdate ();                      // page flip or blit buffer
 	I_UpdateSound ();
 	I_SubmitSound ();
-	I_FinishUpdate ();                      // page flip or blit buffer
     } while (!done);
 }
 
