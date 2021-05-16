@@ -34,7 +34,9 @@ rcsid[] = "$Id: w_wad.c,v 1.5 1997/02/03 16:47:57 b1 Exp $";
 #include <stdlib.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#ifdef BADGEDOOM
 #include <alloca.h>
+#endif
 #ifndef O_BINARY
 #define O_BINARY		0
 #endif
@@ -71,7 +73,7 @@ void**			lumpcache;
 
 #define strcmpi	strcasecmp
 
-#ifdef notdef
+#ifndef BADGEDOOM
 void strupr (char* s)
 {
     while (*s) { *s = toupper(*s); s++; }

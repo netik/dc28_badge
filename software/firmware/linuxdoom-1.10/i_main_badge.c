@@ -24,22 +24,55 @@
 static const char
 rcsid[] = "$Id: i_main.c,v 1.4 1997/02/03 22:45:10 b1 Exp $";
 
-
+#include <stdlib.h>
+#include <unistd.h>
 
 #include "doomdef.h"
 
 #include "m_argv.h"
 #include "d_main.h"
 
+#include "i_net.h"
+#include "i_system.h"
+#include "w_wad.h"
+#include "doomstat.h"
+
+jmp_buf exit_env;
+
 int
-main
+doom_main
 ( int		argc,
   char**	argv ) 
 { 
+    int i;
+
     myargc = argc; 
     myargv = argv; 
+
+    if (setjmp (exit_env) != 0)
+        goto doom_exit;
  
     D_DoomMain (); 
+
+doom_exit:
+
+    if (doomcom != NULL) {
+	free (doomcom);
+	doomcom = NULL;
+    }
+    if (lumpinfo != NULL) {
+	free (lumpinfo);
+	lumpinfo = NULL;
+    }
+    if (lumpcache != NULL) {
+	free (lumpcache);
+	lumpcache = NULL;
+    }
+
+    for (i = 3; i < 8; i++)
+	close (i);
+
+    I_ShutdownNetwork ();
 
     return 0;
 } 

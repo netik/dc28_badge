@@ -64,7 +64,7 @@ FixedDiv
     return FixedDiv2 (a,b);
 }
 
-#ifdef notdef
+#ifndef BADGEDOOM
 
 /*
  * On Intel, FixedMul() and FixedDiv2() were written in x86 assembly

@@ -2,11 +2,11 @@ DOOMSRC+=				\
 		$(DOOM)/doomdef.o	\
 		$(DOOM)/doomstat.o	\
 		$(DOOM)/dstrings.o	\
-		$(DOOM)/i_main.o	\
+		$(DOOM)/i_main_badge.o	\
 		$(DOOM)/i_sound_badge.o	\
 		$(DOOM)/i_video_badge.o	\
-		$(DOOM)/i_system.o	\
-		$(DOOM)/i_net.o		\
+		$(DOOM)/i_system_badge.o\
+		$(DOOM)/i_net_badge.o	\
 		$(DOOM)/tables.o	\
 		$(DOOM)/f_finale.o	\
 		$(DOOM)/f_wipe.o 	\
@@ -64,7 +64,7 @@ DOOMSRC+=				\
 
 DOOMINC+= $(DOOM)
 
-DOOMDEFS+= -DNORMALUNIX
+DOOMDEFS+= -DNORMALUNIX -DBADGEDOOM
 USE_COPT+= $(DOOMDEFS) -Drcsid="volatile rcsid" -fsigned-char
 ifeq ($(USE_LTO),yes)
   USE_OPT += -Wno-lto-type-mismatch

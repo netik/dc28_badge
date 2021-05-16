@@ -23,17 +23,24 @@
 static const char
 rcsid[] = "$Id: m_bbox.c,v 1.1 1997/02/03 22:45:10 b1 Exp $";
 
+#include <lwip/opt.h>
+#include <lwip/sys.h>
+#include <lwip/timeouts.h>
+
+#include <lwip/sockets.h>
+#include <lwip/inet.h>
+#include <lwip/netdb.h>
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+#ifndef IPPORT_USERRESERVED
+#define IPPORT_USERRESERVED 5000
+#endif
+
 #include <errno.h>
 #include <unistd.h>
-#include <netdb.h>
-#include <sys/ioctl.h>
 
 #include "i_system.h"
 #include "d_event.h"
@@ -50,21 +57,6 @@ rcsid[] = "$Id: m_bbox.c,v 1.1 1997/02/03 22:45:10 b1 Exp $";
 
 
 
-
-// For some odd reason...
-#define ntohl(x) \
-        ((unsigned long int)((((unsigned long int)(x) & 0x000000ffU) << 24) | \
-                             (((unsigned long int)(x) & 0x0000ff00U) <<  8) | \
-                             (((unsigned long int)(x) & 0x00ff0000U) >>  8) | \
-                             (((unsigned long int)(x) & 0xff000000U) >> 24)))
-
-#define ntohs(x) \
-        ((unsigned short int)((((unsigned short int)(x) & 0x00ff) << 8) | \
-                              (((unsigned short int)(x) & 0xff00) >> 8))) \
-	  
-#define htonl(x) ntohl(x)
-#define htons(x) ntohs(x)
-
 void	NetSend (void);
 boolean NetListen (void);
 
@@ -73,14 +65,20 @@ boolean NetListen (void);
 // NETWORKING
 //
 
+__attribute__((section(".ram7")))
 int	DOOMPORT =	(IPPORT_USERRESERVED +0x1d );
 
+__attribute__((section(".ram7")))
 int			sendsocket;
+__attribute__((section(".ram7")))
 int			insocket;
 
+__attribute__((section(".ram7")))
 struct	sockaddr_in	sendaddress[MAXNETNODES];
 
+__attribute__((section(".ram7")))
 void	(*netget) (void);
+__attribute__((section(".ram7")))
 void	(*netsend) (void);
 
 
@@ -163,7 +161,7 @@ void PacketGet (void)
     int			i;
     int			c;
     struct sockaddr_in	fromaddress;
-    int			fromlen;
+    socklen_t		fromlen;
     doomdata_t		sw;
 				
     fromlen = sizeof(fromaddress);
@@ -346,3 +344,17 @@ void I_NetCmd (void)
 	I_Error ("Bad net cmd: %i\n",doomcom->command);
 }
 
+void I_ShutdownNetwork (void)
+{
+    if (insocket) {
+        lwip_close (insocket);
+        insocket = 0;
+    }
+    
+    if (sendsocket) {
+        lwip_close (sendsocket);
+        sendsocket = 0;
+    }
+    
+    return;
+}

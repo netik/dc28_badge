@@ -27,6 +27,7 @@ rcsid[] = "$Id: m_bbox.c,v 1.1 1997/02/03 22:45:10 b1 Exp $";
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <malloc.h>
 
 #include <stdarg.h>
 #include <sys/time.h>
@@ -40,16 +41,23 @@ rcsid[] = "$Id: m_bbox.c,v 1.1 1997/02/03 22:45:10 b1 Exp $";
 #include "d_net.h"
 #include "g_game.h"
 
+#include "d_main.h"
+
 #ifdef __GNUG__
 #pragma implementation "i_system.h"
 #endif
 #include "i_system.h"
 
 
-
-
-int	mb_used = 6;
-
+#ifdef BOOT_FROM_RAM
+static int	mb_used = 4;
+#else
+static int	mb_used = 5;
+#endif
+__attribute__((section(".ram7")))
+static byte *	zonebase;
+__attribute__((section(".ram7")))
+static byte *   lowbase;
 
 void
 I_Tactile
@@ -58,7 +66,9 @@ I_Tactile
   int	total )
 {
   // UNUSED.
-  on = off = total = 0;
+  (void)on;
+  (void)off;
+  (void)total;
 }
 
 ticcmd_t	emptycmd;
@@ -76,10 +86,22 @@ int  I_GetHeapSize (void)
 byte* I_ZoneBase (int*	size)
 {
     *size = mb_used*1024*1024;
-    return (byte *) malloc (*size);
+    zonebase = (byte *) malloc (*size);
+    memset (zonebase, 0, *size);
+    return (zonebase);
 }
 
+void I_ZoneFree (void)
+{
+    free (zonebase);
+    return;
+}
 
+void I_FreeLow (void)
+{
+    free (lowbase);
+    return;
+}
 
 //
 // I_GetTime
@@ -90,6 +112,7 @@ int  I_GetTime (void)
     struct timeval	tp;
     struct timezone	tzp;
     int			newtics;
+__attribute__((section(".ram7")))
     static int		basetime=0;
   
     gettimeofday(&tp, &tzp);
@@ -120,6 +143,11 @@ void I_Quit (void)
     I_ShutdownMusic();
     M_SaveDefaults ();
     I_ShutdownGraphics();
+    I_ZoneFree ();
+    I_FreeLow ();
+
+    longjmp (exit_env, 1);
+
     exit(0);
 }
 
@@ -148,11 +176,11 @@ byte*	I_AllocLow(int length)
 {
     byte*	mem;
         
-    mem = (byte *)malloc (length);
+    mem = (byte *)memalign (1024, length);
+    lowbase = mem;
     memset (mem,0,length);
     return mem;
 }
-
 
 //
 // I_Error
@@ -176,8 +204,10 @@ void I_Error (char *error, ...)
     if (demorecording)
 	G_CheckDemoStatus();
 
+    I_Quit ();
+
     D_QuitNetGame ();
     I_ShutdownGraphics();
-    
+
     exit(-1);
 }

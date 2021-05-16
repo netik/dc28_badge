@@ -564,13 +564,13 @@ char            title[128];
 void D_AddFile (char *file)
 {
     int     numwadfiles;
-#ifdef notdef
+#ifndef BADGEDOOM
     char    *newfile;
 #endif
 	
     for (numwadfiles = 0 ; wadfiles[numwadfiles] ; numwadfiles++)
 	;
-#ifdef notdef
+#ifndef BADGEDOOM
     newfile = malloc (strlen(file)+1);
     strcpy (newfile, file);
 	
@@ -588,8 +588,13 @@ void D_AddFile (char *file)
 void IdentifyVersion (void)
 {
 
+#ifdef BADGEDOOM
     char*	doom1wad = "/doom/doom1.wad";
     char*	doomwad = "/doom/doom.wad";
+#else
+    char*	doom1wad = "";
+    char*	doomwad = "";
+#endif
     char*	doomuwad = "";
     char*	doom2wad = "";
 
@@ -599,7 +604,7 @@ void IdentifyVersion (void)
 
 #ifdef NORMALUNIX
     char *home;
-#ifdef notdef
+#ifndef BADGEDOOM
     char *doomwaddir;
     doomwaddir = getenv("DOOMWADDIR");
     if (!doomwaddir)
