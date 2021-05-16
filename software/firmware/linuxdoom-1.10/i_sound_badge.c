@@ -816,7 +816,7 @@ void I_PlaySong(int handle, int looping)
 
   // UNUSED.
   (void)handle;
-  (void)looping;
+  looping = looping;
   musicdies = gametic + TICRATE*30;
 
   if (ticdup == 2)
@@ -835,7 +835,8 @@ void I_PlaySong(int handle, int looping)
 
   p = &S_music[i];
 
-  WildMidi_Init ("/midi/wildmidi.cfg", SAMPLERATE, WM_MO_LOOP);
+  WildMidi_Init ("/midi/wildmidi.cfg", SAMPLERATE,
+    looping ? WM_MO_LOOP : 0);
 
   songhandle = WildMidi_OpenBuffer (p->data, W_LumpLength (p->lumpnum));
 
