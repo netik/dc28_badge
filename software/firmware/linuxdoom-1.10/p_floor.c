@@ -484,6 +484,7 @@ EV_BuildStairs
 	// new floor thinker
 	rtn = 1;
 	floor = Z_Malloc (sizeof(*floor), PU_LEVSPEC, 0);
+	memset (floor, 0, sizeof(*floor));
 	P_AddThinker (&floor->thinker);
 	sec->specialdata = floor;
 	floor->thinker.function.acp1 = (actionf_p1) T_MoveFloor;
@@ -494,10 +495,12 @@ EV_BuildStairs
 	  case build8:
 	    speed = FLOORSPEED/4;
 	    stairsize = 8*FRACUNIT;
+	    floor->crush = false;
 	    break;
 	  case turbo16:
 	    speed = FLOORSPEED*4;
 	    stairsize = 16*FRACUNIT;
+	    floor->crush = true;
 	    break;
 	}
 	floor->speed = speed;
@@ -537,6 +540,7 @@ EV_BuildStairs
 		sec = tsec;
 		secnum = newsecnum;
 		floor = Z_Malloc (sizeof(*floor), PU_LEVSPEC, 0);
+		memset (floor, 0, sizeof(*floor));
 
 		P_AddThinker (&floor->thinker);
 
@@ -546,6 +550,7 @@ EV_BuildStairs
 		floor->sector = sec;
 		floor->speed = speed;
 		floor->floordestheight = height;
+		floor->crush = type == build8 ? false : true;
 		ok = 1;
 		break;
 	    }
