@@ -432,7 +432,7 @@ idesDoubleBufferInit (uint8_t pixfmt)
 	 * hardware color look-up table (CLUT)
 	 *
 	 * For IDES_DB_L8, the caller must also use
-	 * esDoubleBufferPaleteLoad() to install a palette into
+	 * idesDoubleBufferPaleteLoad() to install a palette into
 	 * the DMA2D engine.
 	 */
 
