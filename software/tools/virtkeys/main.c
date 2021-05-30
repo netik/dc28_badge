@@ -6,6 +6,9 @@
 
 #include "serialio.h"
 
+extern char _binary_undrattk_bmp_start[];
+extern uint32_t * _binary_undrattk_bmp_size;
+
 static int fd;
 
 static void
@@ -35,7 +38,9 @@ main (int argc, char * argv[])
 	SDL_Event event;
 	SDL_Window * win;
 	SDL_Renderer * renderer;
-	SDL_Texture * img;
+	SDL_RWops * ops;
+	SDL_Texture * imgtexture;
+	SDL_Surface * imgsurface;
 	SDL_Rect rect;
 	int h, w;
 
@@ -63,8 +68,13 @@ main (int argc, char * argv[])
 
 	renderer = SDL_CreateRenderer (win, -1, SDL_RENDERER_ACCELERATED);
 
-	img = IMG_LoadTexture (renderer, "undrattk.jpg");
-	SDL_QueryTexture (img, NULL, NULL, &w, &h);
+	ops = SDL_RWFromMem ((void *)_binary_undrattk_bmp_start,
+	    (int)(uintptr_t)&_binary_undrattk_bmp_size);
+
+	imgsurface = SDL_LoadBMP_RW (ops, 0);
+	imgtexture = SDL_CreateTextureFromSurface (renderer, imgsurface);
+
+	SDL_QueryTexture (imgtexture, NULL, NULL, &w, &h);
 
 	rect.x = 0;
 	rect.y = 0;
@@ -74,6 +84,8 @@ main (int argc, char * argv[])
 	/* Send start code */
 
 	serial_write (fd, "\rcapture\r", 10);
+
+	/* Process SDL events */
 
 	while (1) {
 		if (SDL_WaitEvent (&event)) {
@@ -96,7 +108,8 @@ main (int argc, char * argv[])
 			if (event.type == SDL_WINDOWEVENT ||
 			    event.type == SDL_WINDOWEVENT_EXPOSED) {
 				SDL_RenderClear (renderer);
-				SDL_RenderCopy (renderer, img, NULL, &rect);
+				SDL_RenderCopy (renderer, imgtexture,
+				    NULL, &rect);
 				SDL_RenderPresent (renderer);
 			}
 		}
@@ -108,7 +121,8 @@ main (int argc, char * argv[])
 
 	serial_close (fd);
 
-	SDL_DestroyTexture (img);
+	SDL_DestroyTexture (imgtexture);
+	SDL_FreeSurface (imgsurface);
 	SDL_DestroyRenderer (renderer);
 	SDL_DestroyWindow (win);
 
