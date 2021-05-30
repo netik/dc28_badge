@@ -53,7 +53,7 @@ __attribute__((section(".ram7")))
 int		finalestage;
 
 __attribute__((section(".ram7")))
-size_t		finalecount;
+int		finalecount;
 
 #define	TEXTSPEED	3
 #define	TEXTWAIT	250
@@ -242,7 +242,8 @@ void F_Ticker (void)
     if ( gamemode == commercial)
 	return;
 		
-    if (!finalestage && finalecount>strlen (finaletext)*TEXTSPEED + TEXTWAIT)
+    if (!finalestage &&
+        (size_t)finalecount>strlen (finaletext)*TEXTSPEED + TEXTWAIT)
     {
 	finalecount = 0;
 	finalestage = 1;
