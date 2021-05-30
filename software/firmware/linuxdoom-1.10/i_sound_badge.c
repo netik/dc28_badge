@@ -553,11 +553,24 @@ void I_UpdateSound( void )
     /* if there's a song playing, get the samples for it */
 
 #ifdef ENABLE_DOOM_MUSIC
+  int                           samplecnt = 0;
+
     if (songhandle != NULL && song_paused == FALSE)
-      WildMidi_GetOutput (songhandle, (int8_t *)mixbuffer,
-        SAMPLECOUNT * BUFMUL * 2);
-    else
-      memset (mixbuffer, 0, SAMPLECOUNT * BUFMUL * 2);
+        samplecnt = WildMidi_GetOutput (songhandle, (int8_t *)mixbuffer,
+          SAMPLECOUNT * BUFMUL * 2);
+
+    /*
+     * If we only get a partial buffer, it means we hit the end of
+     * of the song. Zero out the rest of the mixer buffer.
+     */
+
+    if (samplecnt && samplecnt < (SAMPLECOUNT * BUFMUL * 2)) {
+        memset (mixbuffer + samplecnt, 0,
+         (SAMPLECOUNT * BUFMUL * 2) - samplecnt);
+
+        songhandle = NULL;
+    }
+
 #endif
 
     // Left and right channel
@@ -611,9 +624,9 @@ void I_UpdateSound( void )
 #ifdef ENABLE_DOOM_MUSIC
         /* Mix in music samples */
 
-        if (songhandle) {
-          dr += *rightout << 2;
-          dl += *leftout << 2;
+        if (samplecnt) {
+            dr += *rightout << 2;
+            dl += *leftout << 2;
         }
 #endif
 
