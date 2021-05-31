@@ -565,7 +565,7 @@ void I_UpdateSound( void )
      */
 
     if (samplecnt && samplecnt < (SAMPLECOUNT * BUFMUL * 2)) {
-        memset (mixbuffer + samplecnt, 0,
+        memset ((int8_t *)mixbuffer + samplecnt, 0,
          (SAMPLECOUNT * BUFMUL * 2) - samplecnt);
 
         songhandle = NULL;
