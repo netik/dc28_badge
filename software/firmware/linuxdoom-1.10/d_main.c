@@ -593,12 +593,13 @@ void IdentifyVersion (void)
 #ifdef BADGEDOOM
     char*	doom1wad = "/doom/doom1.wad";
     char*	doomwad = "/doom/doom.wad";
+    char*	doom2wad = "/doom/doom2.wad";
 #else
     char*	doom1wad = "";
     char*	doomwad = "";
+    char*	doom2wad = "";
 #endif
     char*	doomuwad = "";
-    char*	doom2wad = "";
 
     char*	doom2fwad = "";
     char*	plutoniawad = "";
