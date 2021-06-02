@@ -115,9 +115,7 @@ static hu_stext_t	w_message;
 __attribute__((section(".ram7")))
 static int		message_counter;
 
-__attribute__((section(".ram7")))
 extern int		showMessages;
-__attribute__((section(".ram7")))
 extern boolean		automapactive;
 
 __attribute__((section(".ram7")))
