@@ -595,16 +595,18 @@ void IdentifyVersion (void)
     char*	doomwad = "/doom/doom.wad";	/* Registered Doom (3 eps) */
     char*	doomuwad = "/doom/doomu.wad";	/* Ultimate Doom (4 eps) */
     char*	doom2wad = "/doom/doom2.wad";	/* Doom II */
+    char*	tntwad = "/doom/tnt.wad";	/* TNT: Evilution */
+    char*	plutoniawad = "/doom/plutonia.wad"; /* Plutonia */
 #else
     char*	doom1wad = "";
     char*	doomwad = "";
     char*	doom2wad = "";
     char*	doomuwad = "";
+    char*	tntwad = "";
+    char*	plutoniawad = "";
 #endif
 
     char*	doom2fwad = "";
-    char*	plutoniawad = "";
-    char*	tntwad = "";
 
 #ifdef NORMALUNIX
     char *home;
@@ -653,6 +655,7 @@ void IdentifyVersion (void)
     if (M_CheckParm ("-shdev"))
     {
 	gamemode = shareware;
+	gamemission = doom;
 	devparm = true;
 	D_AddFile (DEVDATA"doom1.wad");
 	D_AddFile (DEVMAPS"data_se/texture1.lmp");
@@ -664,6 +667,7 @@ void IdentifyVersion (void)
     if (M_CheckParm ("-regdev"))
     {
 	gamemode = registered;
+	gamemission = doom;
 	devparm = true;
 	D_AddFile (DEVDATA"doom.wad");
 	D_AddFile (DEVMAPS"data_se/texture1.lmp");
@@ -676,6 +680,7 @@ void IdentifyVersion (void)
     if (M_CheckParm ("-comdev"))
     {
 	gamemode = commercial;
+	gamemission = doom;
 	devparm = true;
 	/* I don't bother
 	if(plutonia)
@@ -694,6 +699,7 @@ void IdentifyVersion (void)
     if ( !access (doom2fwad,R_OK) )
     {
 	gamemode = commercial;
+	gamemission = doom;
 	// C'est ridicule!
 	// Let's handle languages in config files, okay?
 	language = french;
@@ -705,6 +711,7 @@ void IdentifyVersion (void)
     if ( !access (doom2wad,R_OK) )
     {
 	gamemode = commercial;
+	gamemission = doom;
 	D_AddFile (doom2wad);
 	return;
     }
@@ -712,6 +719,7 @@ void IdentifyVersion (void)
     if ( !access (plutoniawad, R_OK ) )
     {
       gamemode = commercial;
+      gamemission = pack_plut;
       D_AddFile (plutoniawad);
       return;
     }
@@ -719,6 +727,7 @@ void IdentifyVersion (void)
     if ( !access ( tntwad, R_OK ) )
     {
       gamemode = commercial;
+      gamemission = pack_tnt;
       D_AddFile (tntwad);
       return;
     }
@@ -726,6 +735,7 @@ void IdentifyVersion (void)
     if ( !access (doomuwad,R_OK) )
     {
       gamemode = retail;
+      gamemission = doom;
       D_AddFile (doomuwad);
       return;
     }
@@ -733,6 +743,7 @@ void IdentifyVersion (void)
     if ( !access (doomwad,R_OK) )
     {
       gamemode = registered;
+      gamemission = doom;
       D_AddFile (doomwad);
       return;
     }
@@ -740,12 +751,14 @@ void IdentifyVersion (void)
     if ( !access (doom1wad,R_OK) )
     {
       gamemode = shareware;
+      gamemission = doom;
       D_AddFile (doom1wad);
       return;
     }
 
     printf("Game mode indeterminate.\n");
     gamemode = indetermined;
+    gamemission = doom;
 
     // We don't abort. Let's see what the PWAD contains.
     //exit(1);
@@ -877,28 +890,30 @@ void D_DoomMain (void)
 		 VERSION/100,VERSION%100);
 	break;
       case commercial:
-	sprintf (title,
-		 "                         "
-		 "DOOM 2: Hell on Earth v%i.%i"
-		 "                           ",
-		 VERSION/100,VERSION%100);
-	break;
-/*FIXME
-       case pack_plut:
-	sprintf (title,
-		 "                   "
-		 "DOOM 2: Plutonia Experiment v%i.%i"
-		 "                           ",
-		 VERSION/100,VERSION%100);
-	break;
-      case pack_tnt:
-	sprintf (title,
-		 "                     "
-		 "DOOM 2: TNT - Evilution v%i.%i"
-		 "                           ",
-		 VERSION/100,VERSION%100);
-	break;
-*/
+        switch (gamemission) {
+          case pack_plut:
+            sprintf (title,
+		   "                   "
+		   "DOOM 2: Plutonia Experiment v%i.%i"
+		   "                           ",
+		   VERSION/100,VERSION%100);
+	  break;
+        case pack_tnt:
+          sprintf (title,
+		   "                     "
+		   "DOOM 2: TNT - Evilution v%i.%i"
+		   "                           ",
+		   VERSION/100,VERSION%100);
+	  break;
+        case doom:
+        default:
+	  sprintf (title,
+		   "                         "
+		   "DOOM 2: Hell on Earth v%i.%i"
+		   "                           ",
+		   VERSION/100,VERSION%100);
+	  break;
+        }
       default:
 	sprintf (title,
 		 "                     "

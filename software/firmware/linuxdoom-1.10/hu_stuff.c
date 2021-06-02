@@ -115,6 +115,7 @@ static hu_stext_t	w_message;
 __attribute__((section(".ram7")))
 static int		message_counter;
 
+__attribute__((section(".ram7")))
 extern int		showMessages;
 extern boolean		automapactive;
 
@@ -465,19 +466,20 @@ void HU_Start(void)
       case retail:
 	s = HU_TITLE;
 	break;
-
-/* FIXME
-      case pack_plut:
-	s = HU_TITLEP;
-	break;
-      case pack_tnt:
-	s = HU_TITLET;
-	break;
-*/
-	
       case commercial:
       default:
-	 s = HU_TITLE2;
+        switch (gamemission) {
+          case pack_plut:
+	  s = HU_TITLEP;
+	  break;
+        case pack_tnt:
+	  s = HU_TITLET;
+	  break;
+	case doom:
+        default:
+	  s = HU_TITLE2;
+	  break;
+         }
 	 break;
     }
     
