@@ -555,7 +555,7 @@ void I_UpdateSound( void )
 #ifdef ENABLE_DOOM_MUSIC
   int                           samplecnt = 0;
 
-    if (songhandle != NULL && song_paused == FALSE)
+    if (songhandle != NULL && song_paused == FALSE && snd_MusicVolume)
         samplecnt = WildMidi_GetOutput (songhandle, (int8_t *)mixbuffer,
           SAMPLECOUNT * BUFMUL * 2);
 
