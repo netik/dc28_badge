@@ -914,6 +914,7 @@ void D_DoomMain (void)
 		   VERSION/100,VERSION%100);
 	  break;
         }
+	break;
       default:
 	sprintf (title,
 		 "                     "
