@@ -778,7 +778,9 @@ void FindResponseFile (void)
 	    if (!handle)
 	    {
 		printf ("\nNo such response file!");
+#ifdef BADGEDOOM
 		longjmp (exit_env, 1);
+#endif
 		exit(1);
 	    }
 	    printf("Found response file %s!\n",&myargv[i][1]);
