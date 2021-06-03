@@ -1894,6 +1894,16 @@ void M_Init (void)
     // Here we could catch other version dependencies,
     //  like HELP1/2, and four episodes.
 
+    MainMenu[readthis].status = 1;
+    strcpy (MainMenu[readthis].name, "M_RDTHIS");
+    MainMenu[readthis].routine = M_ReadThis;
+    MainMenu[readthis].alphaKey = 'r';
+    MainDef.y = 64;
+    NewDef.prevMenu = &EpiDef;
+    ReadDef1.routine = M_DrawReadThis1;
+    ReadDef1.x = 280;
+    ReadDef1.y = 185;
+    ReadMenu1[0].routine = M_ReadThis2;
     MainDef.numitems = main_end;
     EpiDef.numitems = ep_end;
  
