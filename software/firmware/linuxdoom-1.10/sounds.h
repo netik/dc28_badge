@@ -285,7 +285,8 @@ typedef enum
     sfx_skesit,
     sfx_skeatk,
     sfx_radio,
-    NUMSFX
+    NUMSFX_OLD,
+    NUMSFX = 200
 } sfxenum_t;
 
 #endif

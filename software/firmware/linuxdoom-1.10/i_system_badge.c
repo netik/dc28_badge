@@ -40,6 +40,7 @@ rcsid[] = "$Id: m_bbox.c,v 1.1 1997/02/03 22:45:10 b1 Exp $";
 
 #include "d_net.h"
 #include "g_game.h"
+#include "w_wad.h"
 
 #include "d_main.h"
 
@@ -145,6 +146,7 @@ void I_Quit (void)
     I_ShutdownGraphics();
     I_ZoneFree ();
     I_FreeLow ();
+    W_RestoreSounds ();
 
     longjmp (exit_env, 1);
 

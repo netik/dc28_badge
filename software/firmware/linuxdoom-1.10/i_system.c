@@ -39,6 +39,7 @@ rcsid[] = "$Id: m_bbox.c,v 1.1 1997/02/03 22:45:10 b1 Exp $";
 
 #include "d_net.h"
 #include "g_game.h"
+#include "w_wad.h"
 
 #ifdef __GNUG__
 #pragma implementation "i_system.h"
@@ -120,6 +121,7 @@ void I_Quit (void)
     I_ShutdownMusic();
     M_SaveDefaults ();
     I_ShutdownGraphics();
+    W_RestoreSounds ();
     exit(0);
 }
 

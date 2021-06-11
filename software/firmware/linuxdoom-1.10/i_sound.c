@@ -42,7 +42,11 @@ rcsid[] = "$Id: i_unix.c,v 1.5 1997/02/03 22:45:10 b1 Exp $";
 #include <sys/ioctl.h>
 
 // Linux voxware output.
+#ifdef __FreeBSD__
+#include <sys/soundcard.h>
+#else
 #include <linux/soundcard.h>
+#endif
 
 // Timer stuff. Experimental.
 #include <time.h>
@@ -195,6 +199,8 @@ getsfx
     char                name[20];
     int                 sfxlump;
 
+    if (sfxname == NULL)
+        return (NULL);
     
     // Get the sound data from the WAD, allocate lump
     //  in zone memory.
@@ -210,7 +216,9 @@ getsfx
     // I do not do runtime patches to that
     //  variable. Instead, we will use a
     //  default sound for replacement.
-    if ( W_CheckNumForName(name) == -1 )
+    if ( W_CheckNumForName(sfxname) != -1 )
+      sfxlump = W_GetNumForName(sfxname);
+    else if ( W_CheckNumForName(name) == -1 )
       sfxlump = W_GetNumForName("dspistol");
     else
       sfxlump = W_GetNumForName(name);
@@ -451,6 +459,10 @@ void I_SetMusicVolume(int volume)
 int I_GetSfxLumpNum(sfxinfo_t* sfx)
 {
     char namebuf[9];
+    if (sfx->name == NULL)
+        return (-1);
+    if (W_CheckNumForName(sfx->name) != -1)
+        return (W_GetNumForName(sfx->name));
     sprintf(namebuf, "ds%s", sfx->name);
     return W_GetNumForName(namebuf);
 }

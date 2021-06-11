@@ -178,6 +178,9 @@ getsfx
     int                 sfxlump;
 
     
+    if (sfxname == NULL)
+        return (NULL);
+
     // Get the sound data from the WAD, allocate lump
     //  in zone memory.
     sprintf(name, "ds%s", sfxname);
@@ -192,7 +195,9 @@ getsfx
     // I do not do runtime patches to that
     //  variable. Instead, we will use a
     //  default sound for replacement.
-    if ( W_CheckNumForName(name) == -1 )
+    if ( W_CheckNumForName(sfxname) != -1 )
+      sfxlump = W_GetNumForName(sfxname);
+    else if ( W_CheckNumForName(name) == -1 )
       sfxlump = W_GetNumForName("dspistol");
     else
       sfxlump = W_GetNumForName(name);
@@ -455,6 +460,10 @@ void I_SetMusicVolume(int volume)
 int I_GetSfxLumpNum(sfxinfo_t* sfx)
 {
     char namebuf[9];
+    if (sfx->name == NULL)
+        return (-1);
+    if (W_CheckNumForName(sfx->name) != -1)
+        return (W_GetNumForName(sfx->name));
     sprintf(namebuf, "ds%s", sfx->name);
     return W_GetNumForName(namebuf);
 }
