@@ -372,6 +372,8 @@ W_ParseSndinfo (char * snd, int len)
     char * eol;
     montype_t * m;
 
+    replacesfx = NUMSFX_OLD;
+
     m = &montype[0];
     while (m->name != NULL) {
 	m->oldsound[MON_see] = -1;
@@ -407,6 +409,9 @@ W_RestoreSounds (void)
 {
     montype_t * m;
     mobjinfo_t * mobj;
+
+    if (replacesfx <= NUMSFX_OLD)
+	return;
 
     m = &montype[0];
 
@@ -711,7 +716,6 @@ void W_AddFile (char *filename)
     i = W_CheckNumForName ("SNDINFO");
     if (i != -1) {
 	char * p;
-	replacesfx = NUMSFX_OLD;
 	p = Z_Malloc (W_LumpLength (i), PU_STATIC, NULL);
 	W_ReadLump (i, p);
 	W_ParseSndinfo (p, W_LumpLength (i));
