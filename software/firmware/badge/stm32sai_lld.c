@@ -191,7 +191,7 @@ saiSpeed (SAIDriver * saip, int val)
 	 * The SAI PLL is set to 192MHz. We can get 11025KHz if we
 	 * do:
 	 *
-	 * 192000000 / 12 / 2 / 256 / 2 == 11029.41176470588235294117
+	 * 192000000 / 17 / 2 / 256 / 2 == 11029.41176470588235294117
 	 *
 	 * This is close enough that nobody will notice the difference.
 	 *
