@@ -740,8 +740,9 @@ sx1262GfskConfig (SX1262_Driver * p)
 	 * According to the manual, we must perform the following
 	 * operations in order: set packet type, set modulation
 	 * parameters, then finally set packet parameters. (In spite
-	 * of this, some SemTech does the packet parameter setup
-	 * before the modulation parameters.)
+	 * of this, I've seen some some SemTech driver code that
+	 * does the packet parameter setup before the modulation
+	 * parameter setup.)
 	 */
 
 	/* Set the radio to GFSK mode */
