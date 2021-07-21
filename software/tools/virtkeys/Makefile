@@ -8,12 +8,13 @@ ifeq ($(detected_OS), Linux)
 # It also has the SDL headers in /usr/include instead
 # of /usr/local/include like everyone else
 
-	CFLAGS= -g -O2 -Wall -I/usr/include/SDL2
+CFLAGS= -g -O2 -Wall -I/usr/include/SDL2
+
 else
 
 # Works with FreeBSD and MacOS
 
-	CFLAGS= -g -O2 -Wall -ansi -pedantic -I/usr/local/include/SDL2
+CFLAGS= -g -O2 -Wall -ansi -pedantic -I/usr/local/include/SDL2
 
 endif
 
