@@ -8,7 +8,7 @@ ifeq ($(USE_OPT),)
   USE_OPT = -Os -ggdb -fomit-frame-pointer -falign-functions=16
 endif
 
-# Build image to boot from RAM (yes) for from flash (no)
+# Build image to boot from RAM (yes) or from flash (no)
 ifeq ($(BOOT_FROM_RAM),)
   BOOT_FROM_RAM = no
 endif
