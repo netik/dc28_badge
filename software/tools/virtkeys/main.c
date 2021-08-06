@@ -86,31 +86,28 @@ main (int argc, char * argv[])
 
 	/* Process SDL events */
 
-	while (1) {
-		if (SDL_WaitEvent (&event)) {
+	while (SDL_WaitEvent (&event)) {
 
-			/* Check for key press/release events */
+		/* Check for key press/release events */
 
-			if (event.type == SDL_KEYDOWN ||
-			    event.type == SDL_KEYUP)
-				keyShow (&event.key);
+		if (event.type == SDL_KEYDOWN ||
+		    event.type == SDL_KEYUP)
+			keyShow (&event.key);
 
-			/* Exit */
+		/* Exit */
 
-			if (event.type == SDL_QUIT) {
-				printf ("Exiting.\n");
-				break;
-			}
+		if (event.type == SDL_QUIT) {
+			printf ("Exiting.\n");
+			break;
+		}
 
-			/* Draw the image */
+		/* Draw the image */
 
-			if (event.type == SDL_WINDOWEVENT ||
-			    event.type == SDL_WINDOWEVENT_EXPOSED) {
-				SDL_RenderClear (renderer);
-				SDL_RenderCopy (renderer, imgtexture,
-				    NULL, &rect);
-				SDL_RenderPresent (renderer);
-			}
+		if (event.type == SDL_WINDOWEVENT ||
+		    event.type == SDL_WINDOWEVENT_EXPOSED) {
+			SDL_RenderClear (renderer);
+			SDL_RenderCopy (renderer, imgtexture, NULL, &rect);
+			SDL_RenderPresent (renderer);
 		}
 	}
 
