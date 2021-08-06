@@ -497,7 +497,7 @@ main (void)
 		 * 0xA0000000 to 0xDFFFFFFF is eXecute Never (XN), and
 		 * the SDRAM bank starts at 0xC0000000. So if we turn
 		 * off that MPU entry and we're running out of RAM,
-		 * we will die screaming. We will create out own mapping
+		 * we will die screaming. We will create our own mapping
 		 * below though, and at that point we can safely remove
 		 * the previous one.
 		 */
