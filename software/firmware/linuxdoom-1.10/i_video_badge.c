@@ -31,6 +31,7 @@ rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
 #include "ides_gfx.h"
 #include "hal_stm32_dma2d.h"
 #include "hal_stm32_ltdc.h"
+#include "badge_console.h"
 
 #include "capture.h"
 
@@ -288,6 +289,8 @@ void I_SetPalette (byte* palette)
 void I_InitGraphics(void)
 {
 	uint32_t sym;
+
+	badge_condestroy ();
 
 	/* Allocate pallete */
 

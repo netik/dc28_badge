@@ -108,8 +108,6 @@ static THD_FUNCTION(doomThread, arg)
 
 	net_doom_node = NULL;
 
-	badge_condestroy ();
-
 	chSysLock ();
 	chThdExitS (MSG_OK);
 
