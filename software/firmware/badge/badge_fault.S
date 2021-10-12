@@ -30,13 +30,6 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-	.cpu		cortex-m7
-
-	.fpu		fpv5-sp-d16
-
-	.thumb
-	.thumb_func
-
 	.file		"badge_fault.S"
 	.text
 
@@ -45,6 +38,13 @@
 	.code		16 
 	.arch		armv7e-m
 	.syntax		unified
+
+	.cpu		cortex-m7
+
+	.fpu		fpv5-sp-d16
+
+	.thumb
+	.thumb_func
 
 	.type		HardFault_Handler, %function
 	.type		BusFault_Handler, %function
