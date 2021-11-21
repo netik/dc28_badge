@@ -363,6 +363,7 @@ badge_wakeup (void)
 		rccEnableDMA1 (TRUE);
 		rccEnableDMA2 (TRUE);
 		rccEnableOTG_FS (TRUE);
+		rccEnableOTG_HS (TRUE);
 		rccEnableRNG (TRUE);
 		rccEnableI2C1 (TRUE);
 		rccEnableI2C3 (TRUE);
