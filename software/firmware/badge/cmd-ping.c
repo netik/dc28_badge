@@ -180,7 +180,7 @@ cmd_ping (BaseSequentialStream *chp, int argc, char *argv[])
 	}
 
 	for (i = 0; i < 4; i++) {
-		if (o[i] <= 0 && o[i] > 255) {
+		if (o[i] <= 0 || o[i] > 255) {
 			printf ("bad IP address\n");
 			return;
 		}
