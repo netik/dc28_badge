@@ -722,6 +722,7 @@ static inline void _dterr_int(USBHDriver *host, stm32_hc_management_t *hcm, stm3
 	ep->xfer.error_count = 0;
 	hc->HCINTMSK &= ~HCINTMSK_ACKM;
 	hc->HCCHAR |= HCCHAR_CHENA;
+	host->intSkip = 1;
 #endif
 	ueperrf("DTERR");
 }
@@ -772,6 +773,7 @@ static inline void _nak_int(USBHDriver *host, stm32_hc_management_t *hcm, stm32_
 		ep->xfer.error_count = 0;
 		hc->HCINTMSK &= ~HCINTMSK_ACKM;
 		hc->HCCHAR |= HCCHAR_CHENA;
+		host->intSkip = 1;
 	}
 	uepdbgf("NAK");
 }
@@ -1408,8 +1410,11 @@ static void usb_lld_serve_interrupt(USBHDriver *host) {
 	}
 
 	osalSysLockFromISR ();
-	host->intService = ~host->intService;
-	osalThreadResumeI (&host->thread_ref, MSG_OK);
+	if (host->intSkip == 0) {
+		host->intService = ~host->intService;
+		osalThreadResumeI (&host->thread_ref, MSG_OK);
+	}
+	host->intSkip = 0;
 	osalSysUnlockFromISR ();
 }
 
@@ -1610,6 +1615,15 @@ void usbh_lld_start(USBHDriver *host) {
 
 	/* Reset after a PHY change */
 	otg_core_reset(host);
+
+#if STM32_USBH_USE_OTG_HS_ULPI
+	/* Select vbus source */
+	otgp->GUSBCFG = GUSBCFG_FHMOD | GUSBCFG_TRDT(9) |
+	     USB_OTG_GUSBCFG_ULPIAR | USB_OTG_GUSBCFG_ULPIEVBUSD;
+#else
+	/* Forced host mode. */
+	otgp->GUSBCFG = GUSBCFG_PHYSEL | GUSBCFG_FHMOD | GUSBCFG_TRDT(5);
+#endif
 
 	/* Interrupts on FIFOs half empty.*/
 	otgp->GAHBCFG = 0;

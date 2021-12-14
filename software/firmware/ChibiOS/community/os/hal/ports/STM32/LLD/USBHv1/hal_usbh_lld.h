@@ -69,6 +69,8 @@ typedef struct stm32_hc_management {
 	thread_reference_t thread_ref;											\
 	/* interrupt occured */												\
 	uint8_t intService;												\
+	/* interrupt fully serviced, no need to wake task */								\
+	uint32_t intSkip;												\
 	/* channels */													\
 	uint8_t channels_number;											\
 	stm32_hc_management_t channels[STM32_OTG_HS_CHANNELS_NUMBER];							\
