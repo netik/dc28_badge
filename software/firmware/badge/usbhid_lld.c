@@ -384,7 +384,8 @@ usbHidUrbCb (usbh_urb_t * pUrb)
 
 	osalSysLockFromISR ();
 	t = pUrb->userData;
-	osalThreadResumeI (t, MSG_OK);
+	if (*t != NULL)
+		osalThreadResumeI (t, MSG_OK);
 	osalSysUnlockFromISR ();
 
 	return;
@@ -557,7 +558,7 @@ usbHostStart (void)
 	 */
 
 	pUsbhThread = chThdCreateFromHeap (NULL, THD_WORKING_AREA_SIZE(1024),
-	    "USBHEvent", NORMALPRIO + 1, usbhThread, NULL);
+	    "USBHEvent", 2 /*NORMALPRIO + 1*/, usbhThread, NULL);
 
 	return;
 }

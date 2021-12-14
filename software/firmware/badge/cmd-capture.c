@@ -30,6 +30,10 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <stdint.h>
+#include <stdlib.h>
+#include <unistd.h>
+
 #include "ch.h"
 #include "hal.h"
 #include "shell.h"
@@ -43,6 +47,8 @@
 
 #include "orchard-app.h"
 #include "orchard-events.h"
+
+#include "usbnet_lld.h"
 
 extern event_source_t orchard_app_key;
 
@@ -269,4 +275,69 @@ cmd_capture (BaseSequentialStream *chp, int argc, char *argv[])
 	return;
 }
 
+static void
+badgnet_output (uint8_t * p, uint16_t len)
+{
+	uint16_t l;
+
+	l = streamWrite (&PORTAB_SDU1, p, len);
+
+	if (l != len)
+		printf ("CDC stream write failed\n");
+
+	return;
+}
+
+static void
+cmd_badgenet (BaseSequentialStream *chp, int argc, char *argv[])
+{
+	uint8_t * p;
+	int r;
+
+	(void)argv;
+	(void)chp;
+	if (argc > 0) {
+		printf ("Usage: badgenet\r\n");
+		return;
+	}
+
+	if (palReadLine (LINE_OTG_FS_VBUS) == 0) {
+		printf ("USB OTG port not connected\n");
+		return;
+	}
+
+	osalMutexLock (&conmutex);
+	conin = (BaseSequentialStream *)&SD1;
+	conout = (BaseSequentialStream *)&SD1;
+	osalMutexUnlock (&conmutex);
+
+	p = malloc (CDC_MTU);
+
+	USBNETD1.usb_tx_cb = badgnet_output;
+	usbnetEnable (&USBNETD1);
+
+	while (1) {
+		r = streamRead (&PORTAB_SDU1, p, CDC_MTU);
+		if (strcmp ((char *)p, "badgenetexit") == 0 || r == 0)
+			break;
+		if (r == CDC_MTU)
+			usbnetReceive (p, CDC_MTU);
+	}
+
+	usbnetDisable (&USBNETD1);
+	USBNETD1.usb_tx_cb = NULL;
+
+	if (r == 0) {
+		osalMutexLock (&conmutex);
+		conin = (BaseSequentialStream *)&PORTAB_SDU1;
+		conout = (BaseSequentialStream *)&PORTAB_SDU1;
+		osalMutexUnlock (&conmutex);
+	}
+
+	free (p);
+
+	return;
+}
+
 orchard_command("capture", cmd_capture);
+orchard_command("badgenet", cmd_badgenet);

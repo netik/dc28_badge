@@ -7,12 +7,14 @@
 
 /* Declarations */
 extern const usbh_classdriverinfo_t usbhCustomHidDriverInfo;
+extern const usbh_classdriverinfo_t usbhCustomCdcDriverInfo;
 
 
 
 /* Comma separated list of additional class drivers */
 #define HAL_USBH_ADDITIONAL_CLASS_DRIVERS	\
-	&usbhCustomHidDriverInfo,
+	&usbhCustomHidDriverInfo,		\
+	&usbhCustomCdcDriverInfo
 
 
 

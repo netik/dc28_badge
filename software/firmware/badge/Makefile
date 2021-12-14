@@ -121,6 +121,7 @@ include $(CHIBIOS)/os/hal/osal/rt-nil/osal.mk
 # RTOS files (optional).
 include $(CHIBIOS)/os/rt/rt.mk
 include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/port_v7m.mk
+#include $(CHIBIOS)/os/common/ports/ARMv7-M/compilers/GCC/mk/port.mk
 # Auto-build files in ./source recursively.
 include $(CHIBIOS)/tools/mk/autobuild.mk
 # Other files (optional).
@@ -196,6 +197,7 @@ CSRC = $(ALLCSRC) \
        crc32.c \
        newlib_syscall.c \
        nullprot_lld.c \
+       usbcdc_lld.c \
        usbhid_lld.c \
        badge_console.c \
        badge_finder.c \
@@ -207,6 +209,7 @@ CSRC = $(ALLCSRC) \
        stm32sai_lld.c \
        sddetect_lld.c \
        sx1262_lld.c \
+       usbnet_lld.c \
        touch_lld.c \
        scroll_lld.c \
        malloc.c \

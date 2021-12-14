@@ -38,6 +38,7 @@
 #include "touch_lld.h"
 #include "sx1262_lld.h"
 #include "usbhid_lld.h"
+#include "usbnet_lld.h"
 #include "wm8994.h"
 
 #include "gfx.h"
@@ -771,13 +772,6 @@ main (void)
 
 	printf ("Analog to digital converter ADC1 enabled\n");
 
-	/* Initialize host USB controller */
-
-	usbhStart (&USBHD2);
-	usbHostStart ();
-
-	printf ("USB host controller enabled\n");
-
 	/*
 	 * Initialize serial-over-USB CDC driver.
 	 */
@@ -903,6 +897,17 @@ main (void)
 
 	badge_coninit ();
 	capture_queue_init ();
+
+	/* Initialize usb serial network interface */
+
+	usbnetStart (&USBNETD1);
+
+	/* Initialize host USB controller */
+
+	usbhStart (&USBHD2);
+	usbHostStart ();
+
+	printf ("USB host controller enabled\n");
 
 	/*
 	 * Initialize orchard subsystem
