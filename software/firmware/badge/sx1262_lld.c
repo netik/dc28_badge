@@ -1180,9 +1180,9 @@ sx1262LinkOutput (struct netif * netif, struct pbuf * p)
 	 * TX, so we have to put it back to its original value before
 	 * we turn the receiver back on.
 	 *
-	 * The SX_REG_PAYLEN register is used in the SemTeck LoraMac
+	 * The SX_REG_PAYLEN register is used in the SemTech LoraMac
 	 * code, and SX_REG_RXTX_PAYLOAD_LEN is used in the sample
-	 * code that goes with SemTech application node AN1200.53 (which
+	 * code that goes with SemTech application note AN1200.53 (which
 	 * shows how to exchange packets larger than 255 bytes with
 	 * the SX126x in GFSK mode).
 	 */
