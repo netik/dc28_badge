@@ -1,20 +1,28 @@
-OBJS= serialio.o main.o undrattk.o
+OBJS= main.o undrattk.o
 
 detected_OS := $(shell sh -c 'uname 2>/dev/null || echo Unknown')
 
 ifeq ($(detected_OS), Linux)
 
 # Linux doesn't define CRTSCTS when using -ansi.
-# It also has the SDL headers in /usr/include instead
-# of /usr/local/include like everyone else
 
-CFLAGS= -g -O2 -Wall -I/usr/include/SDL2
+CFLAGS= -g -O2 -Wall
+OBJS+= serialio.o
+LIBS= -L/usr/local/lib -lSDL2
+
+else ifeq ($(OS), Windows_NT)
+
+CFLAGS= -g -O2 -Wall -ansi -pedantic
+OBJS+= serialio_win.o
+LIBS+= -lmingw32 -lSDL2main -lSDL2
 
 else
 
 # Works with FreeBSD and MacOS
 
-CFLAGS= -g -O2 -Wall -ansi -pedantic -I/usr/local/include/SDL2
+CFLAGS= -g -O2 -Wall -ansi -pedantic -I/usr/local/include
+OBJS+= serialio.o
+LIBS= -L/usr/local/lib -lSDL2
 
 endif
 
@@ -31,10 +39,10 @@ OBJFORMAT= objdump -x $(OBJECT) | grep format | cut -d ' ' -f 8
 MACHINE= objdump -x $(OBJECT) | grep architecture | sed s/:/,/ | cut -d ',' -f 2
 
 virtkeys: $(OBJS)
-	cc -o virtkeys $(OBJS) -L/usr/local/lib -lSDL2
+	$(CC) -o virtkeys $(OBJS) $(LIBS)
 
 undrattk.o: undrattk.bmp main.o
-	objcopy -I binary -O `$(OBJFORMAT)` -B `$(MACHINE)` undrattk.bmp undrattk.o
+	objcopy --change-leading-char -I binary -O `$(OBJFORMAT)` -B `$(MACHINE)` undrattk.bmp undrattk.o
 
 clean:
 	/bin/rm -f *.o virtkeys
