@@ -14,7 +14,8 @@ else ifeq ($(OS), Windows_NT)
 
 CFLAGS= -g -O2 -Wall -ansi -pedantic
 OBJS+= serialio_win.o
-LIBS+= -lmingw32 -lSDL2main -lSDL2
+LIBS += -static -lmingw32 -lSDL2main -lSDL2 -lsetupapi -lgdi32
+LIBS += -lwinmm -limm32 -lole32 -loleaut32 -lversion
 
 else
 
