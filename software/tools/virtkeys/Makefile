@@ -16,6 +16,7 @@ CFLAGS= -g -O2 -Wall -ansi -pedantic
 OBJS+= serialio_win.o
 LIBS += -static -lmingw32 -lSDL2main -lSDL2 -lsetupapi -lgdi32
 LIBS += -lwinmm -limm32 -lole32 -loleaut32 -lversion
+OBJOPTS = --change-leading-char
 
 else
 
@@ -43,7 +44,7 @@ virtkeys: $(OBJS)
 	$(CC) -o virtkeys $(OBJS) $(LIBS)
 
 undrattk.o: undrattk.bmp main.o
-	objcopy --change-leading-char -I binary -O `$(OBJFORMAT)` -B `$(MACHINE)` undrattk.bmp undrattk.o
+	objcopy $(OBJOPTS) -I binary -O `$(OBJFORMAT)` -B `$(MACHINE)` undrattk.bmp undrattk.o
 
 clean:
 	/bin/rm -f *.o virtkeys

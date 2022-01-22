@@ -1,10 +1,6 @@
 #include <sys/types.h>
 #include <sys/fcntl.h>
 
-#ifdef __linux__
-#define __BSD_SOURCE
-#endif
-
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>

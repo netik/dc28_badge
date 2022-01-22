@@ -11,7 +11,7 @@ It's relatively easy to provide serial communications over USB, but it's
 not as easy to use a serial port to simulate button press and button release
 events. Doom in particular expects to use keyboard press/release events
 for its motion controls (press the up arrow key to start moving forward
-and release it to stop). Also, it uses modifier keys, such as the CTRL
+and release it to stop). It also uses modifier keys such as the CTRL
 key for firing your weapon and SHIFT to run instead of walk. These keys
 don't generate characters when you press them so typing them into a serial
 terminal session doesn't do anything.
