@@ -145,7 +145,7 @@ main (int argc, char * argv[])
 
 	if (argc < 2 || argc > 4) {
 		fprintf (stderr,
-	    "usage: %s <vidframedir> <soundfile> <utputfile>\n", argv[0]);
+	    "usage: %s <vidframedir> <soundfile> <outputfile>\n", argv[0]);
 		exit (1);
 	}
 
