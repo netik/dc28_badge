@@ -143,8 +143,11 @@ main (int argc, char * argv[])
 	fpos_t prevpos;
 	CHUNK_HEADER ch;
 
-	if (argc > 4)
+	if (argc < 2 || argc > 4) {
+		fprintf (stderr,
+	    "usage: %s <vidframedir> <soundfile> <utputfile>\n", argv[0]);
 		exit (1);
+	}
 
 	audio = fopen (argv[2], "r+");
 
