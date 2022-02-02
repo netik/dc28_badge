@@ -92,16 +92,16 @@ static THD_FUNCTION(doomThread, arg)
 		badge_finder_radio_freq_set (net_doom_freq);
 		badge_finder_radio_mode_set (FINDER_RADIO_MODE_FAST);
 
-		args[2] = "-port";
-		args[3] = "9999";
-		args[4] = ""; /* "-dup" */
-		args[5] = ""; /* "2" */
-		args[6] = "" /*"-extratic"*/;
-		args[7] = "-skill";
-		args[8] = "3";
-		args[9] = "-net";
-		args[10] = net_doom_node;
-		args[11] = net_doom_peer;
+		args[3] = "-port";
+		args[4] = "9999";
+		args[5] = ""; /* "-dup" */
+		args[6] = ""; /* "2" */
+		args[7] = "" /*"-extratic"*/;
+		args[8] = "-skill";
+		args[9] = "3";
+		args[10] = "-net";
+		args[11] = net_doom_node;
+		args[12] = net_doom_peer;
 		doom_main (13, args);
 
 		badge_finder_radio_restore ();
