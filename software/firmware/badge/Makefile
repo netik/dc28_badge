@@ -25,6 +25,7 @@ endif
 # C specific options here (added to USE_OPT).
 ifeq ($(USE_COPT),)
   USE_COPT = -DHAVE_MORECORE=1 -DHAVE_MMAP=0 -DUSE_LOCKS=2 -DUSE_DL_PREFIX
+  USE_COPT += -DMALLOC_INSPECT_ALL
 endif
 
 # C++ specific options here (added to USE_OPT).

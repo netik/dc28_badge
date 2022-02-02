@@ -40,18 +40,45 @@
 
 #include "badge.h"
 
+extern void dlmalloc_inspect_all (void(*handler)(void*, void *, size_t, void*),
+          void* arg);
+
 static void
 cmd_mem (BaseSequentialStream *chp, int argc, char *argv[])
 {
 	(void)argv;
 	(void)chp;
 	if (argc > 0) {
-		printf ("Usage: mem\n");
+		printf ("Usage: mem-sdram\n");
 		return;
 	}
 
 	printf ("total heap size  = %10u\n", HEAP_END - HEAP_BASE);
 	malloc_stats ();
+
+	return;
+}
+
+static void
+mem_show (void * top, void * bottom, size_t used_bytes, void * arg)
+{
+	(void)arg;
+	printf ("Chunk at %p-%p (%d) size %d\n", top, bottom,
+	    (uintptr_t)bottom - (uintptr_t)top, used_bytes);
+	return;
+}
+
+static void
+cmd_mem_all (BaseSequentialStream *chp, int argc, char *argv[])
+{
+	(void)argv;
+	(void)chp;
+	if (argc > 0) {
+		printf ("Usage: mem-sdram-all\n");
+		return;
+	}
+
+	dlmalloc_inspect_all (mem_show, NULL);
 
 	return;
 }
@@ -83,4 +110,5 @@ cmd_memtest (BaseSequentialStream *chp, int argc, char *argv[])
 }
 
 orchard_command("mem-sdram", cmd_mem);
+orchard_command("mem-sdram-all", cmd_mem_all);
 orchard_command("memtest-sdram", cmd_memtest);
