@@ -944,8 +944,8 @@ static int	musicdies=-1;
 
 void I_PlaySong(int handle, int loop)
 {
-  int i;
 #ifdef ENABLE_DOOM_MUSIC
+  int i;
   musicinfo_t * p;
 #endif
 
