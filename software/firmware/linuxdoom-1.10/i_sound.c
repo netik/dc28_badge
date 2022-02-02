@@ -24,9 +24,15 @@
 static const char
 rcsid[] = "$Id: i_unix.c,v 1.5 1997/02/03 22:45:10 b1 Exp $";
 
+#define TRUE 1
+#define FALSE 0
+
+#undef ENABLE_DOOM_MUSIC
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <stdbool.h>
 
 #include <math.h>
 
@@ -51,6 +57,10 @@ rcsid[] = "$Id: i_unix.c,v 1.5 1997/02/03 22:45:10 b1 Exp $";
 // Timer stuff. Experimental.
 #include <time.h>
 #include <signal.h>
+
+#ifdef ENABLE_DOOM_MUSIC
+#include <wildmidi_lib.h>
+#endif
 
 #include "z_zone.h"
 
@@ -94,14 +104,19 @@ static int flag = 0;
 
 
 // Needed for calling the actual sound output.
-#define SAMPLECOUNT		512
+#define SAMPLECOUNT		316
 #define NUM_CHANNELS		8
 // It is 2 for 16bit, and 2 for two channels.
-#define BUFMUL                  4
+#define BUFMUL                  2
 #define MIXBUFFERSIZE		(SAMPLECOUNT*BUFMUL)
 
 #define SAMPLERATE		11025	// Hz
 #define SAMPLESIZE		2   	// 16bit
+
+#ifdef ENABLE_DOOM_MUSIC
+static midi * songhandle;
+static bool song_paused = FALSE;
+#endif
 
 // The actual lengths of all sound effects.
 int 		lengths[NUMSFX];
@@ -163,7 +178,7 @@ int*		channelrightvol_lookup[NUM_CHANNELS];
 void
 myioctl
 ( int	fd,
-  int	command,
+  unsigned long	command,
   int*	arg )
 {   
     int		rc;
@@ -172,7 +187,7 @@ myioctl
     rc = ioctl(fd, command, arg);  
     if (rc < 0)
     {
-	fprintf(stderr, "ioctl(dsp,%d,arg) failed\n", command);
+	fprintf(stderr, "ioctl(dsp,%lu,arg) failed\n", command);
 	fprintf(stderr, "errno=%d\n", errno);
 	exit(-1);
     }
@@ -200,7 +215,7 @@ getsfx
     int                 sfxlump;
 
     if (sfxname == NULL)
-        return (NULL);
+	return (NULL);
     
     // Get the sound data from the WAD, allocate lump
     //  in zone memory.
@@ -222,7 +237,7 @@ getsfx
       sfxlump = W_GetNumForName("dspistol");
     else
       sfxlump = W_GetNumForName(name);
-    
+
     size = W_LumpLength( sfxlump );
 
     // Debug.
@@ -368,6 +383,14 @@ addsfx
     rightvol =
 	volume - ((volume*seperation*seperation) >> 16);	
 
+    leftvol *= 10;
+    if (leftvol > 127)
+        leftvol = 127;
+
+    rightvol *= 10;
+    if (rightvol > 127)
+        rightvol = 127;
+
     // Sanity check, clamp volume.
     if (rightvol < 0 || rightvol > 127)
 	I_Error("rightvol out of bounds");
@@ -445,10 +468,24 @@ void I_SetSfxVolume(int volume)
 // MUSIC API - dummy. Some code from DOS version.
 void I_SetMusicVolume(int volume)
 {
+#ifdef ENABLE_DOOM_MUSIC
+  int v;
+#endif
+
   // Internal state variable.
   snd_MusicVolume = volume;
   // Now set volume on output device.
   // Whatever( snd_MusciVolume );
+
+#ifdef ENABLE_DOOM_MUSIC
+  v = volume * 10;
+  if (v > 127)
+    v = 127;
+                
+  if (songhandle != NULL)
+    WildMidi_MasterVolume (v);
+#endif
+
 }
 
 
@@ -458,13 +495,13 @@ void I_SetMusicVolume(int volume)
 //
 int I_GetSfxLumpNum(sfxinfo_t* sfx)
 {
-    char namebuf[9];
     if (sfx->name == NULL)
         return (-1);
+    char namebuf[9];
     if (W_CheckNumForName(sfx->name) != -1)
-        return (W_GetNumForName(sfx->name));
+	return (W_GetNumForName(sfx->name));
     sprintf(namebuf, "ds%s", sfx->name);
-    return W_GetNumForName(namebuf);
+    return (W_GetNumForName(namebuf));
 }
 
 //
@@ -504,6 +541,7 @@ I_StartSound
     //fprintf( stderr, "starting sound %d", id );
     
     // Returns a handle (not used).
+
     id = addsfx( id, vol, steptable[pitch], sep );
 
     // fprintf( stderr, "/handle is %d\n", id );
@@ -572,6 +610,27 @@ void I_UpdateSound( void )
   // Mixing channel index.
   int				chan;
     
+#ifdef ENABLE_DOOM_MUSIC
+  int                           samplecnt = 0;
+
+    if (songhandle != NULL && song_paused == FALSE && snd_MusicVolume)
+        samplecnt = WildMidi_GetOutput (songhandle, (int8_t *)mixbuffer,
+          SAMPLECOUNT * BUFMUL * 2);
+
+    /*
+     * If we only get a partial buffer, it means we hit the end of
+     * of the song. Zero out the rest of the mixer buffer.
+     */
+
+    if (samplecnt && samplecnt < (SAMPLECOUNT * BUFMUL * 2)) {
+        memset ((int8_t *)mixbuffer + samplecnt, 0,
+         (SAMPLECOUNT * BUFMUL * 2) - samplecnt);
+
+        songhandle = NULL;
+    }
+
+#endif
+
     // Left and right channel
     //  are in global mixbuffer, alternating.
     leftout = mixbuffer;
@@ -620,6 +679,15 @@ void I_UpdateSound( void )
 	    }
 	}
 	
+#ifdef ENABLE_DOOM_MUSIC
+        /* Mix in music samples */
+      
+        if (samplecnt) {
+            dr += *rightout << 2;
+            dl += *leftout << 2;
+        }
+#endif
+
 	// Clamp to range. Left hardware channel.
 	// Has been char instead of short.
 	// if (dl > 127) *leftout = 127;
@@ -678,7 +746,7 @@ void
 I_SubmitSound(void)
 {
   // Write it to DSP device.
-  write(audio_fd, mixbuffer, SAMPLECOUNT*BUFMUL);
+  write(audio_fd, mixbuffer, SAMPLECOUNT*BUFMUL*2);
 }
 
 
@@ -715,9 +783,17 @@ void I_ShutdownSound(void)
   // Wait till all pending sounds are finished.
   int done = 0;
   int i;
-  
+
+#ifdef ENABLE_DOOM_MUSIC
+  songhandle = NULL;
+
+  WildMidi_Shutdown ();
+#endif
 
   // FIXME (below).
+  for (i = 0; i < NUMMUSIC; i++)
+    S_music[i].handle = 0;
+
   fprintf( stderr, "I_ShutdownSound: NOT finishing pending sounds\n");
   fflush( stderr );
   
@@ -810,6 +886,9 @@ I_InitSound()
   
   for (i=1 ; i<NUMSFX ; i++)
   { 
+    if (S_sfx[i].data == (void *)0xdeadbeef)
+      continue;
+
     // Alias? Example is the chaingun sound linked to pistol.
     if (!S_sfx[i].link)
     {
@@ -834,6 +913,19 @@ I_InitSound()
   fprintf(stderr, "I_InitSound: sound module ready\n");
     
 #endif
+
+#ifdef testing
+{
+int sndinfo;
+char * sinfo;
+
+      sndinfo = W_GetNumForName("SNDINFO");
+printf ("SNDINFO lump: %d\n", sndinfo);
+
+    sinfo = (char *)W_CacheLumpNum( sndinfo, PU_STATIC );
+printf ("SINFO: %s\n", sinfo);
+}
+#endif
 }
 
 
@@ -850,23 +942,64 @@ void I_ShutdownMusic(void)	{ }
 static int	looping=0;
 static int	musicdies=-1;
 
-void I_PlaySong(int handle, int looping)
+void I_PlaySong(int handle, int loop)
 {
+  int i;
+#ifdef ENABLE_DOOM_MUSIC
+  musicinfo_t * p;
+#endif
+
   // UNUSED.
-  handle = looping = 0;
+  looping = loop;
   musicdies = gametic + TICRATE*30;
+
+#ifdef ENABLE_DOOM_MUSIC
+  for (i = 0; i < NUMMUSIC; i++) {
+    if (S_music[i].handle == handle)
+      break;
+  }
+ 
+  if (i == NUMMUSIC)
+    return;
+
+  p = &S_music[i];
+  
+  WildMidi_Init ("/home/wpaul/doom/patches/wildmidi.cfg", SAMPLERATE,
+    WM_MO_ENHANCED_RESAMPLING | (looping ? WM_MO_LOOP : 0));
+
+  songhandle = WildMidi_OpenBuffer (p->data, W_LumpLength (p->lumpnum));
+
+  i = snd_MusicVolume * 10;
+  if (i > 127)
+    i = 127;
+  WildMidi_MasterVolume (i);
+#endif
+
+  return;
 }
 
 void I_PauseSong (int handle)
 {
   // UNUSED.
   handle = 0;
+
+#ifdef ENABLE_DOOM_MUSIC
+  song_paused = TRUE;
+#endif
+
+  return;
 }
 
 void I_ResumeSong (int handle)
 {
   // UNUSED.
   handle = 0;
+
+#ifdef ENABLE_DOOM_MUSIC
+  song_paused = FALSE;
+#endif
+
+  return;
 }
 
 void I_StopSong(int handle)
@@ -876,12 +1009,37 @@ void I_StopSong(int handle)
   
   looping = 0;
   musicdies = 0;
+
+#ifdef ENABLE_DOOM_MUSIC
+  songhandle = NULL;
+  WildMidi_Shutdown ();
+#endif
+
+  return;
 }
 
 void I_UnRegisterSong(int handle)
 {
-  // UNUSED.
+#ifdef ENABLE_DOOM_MUSIC
+  int i;
+#endif
+
+  // UNUSED
   handle = 0;
+
+#ifdef ENABLE_DOOM_MUSIC
+  for (i = 0; i < NUMMUSIC; i++) {
+    if (S_music[i].handle == handle)
+        break;
+  }
+
+  if (i == NUMMUSIC)
+    return;
+
+  S_music[i].handle = 0;
+#endif
+
+  return;
 }
 
 int I_RegisterSong(void* data)
@@ -896,7 +1054,7 @@ int I_RegisterSong(void* data)
 int I_QrySongPlaying(int handle)
 {
   // UNUSED.
-  handle = 0;
+  (void)handle;
   return looping || musicdies > gametic;
 }
 

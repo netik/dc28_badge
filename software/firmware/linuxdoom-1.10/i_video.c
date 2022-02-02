@@ -46,7 +46,7 @@ int XShmGetEventBase( Display* dpy ); // problems with g++?
 #include <sys/socket.h>
 
 #include <netinet/in.h>
-#include <errnos.h>
+#include <errno.h>
 #include <signal.h>
 
 #include "doomstat.h"
@@ -164,7 +164,7 @@ int xlatekey(void)
 void I_ShutdownGraphics(void)
 {
   // Detach from X server
-  if (!XShmDetach(X_display, &X_shminfo))
+  if (X_display != NULL && !XShmDetach(X_display, &X_shminfo))
 	    I_Error("XShmDetach() failed in I_ShutdownGraphics()");
 
   // Release shared memory.
@@ -172,7 +172,8 @@ void I_ShutdownGraphics(void)
   shmctl(X_shminfo.shmid, IPC_RMID, 0);
 
   // Paranoia.
-  image->data = NULL;
+  if (image != NULL)
+      image->data = NULL;
 }
 
 
