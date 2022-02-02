@@ -50,11 +50,7 @@ rcsid[] = "$Id: m_bbox.c,v 1.1 1997/02/03 22:45:10 b1 Exp $";
 #include "i_system.h"
 
 
-#ifdef BOOT_FROM_RAM
-static int	mb_used = 4;
-#else
-static int	mb_used = 5;
-#endif
+int		mb_used;
 __attribute__((section(".ram7")))
 static byte *	zonebase;
 __attribute__((section(".ram7")))

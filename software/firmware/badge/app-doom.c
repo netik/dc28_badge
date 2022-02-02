@@ -55,7 +55,7 @@ uint32_t net_doom_freq;
 
 static THD_FUNCTION(doomThread, arg)
 {
-	char * args[11];
+	char * args[13];
 	size_t bsslen;
 
 	(void)arg;
@@ -64,7 +64,7 @@ static THD_FUNCTION(doomThread, arg)
 
 	/* Set the environment */
 
-	setenv ("HOME", "/", TRUE);
+	setenv ("HOME", "", TRUE);
 	setenv ("DOOMWADDIR", "/doom", TRUE);
 
 	/* Initialize Doom's .bss */
@@ -80,6 +80,8 @@ static THD_FUNCTION(doomThread, arg)
 	 */
 
 	args[0] = "doom";
+	args[1] = "-config";
+	args[2] = "/doomrc";
 	if (net_doom_node != NULL) {
 		/*
 		 * Switch the radio to GFSK mode and change the
@@ -90,21 +92,21 @@ static THD_FUNCTION(doomThread, arg)
 		badge_finder_radio_freq_set (net_doom_freq);
 		badge_finder_radio_mode_set (FINDER_RADIO_MODE_FAST);
 
-		args[1] = "-port";
-		args[2] = "9999";
-		args[3] = ""; /* "-dup" */
-		args[4] = ""; /* "2" */
-		args[5] = "" /*"-extratic"*/;
-		args[6] = "-skill";
-		args[7] = "3";
-		args[8] = "-net";
-		args[9] = net_doom_node;
-		args[10] = net_doom_peer;
-		doom_main (11, args);
+		args[2] = "-port";
+		args[3] = "9999";
+		args[4] = ""; /* "-dup" */
+		args[5] = ""; /* "2" */
+		args[6] = "" /*"-extratic"*/;
+		args[7] = "-skill";
+		args[8] = "3";
+		args[9] = "-net";
+		args[10] = net_doom_node;
+		args[11] = net_doom_peer;
+		doom_main (13, args);
 
 		badge_finder_radio_restore ();
 	} else
-		doom_main (1, args);
+		doom_main (3, args);
 
 	net_doom_node = NULL;
 

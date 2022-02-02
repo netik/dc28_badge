@@ -566,19 +566,15 @@ char            title[128];
 void D_AddFile (char *file)
 {
     int     numwadfiles;
-#ifndef BADGEDOOM
     char    *newfile;
-#endif
 	
     for (numwadfiles = 0 ; wadfiles[numwadfiles] ; numwadfiles++)
 	;
-#ifndef BADGEDOOM
+
     newfile = malloc (strlen(file)+1);
     strcpy (newfile, file);
 	
     wadfiles[numwadfiles] = newfile;
-#endif
-    wadfiles[numwadfiles] = file;
 }
 
 //
@@ -590,27 +586,17 @@ void D_AddFile (char *file)
 void IdentifyVersion (void)
 {
 
-#ifdef BADGEDOOM
-    char*	doom1wad = "/doom/doom1.wad";	/* Shareware Doom */
-    char*	doomwad = "/doom/doom.wad";	/* Registered Doom (3 eps) */
-    char*	doomuwad = "/doom/doomu.wad";	/* Ultimate Doom (4 eps) */
-    char*	doom2wad = "/doom/doom2.wad";	/* Doom II */
-    char*	tntwad = "/doom/tnt.wad";	/* TNT: Evilution */
-    char*	plutoniawad = "/doom/plutonia.wad"; /* Plutonia */
-#else
     char*	doom1wad = "";
     char*	doomwad = "";
     char*	doom2wad = "";
     char*	doomuwad = "";
     char*	tntwad = "";
     char*	plutoniawad = "";
-#endif
 
     char*	doom2fwad = "";
 
 #ifdef NORMALUNIX
     char *home;
-#ifndef BADGEDOOM
     char *doomwaddir;
     doomwaddir = getenv("DOOMWADDIR");
     if (!doomwaddir)
@@ -644,7 +630,6 @@ void IdentifyVersion (void)
     // French stuff.
     doom2fwad = malloc(strlen(doomwaddir)+1+10+1);
     sprintf(doom2fwad, "%s/doom2f.wad", doomwaddir);
-#endif
 
     home = getenv("HOME");
     if (!home)
@@ -705,7 +690,7 @@ void IdentifyVersion (void)
 	language = french;
 	printf("French version\n");
 	D_AddFile (doom2fwad);
-	return;
+	goto done;
     }
 
     if ( !access (doom2wad,R_OK) )
@@ -713,7 +698,7 @@ void IdentifyVersion (void)
 	gamemode = commercial;
 	gamemission = doom;
 	D_AddFile (doom2wad);
-	return;
+	goto done;
     }
 
     if ( !access (plutoniawad, R_OK ) )
@@ -721,6 +706,7 @@ void IdentifyVersion (void)
       gamemode = commercial;
       gamemission = pack_plut;
       D_AddFile (plutoniawad);
+      goto done;
       return;
     }
 
@@ -729,7 +715,7 @@ void IdentifyVersion (void)
       gamemode = commercial;
       gamemission = pack_tnt;
       D_AddFile (tntwad);
-      return;
+      goto done;
     }
 
     if ( !access (doomuwad,R_OK) )
@@ -737,6 +723,7 @@ void IdentifyVersion (void)
       gamemode = retail;
       gamemission = doom;
       D_AddFile (doomuwad);
+      goto done;
       return;
     }
 
@@ -745,6 +732,7 @@ void IdentifyVersion (void)
       gamemode = registered;
       gamemission = doom;
       D_AddFile (doomwad);
+      goto done;
       return;
     }
 
@@ -753,7 +741,7 @@ void IdentifyVersion (void)
       gamemode = shareware;
       gamemission = doom;
       D_AddFile (doom1wad);
-      return;
+      goto done;
     }
 
     printf("Game mode indeterminate.\n");
@@ -763,6 +751,20 @@ void IdentifyVersion (void)
     // We don't abort. Let's see what the PWAD contains.
     //exit(1);
     //I_Error ("Game mode indeterminate\n");
+
+done:
+
+#ifdef NORMALUNIX
+    free (doom2fwad);
+    free (doom2wad);
+    free (plutoniawad);
+    free (tntwad);
+    free (doomuwad);
+    free (doomwad);
+    free (doom1wad);
+#endif
+
+    return;
 }
 
 //

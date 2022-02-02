@@ -72,6 +72,13 @@ doom_exit:
     for (i = 3; i < 8; i++)
 	close (i);
 
+    for (i = 0; i < MAXWADFILES; i++) {
+	if (wadfiles[i] != NULL) {
+	    free (wadfiles[i]);
+	    wadfiles[i] = NULL;
+	}
+    }
+
     I_ShutdownNetwork ();
 
     return 0;
