@@ -1022,12 +1022,7 @@ void I_UnRegisterSong(int handle)
 {
 #ifdef ENABLE_DOOM_MUSIC
   int i;
-#endif
 
-  // UNUSED
-  handle = 0;
-
-#ifdef ENABLE_DOOM_MUSIC
   for (i = 0; i < NUMMUSIC; i++) {
     if (S_music[i].handle == handle)
         break;
@@ -1037,6 +1032,9 @@ void I_UnRegisterSong(int handle)
     return;
 
   S_music[i].handle = 0;
+#else
+  // UNUSED
+  handle = 0;
 #endif
 
   return;
