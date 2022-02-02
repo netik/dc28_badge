@@ -61,7 +61,7 @@ rcsid[] = "$Id: i_unix.c,v 1.5 1997/02/03 22:45:10 b1 Exp $";
 
 // Needed for calling the actual sound output.
 #define SAMPLECOUNT_MAX		650
-#define SAMPLECOUNT_NORMAL	320
+#define SAMPLECOUNT_NORMAL	316
 __attribute__((section(".ram7")))
 static int SAMPLECOUNT;
 #define NUM_CHANNELS		8
@@ -82,7 +82,7 @@ static int SAMPLECOUNT;
  * the difference.
  */
 
-#define SAMPLERATE		11025	// Hz
+#define SAMPLERATE		11029	// Hz
 #define SAMPLESIZE		2   	// 16bit
 
 #ifdef ENABLE_DOOM_MUSIC
