@@ -96,7 +96,7 @@ static THD_FUNCTION(doomThread, arg)
 		args[4] = "9999";
 		args[5] = ""; /* "-dup" */
 		args[6] = ""; /* "2" */
-		args[7] = "" /*"-extratic"*/;
+		args[7] = "-extratic";
 		args[8] = "-skill";
 		args[9] = "3";
 		args[10] = "-net";
