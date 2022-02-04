@@ -47,9 +47,11 @@ rcsid[] = "$Id: m_bbox.c,v 1.1 1997/02/03 22:45:10 b1 Exp $";
 #endif
 #include "i_net.h"
 
+#ifndef IPPORT_USERRESERVED
+#define IPPORT_USERRESERVED 5000
+#endif
 
-
-
+#ifndef ntohl
 
 // For some odd reason...
 #define ntohl(x) \
@@ -64,6 +66,8 @@ rcsid[] = "$Id: m_bbox.c,v 1.1 1997/02/03 22:45:10 b1 Exp $";
 	  
 #define htonl(x) ntohl(x)
 #define htons(x) ntohs(x)
+
+#endif
 
 void	NetSend (void);
 boolean NetListen (void);
@@ -163,7 +167,7 @@ void PacketGet (void)
     int			i;
     int			c;
     struct sockaddr_in	fromaddress;
-    int			fromlen;
+    socklen_t		fromlen;
     doomdata_t		sw;
 				
     fromlen = sizeof(fromaddress);
