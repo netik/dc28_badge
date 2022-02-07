@@ -115,7 +115,23 @@ void P_InitSwitchList(void)
 	
     episode = 1;
 
-    if (gamemode == registered)
+    /*
+     * Yet another original Doom bug:
+     * The Ultimate Doom WAD is basically the same as
+     * the original registered Doom WAD, except with a
+     * bonus 4th episode. The Doom code identifies this
+     * was as "retail" instead of "registered" however,
+     * and this causes the switch code to select the
+     * wrong switchlist for it, because the "retail"
+     * case is not handled here. The result is that
+     * the player can press switches and they work,
+     * but the textures never change and no sounds are
+     * played. Fix this by treating retail and registered
+     * as the same here.
+     */
+
+    if (gamemode == registered ||
+        gamemode == retail)
 	episode = 2;
     else
 	if ( gamemode == commercial )
