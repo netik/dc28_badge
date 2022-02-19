@@ -27,8 +27,6 @@ rcsid[] = "$Id: i_unix.c,v 1.5 1997/02/03 22:45:10 b1 Exp $";
 #define TRUE 1
 #define FALSE 0
 
-#undef ENABLE_DOOM_MUSIC
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -59,6 +57,11 @@ rcsid[] = "$Id: i_unix.c,v 1.5 1997/02/03 22:45:10 b1 Exp $";
 #include <signal.h>
 
 #ifdef ENABLE_DOOM_MUSIC
+
+#ifndef WILDMIDI_CONFIG_PATH
+#define WILDMIDI_CONFIG_PATH "wildmidi.cfg"
+#endif
+
 #include <wildmidi_lib.h>
 #endif
 
@@ -964,7 +967,7 @@ void I_PlaySong(int handle, int loop)
 
   p = &S_music[i];
   
-  WildMidi_Init ("/home/wpaul/doom/patches/wildmidi.cfg", SAMPLERATE,
+  WildMidi_Init (WILDMIDI_CONFIG_PATH, SAMPLERATE,
     WM_MO_ENHANCED_RESAMPLING | (looping ? WM_MO_LOOP : 0));
 
   songhandle = WildMidi_OpenBuffer (p->data, W_LumpLength (p->lumpnum));

@@ -68,8 +68,10 @@ XEvent		X_event;
 int		X_screen;
 XVisualInfo	X_visualinfo;
 XImage*		image;
+static XColor	colors[256];
 int		X_width;
 int		X_height;
+int		X_depth;
 
 // MIT SHared Memory extension.
 boolean		doShm;
@@ -163,17 +165,22 @@ int xlatekey(void)
 
 void I_ShutdownGraphics(void)
 {
-  // Detach from X server
-  if (X_display != NULL && !XShmDetach(X_display, &X_shminfo))
+  if (X_display == NULL)
+    return;
+
+  if (doShm) {
+    // Detach from X server
+    if (!XShmDetach(X_display, &X_shminfo))
 	    I_Error("XShmDetach() failed in I_ShutdownGraphics()");
 
-  // Release shared memory.
-  shmdt(X_shminfo.shmaddr);
-  shmctl(X_shminfo.shmid, IPC_RMID, 0);
+    // Release shared memory.
+    shmdt(X_shminfo.shmaddr);
+    shmctl(X_shminfo.shmid, IPC_RMID, 0);
+  }
 
   // Paranoia.
   if (image != NULL)
-      image->data = NULL;
+    image->data = NULL;
 }
 
 
@@ -347,6 +354,39 @@ void I_UpdateNoBlit (void)
     // what is this?
 }
 
+static void
+I_LineFill (int srcy, int dsty, int mult)
+{
+	int linerep;
+	int pixrep;
+	int i;
+	uint8_t * src;
+	unsigned long pix;
+
+        src = (uint8_t *)screens[0];
+	src += (srcy * SCREENWIDTH);
+
+	for (linerep = 0; linerep < mult; linerep++) {
+		for (i = 0; i < SCREENWIDTH; i++) {
+			if (X_visual->class == PseudoColor)
+				pix = src[i];
+			else if (X_visual->class == DirectColor)
+				pix = src[i] << 16 | src[i] << 8 | src[i];
+			else { /* TrueColor */
+				pix = 0xFF000000;
+				pix |= (colors[src[i]].red & 0xFF) << 16;
+				pix |= (colors[src[i]].green & 0xFF) << 8;
+				pix |= (colors[src[i]].blue & 0xFF);
+			}
+			for (pixrep = 0; pixrep < mult; pixrep++)
+				XPutPixel (image, (i * mult) + pixrep,
+				    dsty + linerep, pix);
+		}
+	}
+
+	return;
+}
+
 //
 // I_FinishUpdate
 //
@@ -356,6 +396,8 @@ void I_FinishUpdate (void)
     static int	lasttic;
     int		tics;
     int		i;
+    int		j;
+
     // UNUSED static unsigned char *bigscreen=0;
 
     // draws little dots on the bottom of the screen
@@ -374,112 +416,11 @@ void I_FinishUpdate (void)
     
     }
 
-    // scales the screen size before blitting it
-    if (multiply == 2)
-    {
-	unsigned int *olineptrs[2];
-	unsigned int *ilineptr;
-	int x, y, i;
-	unsigned int twoopixels;
-	unsigned int twomoreopixels;
-	unsigned int fouripixels;
-
-	ilineptr = (unsigned int *) (screens[0]);
-	for (i=0 ; i<2 ; i++)
-	    olineptrs[i] = (unsigned int *) &image->data[i*X_width];
-
-	y = SCREENHEIGHT;
-	while (y--)
-	{
-	    x = SCREENWIDTH;
-	    do
-	    {
-		fouripixels = *ilineptr++;
-		twoopixels =	(fouripixels & 0xff000000)
-		    |	((fouripixels>>8) & 0xffff00)
-		    |	((fouripixels>>16) & 0xff);
-		twomoreopixels =	((fouripixels<<16) & 0xff000000)
-		    |	((fouripixels<<8) & 0xffff00)
-		    |	(fouripixels & 0xff);
-#ifdef __BIG_ENDIAN__
-		*olineptrs[0]++ = twoopixels;
-		*olineptrs[1]++ = twoopixels;
-		*olineptrs[0]++ = twomoreopixels;
-		*olineptrs[1]++ = twomoreopixels;
-#else
-		*olineptrs[0]++ = twomoreopixels;
-		*olineptrs[1]++ = twomoreopixels;
-		*olineptrs[0]++ = twoopixels;
-		*olineptrs[1]++ = twoopixels;
-#endif
-	    } while (x-=4);
-	    olineptrs[0] += X_width/4;
-	    olineptrs[1] += X_width/4;
-	}
-
+    for (i = 0; i < SCREENHEIGHT; i++) {
+	for (j = 0; j < multiply; j++)
+		I_LineFill (i, (i * multiply) + j, multiply);
     }
-    else if (multiply == 3)
-    {
-	unsigned int *olineptrs[3];
-	unsigned int *ilineptr;
-	int x, y, i;
-	unsigned int fouropixels[3];
-	unsigned int fouripixels;
 
-	ilineptr = (unsigned int *) (screens[0]);
-	for (i=0 ; i<3 ; i++)
-	    olineptrs[i] = (unsigned int *) &image->data[i*X_width];
-
-	y = SCREENHEIGHT;
-	while (y--)
-	{
-	    x = SCREENWIDTH;
-	    do
-	    {
-		fouripixels = *ilineptr++;
-		fouropixels[0] = (fouripixels & 0xff000000)
-		    |	((fouripixels>>8) & 0xff0000)
-		    |	((fouripixels>>16) & 0xffff);
-		fouropixels[1] = ((fouripixels<<8) & 0xff000000)
-		    |	(fouripixels & 0xffff00)
-		    |	((fouripixels>>8) & 0xff);
-		fouropixels[2] = ((fouripixels<<16) & 0xffff0000)
-		    |	((fouripixels<<8) & 0xff00)
-		    |	(fouripixels & 0xff);
-#ifdef __BIG_ENDIAN__
-		*olineptrs[0]++ = fouropixels[0];
-		*olineptrs[1]++ = fouropixels[0];
-		*olineptrs[2]++ = fouropixels[0];
-		*olineptrs[0]++ = fouropixels[1];
-		*olineptrs[1]++ = fouropixels[1];
-		*olineptrs[2]++ = fouropixels[1];
-		*olineptrs[0]++ = fouropixels[2];
-		*olineptrs[1]++ = fouropixels[2];
-		*olineptrs[2]++ = fouropixels[2];
-#else
-		*olineptrs[0]++ = fouropixels[2];
-		*olineptrs[1]++ = fouropixels[2];
-		*olineptrs[2]++ = fouropixels[2];
-		*olineptrs[0]++ = fouropixels[1];
-		*olineptrs[1]++ = fouropixels[1];
-		*olineptrs[2]++ = fouropixels[1];
-		*olineptrs[0]++ = fouropixels[0];
-		*olineptrs[1]++ = fouropixels[0];
-		*olineptrs[2]++ = fouropixels[0];
-#endif
-	    } while (x-=4);
-	    olineptrs[0] += 2*X_width/4;
-	    olineptrs[1] += 2*X_width/4;
-	    olineptrs[2] += 2*X_width/4;
-	}
-
-    }
-    else if (multiply == 4)
-    {
-	// Broken. Gotta fix this some day.
-	void Expand4(unsigned *, double *);
-  	Expand4 ((unsigned *)(screens[0]), (double *) (image->data));
-    }
 
     if (doShm)
     {
@@ -534,7 +475,6 @@ void I_ReadScreen (byte* scr)
 //
 // Palette stuff.
 //
-static XColor	colors[256];
 
 void UploadNewPalette(Colormap cmap, byte *palette)
 {
@@ -543,38 +483,34 @@ void UploadNewPalette(Colormap cmap, byte *palette)
     register int	c;
     static boolean	firstcall = true;
 
-#ifdef __cplusplus
-    if (X_visualinfo.c_class == PseudoColor && X_visualinfo.depth == 8)
-#else
-    if (X_visualinfo.class == PseudoColor && X_visualinfo.depth == 8)
-#endif
+    // initialize the colormap
+    if (firstcall)
+    {
+	firstcall = false;
+	for (i=0 ; i<256 ; i++)
 	{
-	    // initialize the colormap
-	    if (firstcall)
-	    {
-		firstcall = false;
-		for (i=0 ; i<256 ; i++)
-		{
-		    colors[i].pixel = i;
-		    colors[i].flags = DoRed|DoGreen|DoBlue;
-		}
-	    }
-
-	    // set the X colormap entries
-	    for (i=0 ; i<256 ; i++)
-	    {
-		c = gammatable[usegamma][*palette++];
-		colors[i].red = (c<<8) + c;
-		c = gammatable[usegamma][*palette++];
-		colors[i].green = (c<<8) + c;
-		c = gammatable[usegamma][*palette++];
-		colors[i].blue = (c<<8) + c;
-	    }
-
-	    // store the colors to the current colormap
-	    XStoreColors(X_display, cmap, colors, 256);
-
+	    if (X_visual->class == PseudoColor)
+		colors[i].pixel = i;
+	    else
+		colors[i].pixel = i | i << 8 | i << 16;
+	    colors[i].flags = DoRed|DoGreen|DoBlue;
 	}
+    }
+
+    // set the X colormap entries
+    for (i=0 ; i<256 ; i++)
+    {
+	c = gammatable[usegamma][*palette++];
+	colors[i].red = (c<<8) + c;
+	c = gammatable[usegamma][*palette++];
+	colors[i].green = (c<<8) + c;
+	c = gammatable[usegamma][*palette++];
+	colors[i].blue = (c<<8) + c;
+    }
+
+    // store the colors to the current colormap
+    if (X_visual->class != TrueColor)
+	XStoreColors(X_display, cmap, colors, 256);
 }
 
 //
@@ -710,6 +646,8 @@ void I_InitGraphics(void)
     XGCValues		xgcvalues;
     int			valuemask;
     static int		firsttime=1;
+    XTextProperty	winName;
+    char *		windowTitle;
 
     if (!firsttime)
 	return;
@@ -769,8 +707,43 @@ void I_InitGraphics(void)
 
     // use the default visual 
     X_screen = DefaultScreen(X_display);
-    if (!XMatchVisualInfo(X_display, X_screen, 8, PseudoColor, &X_visualinfo))
-	I_Error("xdoom currently only supports 256-color PseudoColor screens");
+
+    /*
+     * It used to be very common for people to have systems with
+     * support for 8-bit pseudocolor visuals, which was convenient
+     * since Doom renders graphics using 8-bit pseudocolor pixels
+     * with a 24-bit color lookup table (palette), which could be
+     * installed as a private color map.
+     *
+     * But these days, graphics cards are much fancier and you almost
+     * never have 8-bit pseudocolor visual support anymore, which
+     * means that while you can get Doom's original X11 display code
+     * to compile on modern systems, you can't get it to run.
+     *
+     * Instead you have 24-bit depth with either TrueColor or
+     * DirectColor visuals. Neither one is exactly idea. With
+     * DirectColor an X11 application can still use a private color
+     * map, but you have to populate 24 bits of pixel data instead
+     * of just 8. This also results in terrible color map flashing.
+     * With TrueColor you avoid the color map flashing, but you
+     * also have to populate 24 bits of pixel data, _and_ you have
+     * to perform the color map lookup in software.
+     *
+     * We prefer TrueColor here, because at least we avoid the
+     * color map flashing so the user doesn't have a seizure.
+     */
+
+    X_depth = 8;
+
+    if (!XMatchVisualInfo(X_display, X_screen, X_depth,
+	PseudoColor, &X_visualinfo)) {
+	printf ("256-color PseudoColor visual not found, trying TrueColor\n");
+	X_depth = 24;
+	if (!XMatchVisualInfo (X_display, X_screen,
+	    X_depth, TrueColor, &X_visualinfo))
+	    I_Error ("no compatible visual found\n");
+    }
+
     X_visual = X_visualinfo.visual;
 
     // check for the MITSHM extension
@@ -789,11 +762,16 @@ void I_InitGraphics(void)
 	}
     }
 
-    fprintf(stderr, "Using MITSHM extension\n");
+    if (doShm)
+	fprintf(stderr, "Using MITSHM extension\n");
 
     // create the colormap
-    X_cmap = XCreateColormap(X_display, RootWindow(X_display,
+    if (X_visual->class != TrueColor)
+	X_cmap = XCreateColormap(X_display, RootWindow(X_display,
 						   X_screen), X_visual, AllocAll);
+    else
+	X_cmap = XCreateColormap(X_display, XDefaultRootWindow(X_display),
+						   X_visual, AllocNone);
 
     // setup attributes for main window
     attribmask = CWEventMask | CWColormap | CWBorderPixel;
@@ -812,11 +790,15 @@ void I_InitGraphics(void)
 					x, y,
 					X_width, X_height,
 					0, // borderwidth
-					8, // depth
+					X_depth, // depth
 					InputOutput,
 					X_visual,
 					attribmask,
 					&attribs );
+
+    windowTitle = "X11 Doom 1.10";
+    XStringListToTextProperty (&windowTitle, 1, &winName);
+    XSetWMName (X_display, X_mainWindow, &winName);
 
     XDefineCursor(X_display, X_mainWindow,
 		  createnullcursor( X_display, X_mainWindow ) );
@@ -859,14 +841,15 @@ void I_InitGraphics(void)
 	// create the image
 	image = XShmCreateImage(	X_display,
 					X_visual,
-					8,
+					X_depth,
 					ZPixmap,
 					0,
 					&X_shminfo,
 					X_width,
-					X_height );
+					X_height);
 
-	grabsharedmemory(image->bytes_per_line * image->height);
+	grabsharedmemory(image->bytes_per_line * image->height *
+	    sizeof(uint32_t));
 
 
 	// UNUSED
@@ -898,154 +881,16 @@ void I_InitGraphics(void)
     {
 	image = XCreateImage(	X_display,
     				X_visual,
-    				8,
+    				X_depth,
     				ZPixmap,
     				0,
-    				(char*)malloc(X_width * X_height),
+    				(char*)malloc((X_width * X_height) *
+				    sizeof(uint32_t)),
     				X_width, X_height,
-    				8,
-    				X_width );
+    				32, 0);
 
     }
 
-    if (multiply == 1)
-	screens[0] = (unsigned char *) (image->data);
-    else
-	screens[0] = (unsigned char *) malloc (SCREENWIDTH * SCREENHEIGHT);
-
+    screens[0] = (unsigned char *) malloc (SCREENWIDTH * SCREENHEIGHT);
+    return;
 }
-
-
-unsigned	exptable[256];
-
-void InitExpand (void)
-{
-    int		i;
-	
-    for (i=0 ; i<256 ; i++)
-	exptable[i] = i | (i<<8) | (i<<16) | (i<<24);
-}
-
-double		exptable2[256*256];
-
-void InitExpand2 (void)
-{
-    int		i;
-    int		j;
-    // UNUSED unsigned	iexp, jexp;
-    double*	exp;
-    union
-    {
-	double 		d;
-	unsigned	u[2];
-    } pixel;
-	
-    printf ("building exptable2...\n");
-    exp = exptable2;
-    for (i=0 ; i<256 ; i++)
-    {
-	pixel.u[0] = i | (i<<8) | (i<<16) | (i<<24);
-	for (j=0 ; j<256 ; j++)
-	{
-	    pixel.u[1] = j | (j<<8) | (j<<16) | (j<<24);
-	    *exp++ = pixel.d;
-	}
-    }
-    printf ("done.\n");
-}
-
-int	inited;
-
-void
-Expand4
-( unsigned*	lineptr,
-  double*	xline )
-{
-    double	dpixel;
-    unsigned	x;
-    unsigned 	y;
-    unsigned	fourpixels;
-    unsigned	step;
-    double*	exp;
-	
-    exp = exptable2;
-    if (!inited)
-    {
-	inited = 1;
-	InitExpand2 ();
-    }
-		
-		
-    step = 3*SCREENWIDTH/2;
-	
-    y = SCREENHEIGHT-1;
-    do
-    {
-	x = SCREENWIDTH;
-
-	do
-	{
-	    fourpixels = lineptr[0];
-			
-	    dpixel = *(double *)( (int)exp + ( (fourpixels&0xffff0000)>>13) );
-	    xline[0] = dpixel;
-	    xline[160] = dpixel;
-	    xline[320] = dpixel;
-	    xline[480] = dpixel;
-			
-	    dpixel = *(double *)( (int)exp + ( (fourpixels&0xffff)<<3 ) );
-	    xline[1] = dpixel;
-	    xline[161] = dpixel;
-	    xline[321] = dpixel;
-	    xline[481] = dpixel;
-
-	    fourpixels = lineptr[1];
-			
-	    dpixel = *(double *)( (int)exp + ( (fourpixels&0xffff0000)>>13) );
-	    xline[2] = dpixel;
-	    xline[162] = dpixel;
-	    xline[322] = dpixel;
-	    xline[482] = dpixel;
-			
-	    dpixel = *(double *)( (int)exp + ( (fourpixels&0xffff)<<3 ) );
-	    xline[3] = dpixel;
-	    xline[163] = dpixel;
-	    xline[323] = dpixel;
-	    xline[483] = dpixel;
-
-	    fourpixels = lineptr[2];
-			
-	    dpixel = *(double *)( (int)exp + ( (fourpixels&0xffff0000)>>13) );
-	    xline[4] = dpixel;
-	    xline[164] = dpixel;
-	    xline[324] = dpixel;
-	    xline[484] = dpixel;
-			
-	    dpixel = *(double *)( (int)exp + ( (fourpixels&0xffff)<<3 ) );
-	    xline[5] = dpixel;
-	    xline[165] = dpixel;
-	    xline[325] = dpixel;
-	    xline[485] = dpixel;
-
-	    fourpixels = lineptr[3];
-			
-	    dpixel = *(double *)( (int)exp + ( (fourpixels&0xffff0000)>>13) );
-	    xline[6] = dpixel;
-	    xline[166] = dpixel;
-	    xline[326] = dpixel;
-	    xline[486] = dpixel;
-			
-	    dpixel = *(double *)( (int)exp + ( (fourpixels&0xffff)<<3 ) );
-	    xline[7] = dpixel;
-	    xline[167] = dpixel;
-	    xline[327] = dpixel;
-	    xline[487] = dpixel;
-
-	    lineptr+=4;
-	    xline+=8;
-	} while (x-=16);
-	xline += step;
-    } while (y--);
-}
-
-
