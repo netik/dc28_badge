@@ -255,6 +255,7 @@ addsfx
   int		step,
   int		seperation )
 {
+__attribute__((section(".ram7")))
     static unsigned short	handlenums = 0;
  
     int		i;
