@@ -876,7 +876,24 @@ static int WM_GetOutput_Linear(midi * handle, int8_t *buffer, uint32_t size) {
         if (__builtin_expect((!mdi->samples_to_mix), 0)) {
             while ((!mdi->samples_to_mix) && (event->do_event)) {
                 event->do_event(mdi, &event->event_data);
-                if ((mdi->extra_info.mixer_options & WM_MO_LOOP) && (event[0].evtype == ev_meta_endoftrack)) {
+                /*
+                 * The original logic here said "if we're looping,
+                 * and we reached an end-of-track event, then we're
+                 * at the end of the song, and we should go back and
+                 * start playing it again."
+                 *
+                 * This reasoning is faulty: it assumes that there can
+                 * only ever be one end-of-track event in a MIDI file,
+                 * and that assumption is apparently wrong.
+                 *
+                 * The updated logic here only honors the end-of-track
+                 * event if it's also the last valid event in the event
+                 * array, i.e. the following event is the terminator,
+                 * with an evtype of ev_null.
+                 */
+                if ((mdi->extra_info.mixer_options & WM_MO_LOOP) &&
+                    (event[0].evtype == ev_meta_endoftrack) &&
+                    (event[1].evtype == ev_null)) {
                     _WM_ResetToStart(mdi);
                     event = mdi->current_event;
                 } else {
@@ -1195,7 +1212,24 @@ static int WM_GetOutput_Gauss(midi * handle, int8_t *buffer, uint32_t size) {
         if (__builtin_expect((!mdi->samples_to_mix), 0)) {
             while ((!mdi->samples_to_mix) && (event->do_event)) {
                 event->do_event(mdi, &event->event_data);
-                if ((mdi->extra_info.mixer_options & WM_MO_LOOP) && (event[0].evtype == ev_meta_endoftrack)) {
+                /*
+                 * The original logic here said "if we're looping,
+                 * and we reached an end-of-track event, then we're
+                 * at the end of the song, and we should go back and
+                 * start playing it again."
+                 *
+                 * This reasoning is faulty: it assumes that there can
+                 * only ever be one end-of-track event in a MIDI file,
+                 * and that assumption is apparently wrong.
+                 *
+                 * The updated logic here only honors the end-of-track
+                 * event if it's also the last valid event in the event
+                 * array, i.e. the following event is the terminator,
+                 * with an evtype of ev_null.
+                 */
+                if ((mdi->extra_info.mixer_options & WM_MO_LOOP) &&
+                    (event[0].evtype == ev_meta_endoftrack) &&
+                    (event[1].evtype == ev_null)) {
                     _WM_ResetToStart(mdi);
                     event = mdi->current_event;
                 } else {
