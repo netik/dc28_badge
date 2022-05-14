@@ -885,7 +885,7 @@ void I_InitGraphics(void)
     				ZPixmap,
     				0,
     				(char*)malloc((X_width * X_height) *
-				    sizeof(uint32_t)),
+				    sizeof(unsigned long)),
     				X_width, X_height,
     				32, 0);
 
