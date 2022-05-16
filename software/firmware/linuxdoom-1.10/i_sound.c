@@ -31,6 +31,7 @@ rcsid[] = "$Id: i_unix.c,v 1.5 1997/02/03 22:45:10 b1 Exp $";
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <errno.h>
 
 #include <math.h>
 
@@ -185,7 +186,6 @@ myioctl
   int*	arg )
 {   
     int		rc;
-    extern int	errno;
     
     rc = ioctl(fd, command, arg);  
     if (rc < 0)
@@ -968,7 +968,7 @@ void I_PlaySong(int handle, int loop)
   p = &S_music[i];
   
   WildMidi_Init (WILDMIDI_CONFIG_PATH, SAMPLERATE,
-    WM_MO_ENHANCED_RESAMPLING | (looping ? WM_MO_LOOP : 0));
+    /*WM_MO_ENHANCED_RESAMPLING |*/ (looping ? WM_MO_LOOP : 0));
 
   songhandle = WildMidi_OpenBuffer (p->data, W_LumpLength (p->lumpnum));
 
