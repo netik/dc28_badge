@@ -951,7 +951,7 @@ bool sdc_lld_write(SDCDriver *sdcp, uint32_t startblk,
                    const uint8_t *buf, uint32_t blocks) {
 
 #if STM32_SDC_SDMMC_UNALIGNED_SUPPORT
-  if (((unsigned)buf & 3) != 0) {
+  if (((unsigned)buf & (CACHE_LINE_SIZE - 1)) != 0) {
     uint32_t i;
     for (i = 0; i < blocks; i++) {
       memcpy(sdcp->buf, buf, MMCSD_BLOCK_SIZE);
