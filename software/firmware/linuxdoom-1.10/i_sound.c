@@ -968,7 +968,7 @@ void I_PlaySong(int handle, int loop)
   p = &S_music[i];
   
   WildMidi_Init (WILDMIDI_CONFIG_PATH, SAMPLERATE,
-    /*WM_MO_ENHANCED_RESAMPLING |*/ (looping ? WM_MO_LOOP : 0));
+    WM_MO_ENHANCED_RESAMPLING | (looping ? WM_MO_LOOP : 0));
 
   songhandle = WildMidi_OpenBuffer (p->data, W_LumpLength (p->lumpnum));
 
