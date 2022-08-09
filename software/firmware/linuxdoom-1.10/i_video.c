@@ -361,7 +361,7 @@ void I_UpdateNoBlit (void)
 
 /*
  * Note:
-
+ *
  * Historically, X11 has defined a pixel as an unsigned long. This
  * makes sense given that for 24-bit TrueColor visuals, a pixel may need
  * to be represented by 32 bits (8 bits each for red, green and blue
