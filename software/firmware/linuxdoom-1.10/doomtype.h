@@ -34,6 +34,36 @@ typedef bool boolean;
 typedef enum {false, true} boolean;
 #endif
 
+#ifdef sun
+
+#include <sys/types.h>
+
+typedef unsigned char uint8_t;
+typedef signed char int8_t;
+typedef unsigned short uint16_t;
+typedef signed short int16_t;
+typedef unsigned long uint32_t;
+typedef signed long int32_t;
+typedef int socklen_t;
+typedef unsigned int uintptr_t;
+
+#define true 1
+#define false 0
+
+/*
+ * Very old versions of GCC for SunOS don't support the
+ * __attribute__ keyword, so make sure to make it disappear.
+ */
+
+#define __attribute__(x)
+
+#else
+
+#include <stdbool.h>
+#include <stdint.h>
+
+#endif
+
 /*
  * Why do we define boolean to be an int instead of a bool? Well,
  * apparently Doom has a funny idea that boolean variables can
@@ -45,8 +75,6 @@ typedef enum {false, true} boolean;
  * We also include stdbool.h to get the definitions of true and false.
  */
 
-#include <stdbool.h>
-#include <stdint.h>
 typedef int boolean;
 
 #endif

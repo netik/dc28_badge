@@ -73,6 +73,8 @@ int		X_width;
 int		X_height;
 int		X_depth;
 
+static uint8_t * frame;
+
 // MIT SHared Memory extension.
 boolean		doShm;
 
@@ -181,6 +183,9 @@ void I_ShutdownGraphics(void)
   // Paranoia.
   if (image != NULL)
     image->data = NULL;
+
+  free (frame);
+
 }
 
 
@@ -354,33 +359,59 @@ void I_UpdateNoBlit (void)
     // what is this?
 }
 
+/*
+ * Note:
+
+ * Historically, X11 has defined a pixel as an unsigned long. This
+ * makes sense given that for 24-bit TrueColor visuals, a pixel may need
+ * to be represented by 32 bits (8 bits each for red, green and blue
+ * color levels plus 8 more bits for luminance).
+ *
+ * But that decision was made before 64-bit systems came into common use.
+ * With an LP64 machine, the size of the long type changes from 32 bits
+ * to 64 bits. Internally though, it's important that the pixel size
+ * remain at 32 bits. This creates a bit of a discrepancy. For example,
+ * the XPutPixel() function takes an unsigned long argument as the pixel
+ * value, however internally the upper 32 bits are ignored, and only the
+ * lower 32 bits are placed into the XImage data buffer.
+ *
+ * Here. we're trying to avoid the overhead of calling XPutPixel() by
+ * populating the image->data[] buffer directly, but for this to work
+ * right, we have to also enforce a pixel size of 32 bits for DirectColor
+ * and TrueColor visuals. This is why "pix" and "dst" are not declared
+ * as unsigned long, even though it may seem as though they should be.
+ */
+
 static void
-I_LineFill (int srcy, int dsty, int mult)
+I_Draw (int mult)
 {
-	int linerep;
-	int pixrep;
+	int pixcnt;
 	int i;
+	uint32_t pix;
+	uint32_t * dst;
+	uint8_t idx;
 	uint8_t * src;
-	unsigned long pix;
 
-        src = (uint8_t *)screens[0];
-	src += (srcy * SCREENWIDTH);
+	pixcnt = X_width * X_height;;
+	dst = (uint32_t *)image->data;
 
-	for (linerep = 0; linerep < mult; linerep++) {
-		for (i = 0; i < SCREENWIDTH; i++) {
-			if (X_visual->class == PseudoColor)
-				pix = src[i];
-			else if (X_visual->class == DirectColor)
-				pix = src[i] << 16 | src[i] << 8 | src[i];
-			else { /* TrueColor */
-				pix = 0xFF000000;
-				pix |= (colors[src[i]].red & 0xFF) << 16;
-				pix |= (colors[src[i]].green & 0xFF) << 8;
-				pix |= (colors[src[i]].blue & 0xFF);
-			}
-			for (pixrep = 0; pixrep < mult; pixrep++)
-				XPutPixel (image, (i * mult) + pixrep,
-				    dsty + linerep, pix);
+	if (mult == 1)
+		src = screens[0];
+	else
+		src = frame;
+
+	for (i = 0; i < pixcnt; i++) {
+		idx = src[i];
+		if (X_visual->class == PseudoColor)
+			image->data[i] = idx;
+		else if (X_visual->class == DirectColor)
+			dst[i] = idx << 16 | idx << 8 | idx;
+		else { /* TrueColor */
+			pix = 0xFF000000;
+			pix |= (colors[idx].red & 0xFF) << 16;
+			pix |= (colors[idx].green & 0xFF) << 8;
+			pix |= (colors[idx].blue & 0xFF);
+			dst[i] = pix;
 		}
 	}
 
@@ -396,7 +427,6 @@ void I_FinishUpdate (void)
     static int	lasttic;
     int		tics;
     int		i;
-    int		j;
 
     // UNUSED static unsigned char *bigscreen=0;
 
@@ -416,11 +446,108 @@ void I_FinishUpdate (void)
     
     }
 
-    for (i = 0; i < SCREENHEIGHT; i++) {
-	for (j = 0; j < multiply; j++)
-		I_LineFill (i, (i * multiply) + j, multiply);
+    // scales the screen size before blitting it
+    if (multiply == 2)
+    {
+	unsigned int *olineptrs[2];
+	unsigned int *ilineptr;
+	int x, y, i;
+	unsigned int twoopixels;
+	unsigned int twomoreopixels;
+	unsigned int fouripixels;
+
+	ilineptr = (unsigned int *) (screens[0]);
+	for (i=0 ; i<2 ; i++)
+	    olineptrs[i] = (unsigned int *) &frame[i*X_width];
+
+	y = SCREENHEIGHT;
+	while (y--)
+	{
+	    x = SCREENWIDTH;
+	    do
+	    {
+		fouripixels = *ilineptr++;
+		twoopixels =	(fouripixels & 0xff000000)
+		    |	((fouripixels>>8) & 0xffff00)
+		    |	((fouripixels>>16) & 0xff);
+		twomoreopixels =	((fouripixels<<16) & 0xff000000)
+		    |	((fouripixels<<8) & 0xffff00)
+		    |	(fouripixels & 0xff);
+#ifdef __BIG_ENDIAN__
+		*olineptrs[0]++ = twoopixels;
+		*olineptrs[1]++ = twoopixels;
+		*olineptrs[0]++ = twomoreopixels;
+		*olineptrs[1]++ = twomoreopixels;
+#else
+		*olineptrs[0]++ = twomoreopixels;
+		*olineptrs[1]++ = twomoreopixels;
+		*olineptrs[0]++ = twoopixels;
+		*olineptrs[1]++ = twoopixels;
+#endif
+	    } while (x-=4);
+	    olineptrs[0] += X_width/4;
+	    olineptrs[1] += X_width/4;
+	}
+
+    }
+    else if (multiply == 3)
+    {
+	unsigned int *olineptrs[3];
+	unsigned int *ilineptr;
+	int x, y, i;
+	unsigned int fouropixels[3];
+	unsigned int fouripixels;
+
+	ilineptr = (unsigned int *) (screens[0]);
+	for (i=0 ; i<3 ; i++)
+	    olineptrs[i] = (unsigned int *) &frame[i*X_width];
+
+	y = SCREENHEIGHT;
+	while (y--)
+	{
+	    x = SCREENWIDTH;
+	    do
+	    {
+		fouripixels = *ilineptr++;
+		fouropixels[0] = (fouripixels & 0xff000000)
+		    |	((fouripixels>>8) & 0xff0000)
+		    |	((fouripixels>>16) & 0xffff);
+		fouropixels[1] = ((fouripixels<<8) & 0xff000000)
+		    |	(fouripixels & 0xffff00)
+		    |	((fouripixels>>8) & 0xff);
+		fouropixels[2] = ((fouripixels<<16) & 0xffff0000)
+		    |	((fouripixels<<8) & 0xff00)
+		    |	(fouripixels & 0xff);
+#ifdef __BIG_ENDIAN__
+		*olineptrs[0]++ = fouropixels[0];
+		*olineptrs[1]++ = fouropixels[0];
+		*olineptrs[2]++ = fouropixels[0];
+		*olineptrs[0]++ = fouropixels[1];
+		*olineptrs[1]++ = fouropixels[1];
+		*olineptrs[2]++ = fouropixels[1];
+		*olineptrs[0]++ = fouropixels[2];
+		*olineptrs[1]++ = fouropixels[2];
+		*olineptrs[2]++ = fouropixels[2];
+#else
+		*olineptrs[0]++ = fouropixels[2];
+		*olineptrs[1]++ = fouropixels[2];
+		*olineptrs[2]++ = fouropixels[2];
+		*olineptrs[0]++ = fouropixels[1];
+		*olineptrs[1]++ = fouropixels[1];
+		*olineptrs[2]++ = fouropixels[1];
+		*olineptrs[0]++ = fouropixels[0];
+		*olineptrs[1]++ = fouropixels[0];
+		*olineptrs[2]++ = fouropixels[0];
+#endif
+	    } while (x-=4);
+	    olineptrs[0] += 2*X_width/4;
+	    olineptrs[1] += 2*X_width/4;
+	    olineptrs[2] += 2*X_width/4;
+	}
+
     }
 
+    I_Draw (multiply);
 
     if (doShm)
     {
@@ -721,7 +848,7 @@ void I_InitGraphics(void)
      * to compile on modern systems, you can't get it to run.
      *
      * Instead you have 24-bit depth with either TrueColor or
-     * DirectColor visuals. Neither one is exactly idea. With
+     * DirectColor visuals. Neither one is exactly ideal. With
      * DirectColor an X11 application can still use a private color
      * map, but you have to populate 24 bits of pixel data instead
      * of just 8. This also results in terrible color map flashing.
@@ -848,9 +975,14 @@ void I_InitGraphics(void)
 					X_width,
 					X_height);
 
-	grabsharedmemory(image->bytes_per_line * image->height *
-	    sizeof(uint32_t));
+	if (X_visual->class == PseudoColor)
+	    grabsharedmemory(image->bytes_per_line * image->height);
+	else
+	    grabsharedmemory(image->bytes_per_line * image->height *
+	        sizeof(uint32_t));
 
+	frame = malloc (image->bytes_per_line * image->height *
+	    sizeof(uint32_t));
 
 	// UNUSED
 	// create the shared memory segment

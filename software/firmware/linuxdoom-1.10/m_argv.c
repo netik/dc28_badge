@@ -23,8 +23,10 @@
 static const char
 rcsid[] = "$Id: m_argv.c,v 1.1 1997/02/03 22:45:10 b1 Exp $";
 
+#include "doomtype.h"
 
 #include <string.h>
+#include <strings.h>
 
 __attribute__((section(".ram7")))
 int		myargc;

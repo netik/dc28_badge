@@ -183,3 +183,15 @@ void I_Error (char *error, ...)
     
     exit(-1);
 }
+
+#ifdef sun
+
+/* This is a hack, but SunOS 4 doesn't have strerror(). */
+
+char *
+strerror (int i)
+{
+	(void)i;
+	return ("<none>");
+}
+#endif

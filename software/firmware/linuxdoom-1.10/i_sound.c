@@ -30,7 +30,9 @@ rcsid[] = "$Id: i_unix.c,v 1.5 1997/02/03 22:45:10 b1 Exp $";
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#ifndef sun
 #include <stdbool.h>
+#endif
 #include <errno.h>
 
 #include <math.h>
@@ -46,11 +48,16 @@ rcsid[] = "$Id: i_unix.c,v 1.5 1997/02/03 22:45:10 b1 Exp $";
 #include <unistd.h>
 #include <sys/ioctl.h>
 
+
+#ifndef SNDSERV
+
 // Linux voxware output.
 #ifdef __FreeBSD__
 #include <sys/soundcard.h>
 #else
 #include <linux/soundcard.h>
+#endif
+
 #endif
 
 // Timer stuff. Experimental.
@@ -498,9 +505,9 @@ void I_SetMusicVolume(int volume)
 //
 int I_GetSfxLumpNum(sfxinfo_t* sfx)
 {
+    char namebuf[9];
     if (sfx->name == NULL)
         return (-1);
-    char namebuf[9];
     if (W_CheckNumForName(sfx->name) != -1)
 	return (W_GetNumForName(sfx->name));
     sprintf(namebuf, "ds%s", sfx->name);
@@ -1126,8 +1133,8 @@ int I_SoundSetTimer( int duration_of_tick )
   act.sa_handler = I_HandleSoundTimer;
 #ifndef sun    
   //ac	t.sa_mask = _sig;
-#endif
   act.sa_flags = SA_RESTART;
+#endif
   
   sigaction( sig, &act, &oact );
 

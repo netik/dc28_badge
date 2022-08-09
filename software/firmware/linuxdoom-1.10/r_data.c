@@ -27,6 +27,10 @@
 static const char
 rcsid[] = "$Id: r_data.c,v 1.4 1997/02/03 16:47:55 b1 Exp $";
 
+#include <stdio.h>
+#include <string.h>
+#include <strings.h>
+
 #include "i_system.h"
 #include "z_zone.h"
 
@@ -555,7 +559,7 @@ void R_InitTextures (void)
 	texture->height = SHORT(mtexture->height);
 	texture->patchcount = SHORT(mtexture->patchcount);
 
-	memcpy (texture->name, mtexture->name, sizeof(texture->name));
+	bcopy (mtexture->name, texture->name, sizeof(texture->name));
 	mpatch = &mtexture->patches[0];
 	patch = &texture->patches[0];
 	for (j=0 ; j<texture->patchcount ; j++, mpatch++, patch++)
