@@ -981,9 +981,6 @@ void I_InitGraphics(void)
 	    grabsharedmemory(image->bytes_per_line * image->height *
 	        sizeof(uint32_t));
 
-	frame = malloc (image->bytes_per_line * image->height *
-	    sizeof(uint32_t));
-
 	// UNUSED
 	// create the shared memory segment
 	// X_shminfo.shmid = shmget (IPC_PRIVATE,
@@ -1017,11 +1014,13 @@ void I_InitGraphics(void)
     				ZPixmap,
     				0,
     				(char*)malloc((X_width * X_height) *
-				    sizeof(unsigned long)),
+				    sizeof(uint32_t)),
     				X_width, X_height,
     				32, 0);
 
     }
+
+    frame = malloc (image->bytes_per_line * image->height * sizeof(uint32_t));
 
     screens[0] = (unsigned char *) malloc (SCREENWIDTH * SCREENHEIGHT);
     return;
