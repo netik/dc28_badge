@@ -164,6 +164,7 @@ void PacketGet (void)
     socklen_t		fromlen;
     doomdata_t		sw;
 				
+    usleep (rand() % 100);
     fromlen = sizeof(fromaddress);
     c = recvfrom (insocket, &sw, sizeof(sw), 0
 		  , (struct sockaddr *)&fromaddress, &fromlen );
