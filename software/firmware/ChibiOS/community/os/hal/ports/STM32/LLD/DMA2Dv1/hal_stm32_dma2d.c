@@ -89,9 +89,6 @@ OSAL_IRQ_HANDLER(STM32_DMA2D_HANDLER) {
 
   DMA2DDriver *const dma2dp = &DMA2DD1;
   bool job_done = false;
-#if DMA2D_USE_WAIT
-  thread_t *tp = NULL;
-#endif
 
   OSAL_IRQ_PROLOGUE();
 
@@ -147,13 +144,8 @@ OSAL_IRQ_HANDLER(STM32_DMA2D_HANDLER) {
     osalDbgAssert(dma2dp->state == DMA2D_ACTIVE, "invalid state");
 
   #if DMA2D_USE_WAIT
-    /* Wake the waiting thread up.*/
-    if (dma2dp->thread != NULL) {
-      tp = dma2dp->thread;
-      dma2dp->thread = NULL;
-      tp->u.rdymsg = MSG_OK;
-      chSchReadyI(tp);
-    }
+    if (dma2dp->thread != NULL)
+        osalThreadResumeI (&dma2dp->thread, MSG_OK);
   #endif  /* DMA2D_USE_WAIT */
 
     dma2dp->state = DMA2D_READY;
@@ -1020,10 +1012,13 @@ void dma2dJobExecuteS(DMA2DDriver *dma2dp) {
   osalDbgCheckClassS();
   osalDbgCheck(dma2dp == &DMA2DD1);
 
+#if DMA2D_USE_WAIT
+  osalSysLock ();
+#endif
   dma2dJobStartI(dma2dp);
 #if DMA2D_USE_WAIT
-  dma2dp->thread = chThdGetSelfX();
-  chSchGoSleepS(CH_STATE_SUSPENDED);
+  osalThreadSuspendS (&dma2dp->thread);
+  osalSysUnlock ();
 #else
   while (DMA2D->CR & DMA2D_CR_START)
     chSchDoYieldS();
@@ -1696,11 +1691,14 @@ void dma2dBgSetPaletteS(DMA2DDriver *dma2dp, const dma2d_palcfg_t *palettep) {
   );
 
   dma2dp->state = DMA2D_ACTIVE;
+#if DMA2D_USE_WAIT
+  osalSysLock ();
+#endif
   DMA2D->BGPFCCR |= DMA2D_BGPFCCR_START;
 
 #if DMA2D_USE_WAIT
-  dma2dp->thread = chThdGetSelfX();
-  chSchGoSleepS(CH_STATE_SUSPENDED);
+  osalThreadSuspendS (&dma2dp->thread);
+  osalSysUnlock ();
 #else
   while (DMA2D->BGPFCCR & DMA2D_BGPFCCR_START)
     chSchDoYieldS();
@@ -2361,11 +2359,14 @@ void dma2dFgSetPaletteS(DMA2DDriver *dma2dp, const dma2d_palcfg_t *palettep) {
   );
 
   dma2dp->state = DMA2D_ACTIVE;
+#if DMA2D_USE_WAIT
+  osalSysLock ();
+#endif
   DMA2D->FGPFCCR |= DMA2D_FGPFCCR_START;
 
 #if DMA2D_USE_WAIT
-  dma2dp->thread = chThdGetSelfX();
-  chSchGoSleepS(CH_STATE_SUSPENDED);
+  osalThreadSuspendS (&dma2dp->thread);
+  osalSysUnlock ();
 #else
   while (DMA2D->FGPFCCR & DMA2D_FGPFCCR_START)
     chSchDoYieldS();
