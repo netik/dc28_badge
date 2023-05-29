@@ -78,7 +78,7 @@ static int SAMPLECOUNT;
  *
  * 192000000 / 17 / 2 / 256 / 2 == 11029.412KHz
  *
- * We pretend this is close enough to 11025 that nobody will notice
+ * This should be close enough to 11025 that nobody will notice
  * the difference.
  */
 
