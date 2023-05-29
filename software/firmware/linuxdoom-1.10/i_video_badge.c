@@ -46,10 +46,63 @@ rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
 
 #include "doomdef.h"
 
+#define ASPECT_FIXUP
+
+#ifdef ASPECT_FIXUP
+#define STRETCHEDHEIGHT 240
+__attribute__((section(".ram7")))
+static uint8_t * scaled;
+#endif
+
 __attribute__((section(".ram7")))
 static palette_color_t * palettebuf;
 __attribute__((section(".ram7")))
 static int buttontmp;
+
+/*
+ * These are helper functions which are used to copy
+ * scanline data 8 bytes at a time. The STM32F746 processor
+ * supports single-precision floating point only. However
+ * even so, the double-precision registers can be used to
+ * load and store 64-bit quantities. This allows us to
+ * take advantage of them to copy scanlines with a few
+ * less instructions that if we just use a memcpy().
+ */
+
+static inline void
+copy_scanline (uint8_t * dst, uint8_t * src)
+{
+	int i;
+
+	for (i = 0; i < (SCREENWIDTH / 8); i++) {
+		__asm__ ("vldr	d0, [%0]\n"
+			 "vstr	d0, [%1]"
+			 : : "r" (src), "r" (dst) : );
+		src += 8;
+		dst += 8;
+	}
+
+	return;
+}
+
+#ifdef ASPECT_FIXUP
+static inline void
+duplicate_scanline (uint8_t * dst, uint8_t * src)
+{
+	int i;
+
+	for (i = 0; i < (SCREENWIDTH / 8); i++) {
+		__asm__ ("vldr	d0, [%0]\n"
+			 "vstr	d0, [%1]\n"
+			 "vstr	d0, [%1,#320]"
+			 : : "r" (src), "r" (dst) : );
+		src += 8;
+		dst += 8;
+	}
+
+	return;
+}
+#endif
 
 //
 //  Translates the key 
@@ -139,6 +192,12 @@ void I_ShutdownGraphics (void)
 	screens[0] = NULL;
 	palettebuf = NULL;
 
+#ifdef ASPECT_FIXUP
+	if (scaled != NULL)
+		free (scaled);
+	scaled = NULL;
+#endif
+
 	return;
 }
 
@@ -225,6 +284,10 @@ __attribute__((section(".ram7")))
 	static int	lasttic;
 	int		tics;
 	int		i;
+#ifdef ASPECT_FIXUP
+	uint8_t *	pDst;
+	uint8_t *	pSrc;
+#endif
 
 	if (palettebuf == NULL)
 		return;
@@ -243,7 +306,72 @@ __attribute__((section(".ram7")))
 	    		screens[0][ (SCREENHEIGHT-1)*SCREENWIDTH + i] = 0x0;
     	}
 
+#ifdef ASPECT_FIXUP
+	/*
+	 * Back in the day, the MS-DOS version of Doom used a special
+	 * display mode known as VGA mode Y, which allowed for a resolution
+	 * of 320x200 pixels and 256 colors. This is why Doom's rendering
+	 * engine uses these values when producing graphics frames.
+	 *
+	 * This resolution implies a somewhat oddball aspect ratio of 4:2.5.
+	 * But VGA CRT displays had an actual aspect ratio of 4:3. In spite
+	 * of this apparent mismatch, a 320x200 frame in VGA mode Y would
+	 * still fill the entire screen. This happened because, with this
+	 * combination of settings, the displayed pixels were not square:
+	 * they were a little taller than they were wide. The result was
+	 * that the displayed image was stretched a little vertically to
+	 * fit the screen.
+	 *
+	 * It turns out that the various sprites and other graphics (like
+	 * Doomguy's face in the HUD) were originally drawn to take this
+	 * into account. That is, the pixel stetching was necessary in order
+	 * for everything to appear correctly proportioned.
+	 *
+	 * Meanwhile, our display hardware supports a resolution of 320x240
+	 * with perfectly square pixels. This means our screen does have
+ 	 * a 4:3 aspect ratio just like an old school VGA display, but if we
+	 * simply draw the 320x200 frames produced by Doom's renderer on it,
+	 * they will be 40 pixels too short and appear a little squashed.
+	 *
+	 * Sadly, there's no hardware gimmick we can leverage to mitigate
+	 * this, so we have to fudge things a little in software. The
+	 * simplest solution is to rescale the 320x200 frames into 320x240
+	 * here in the display module by duplicating every 5th scan line.
+	 * This requires a little more RAM and the results are not entirely
+	 * perfect, but it will do.
+	 *
+	 * Note: the keen observers among you might have noticed that it's
+	 * technically possible to rescale the rendered image in place,
+	 * thereby avoiding the need to allocate a separate rescaling buffer.
+	 * Unfortunately, that won't work. Some screen elements, notably
+	 * in the HUD, are only redrawn when they're modified. If we modify
+	 * the display buffer by scaling it here, those elements will be
+	 * overwritten and appear corrupted. We try to me a little clever
+	 * by using the 64-bit FPU regiters to speed up the copying from
+	 * the original display buffer into the rescale buffer.
+	 *
+	 * It would be nice if we could get the DMA2D engine to handle the
+	 * scaling for us, but it's not that smart.
+	 */
+
+	pDst = scaled;
+	pSrc = screens[0];
+
+	for (i = 0; i < SCREENHEIGHT; i++) {
+		if (((i + 1) % 5) == 0) {
+			duplicate_scanline (pDst, pSrc);
+			pDst += SCREENWIDTH;
+		} else {
+			copy_scanline (pDst, pSrc);
+		}
+		pDst += SCREENWIDTH;
+		pSrc += SCREENWIDTH;
+	}
+
+	idesDoubleBufferBlit (0, 0, SCREENWIDTH, STRETCHEDHEIGHT, scaled);
+#else
 	idesDoubleBufferBlit (0, 20, SCREENWIDTH, SCREENHEIGHT, screens[0]);
+#endif
 
 	return;
 }
@@ -254,7 +382,22 @@ __attribute__((section(".ram7")))
 //
 void I_ReadScreen (byte* scr)
 {
-    memcpy (scr, screens[0], SCREENWIDTH*SCREENHEIGHT);
+	int		i;
+	uint8_t *	pSrc;
+	uint8_t *	pDst;
+
+	pDst = scr;
+	pSrc = screens[0];
+
+	/* Use the fast copy scheme here */
+
+	for (i = 0; i < SCREENHEIGHT; i++) {
+		copy_scanline (pDst, pSrc);
+		pDst += SCREENWIDTH;
+		pSrc += SCREENWIDTH;
+	}
+
+	return;
 }
 
 //
@@ -311,6 +454,12 @@ void I_InitGraphics(void)
 	if (screens[0] == NULL)
 		I_Error ("failed to allocate foreground buffer\n");
 	memset (screens[0], 0, (SCREENWIDTH * SCREENHEIGHT));
+
+#ifdef ASPECT_FIXUP
+	scaled = malloc (SCREENWIDTH * STRETCHEDHEIGHT);
+	if (scaled == NULL)
+		I_Error ("failed to allocate rescale buffer\n");
+#endif
 
 	/* Drain the input queue */
 

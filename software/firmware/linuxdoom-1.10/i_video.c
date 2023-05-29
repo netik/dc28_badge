@@ -57,6 +57,8 @@ int XShmGetEventBase( Display* dpy ); // problems with g++?
 
 #include "doomdef.h"
 
+#define STRETCHEDHEIGHT 240
+
 #define POINTER_WARP_COUNTDOWN	1
 
 Display*	X_display=0;
@@ -74,6 +76,7 @@ int		X_height;
 int		X_depth;
 
 static uint8_t * frame;
+static uint8_t * scaled;
 
 // MIT SHared Memory extension.
 boolean		doShm;
@@ -185,6 +188,7 @@ void I_ShutdownGraphics(void)
     image->data = NULL;
 
   free (frame);
+  free (scaled);
 
 }
 
@@ -396,7 +400,7 @@ I_Draw (int mult)
 	dst = (uint32_t *)image->data;
 
 	if (mult == 1)
-		src = screens[0];
+		src = scaled;
 	else
 		src = frame;
 
@@ -446,6 +450,36 @@ void I_FinishUpdate (void)
     
     }
 
+    /*
+     * Apply 320x200 to 320x240 rescaling
+     */
+
+    {
+        uint32_t * pDst;
+        uint32_t * pSrc;
+        int x, y;
+        pDst = (uint32_t *)scaled;
+        pSrc = (uint32_t *)screens[0];
+
+        for (x = 0; x < SCREENHEIGHT; x++)
+            {
+            for (y = 0; y < (SCREENWIDTH / sizeof (uint32_t)); y++)
+                {
+                pDst[y] = pSrc[y];
+                }
+            if (((x + 1) % 5) == 0)
+                {
+                pDst += SCREENWIDTH / sizeof (uint32_t);
+                for (y = 0; y < (SCREENWIDTH / sizeof (uint32_t)); y++)
+                    {
+                    pDst[y] = pSrc[y];
+                    }
+                }
+            pDst += SCREENWIDTH / sizeof (uint32_t);
+            pSrc += SCREENWIDTH / sizeof (uint32_t);
+            }
+    }
+
     // scales the screen size before blitting it
     if (multiply == 2)
     {
@@ -456,11 +490,11 @@ void I_FinishUpdate (void)
 	unsigned int twomoreopixels;
 	unsigned int fouripixels;
 
-	ilineptr = (unsigned int *) (screens[0]);
+	ilineptr = (unsigned int *) (scaled);
 	for (i=0 ; i<2 ; i++)
 	    olineptrs[i] = (unsigned int *) &frame[i*X_width];
 
-	y = SCREENHEIGHT;
+	y = STRETCHEDHEIGHT;
 	while (y--)
 	{
 	    x = SCREENWIDTH;
@@ -498,11 +532,11 @@ void I_FinishUpdate (void)
 	unsigned int fouropixels[3];
 	unsigned int fouripixels;
 
-	ilineptr = (unsigned int *) (screens[0]);
+	ilineptr = (unsigned int *) (scaled);
 	for (i=0 ; i<3 ; i++)
 	    olineptrs[i] = (unsigned int *) &frame[i*X_width];
 
-	y = SCREENHEIGHT;
+	y = STRETCHEDHEIGHT;
 	while (y--)
 	{
 	    x = SCREENWIDTH;
@@ -792,7 +826,7 @@ void I_InitGraphics(void)
 	multiply = 4;
 
     X_width = SCREENWIDTH * multiply;
-    X_height = SCREENHEIGHT * multiply;
+    X_height = STRETCHEDHEIGHT * multiply;
 
     // check for command-line display name
     if ( (pnum=M_CheckParm("-disp")) ) // suggest parentheses around assignment
@@ -1021,6 +1055,7 @@ void I_InitGraphics(void)
     }
 
     frame = malloc (image->bytes_per_line * image->height * sizeof(uint32_t));
+    scaled = malloc (SCREENWIDTH * STRETCHEDHEIGHT);
 
     screens[0] = (unsigned char *) malloc (SCREENWIDTH * SCREENHEIGHT);
     return;
