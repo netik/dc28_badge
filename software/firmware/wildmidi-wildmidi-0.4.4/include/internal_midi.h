@@ -164,8 +164,8 @@ struct _mdi {
 };
 
 
-extern int16_t _WM_lin_volume[];
-extern uint32_t _WM_freq_table[];
+extern const int16_t _WM_lin_volume[];
+extern const uint32_t _WM_freq_table[];
 
 /* ===================== */
 

@@ -194,7 +194,7 @@ void I_ShutdownGraphics (void)
 
 #ifdef ASPECT_FIXUP
 	if (scaled != NULL)
-		free (scaled);
+		chHeapFree (scaled);
 	scaled = NULL;
 #endif
 
@@ -456,7 +456,7 @@ void I_InitGraphics(void)
 	memset (screens[0], 0, (SCREENWIDTH * SCREENHEIGHT));
 
 #ifdef ASPECT_FIXUP
-	scaled = malloc (SCREENWIDTH * STRETCHEDHEIGHT);
+	scaled = chHeapAlloc (NULL, SCREENWIDTH * STRETCHEDHEIGHT);
 	if (scaled == NULL)
 		I_Error ("failed to allocate rescale buffer\n");
 #endif
