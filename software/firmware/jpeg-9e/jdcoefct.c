@@ -230,6 +230,7 @@ decompress_onepass (j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
 METHODDEF(int)
 dummy_consume_data (j_decompress_ptr cinfo)
 {
+  (void)cinfo;
   return JPEG_SUSPENDED;	/* Always indicate nothing was done */
 }
 
@@ -679,7 +680,7 @@ decompress_smooth_data (j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
 GLOBAL(void)
 jinit_d_coef_controller (j_decompress_ptr cinfo, boolean need_full_buffer)
 {
-  my_coef_ptr coef;
+  my_coef_ptr coef = NULL;
 
   if (need_full_buffer) {
 #ifdef D_MULTISCAN_FILES_SUPPORTED

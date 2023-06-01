@@ -98,6 +98,8 @@ sep_upsample (j_decompress_ptr cinfo,
   jpeg_component_info * compptr;
   JDIMENSION num_rows;
 
+  (void)in_row_groups_avail;
+
   /* Fill the conversion buffer, if it's empty */
   if (upsample->next_row_out >= cinfo->max_v_samp_factor) {
     for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
@@ -161,6 +163,9 @@ METHODDEF(void)
 fullsize_upsample (j_decompress_ptr cinfo, jpeg_component_info * compptr,
 		   JSAMPARRAY input_data, JSAMPIMAGE output_data_ptr)
 {
+  (void)cinfo;
+  (void)compptr;
+  (void)input_data;
   *output_data_ptr = input_data;
 }
 
@@ -228,6 +233,8 @@ h2v1_upsample (j_decompress_ptr cinfo, jpeg_component_info * compptr,
   JSAMPROW outend;
   int outrow;
 
+  (void)compptr;
+
   for (outrow = 0; outrow < cinfo->max_v_samp_factor; outrow++) {
     inptr = input_data[outrow];
     outptr = output_data[outrow];
@@ -254,6 +261,8 @@ h2v2_upsample (j_decompress_ptr cinfo, jpeg_component_info * compptr,
   register JSAMPROW inptr, outptr;
   register JSAMPLE invalue;
   JSAMPROW outend;
+
+  (void)compptr;
 
   output_data = *output_data_ptr;
   output_end = output_data + cinfo->max_v_samp_factor;

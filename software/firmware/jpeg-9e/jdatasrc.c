@@ -57,6 +57,7 @@ METHODDEF(void)
 init_mem_source (j_decompress_ptr cinfo)
 {
   /* no work necessary here */
+  (void)cinfo;
 }
 
 
@@ -199,6 +200,7 @@ METHODDEF(void)
 term_source (j_decompress_ptr cinfo)
 {
   /* no work necessary here */
+  (void)cinfo;
 }
 
 
