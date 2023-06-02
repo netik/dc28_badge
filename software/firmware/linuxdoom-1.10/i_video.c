@@ -467,7 +467,7 @@ void I_FinishUpdate (void)
                 {
                 pDst[y] = pSrc[y];
                 }
-            if (((x + 1) % 5) == 0)
+            if ((x % 5) == 0)
                 {
                 pDst += SCREENWIDTH / sizeof (uint32_t);
                 for (y = 0; y < (SCREENWIDTH / sizeof (uint32_t)); y++)

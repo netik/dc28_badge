@@ -358,7 +358,7 @@ __attribute__((section(".ram7")))
 	pSrc = screens[0];
 
 	for (i = 0; i < SCREENHEIGHT; i++) {
-		if (((i + 1) % 5) == 0) {
+		if ((i % 5) == 0) {
 			duplicate_scanline (pDst, pSrc);
 			pDst += SCREENWIDTH;
 		} else {
