@@ -20,8 +20,6 @@
 #include "chprintf.h"
 #include "lps22hb.h"
 
-#define cls(chp)  chprintf(chp, "\033[2J\033[1;1H")
-
 /*===========================================================================*/
 /* LPS22HB related.                                                           */
 /*===========================================================================*/
@@ -36,23 +34,23 @@ static float barocooked;
 static float thermocooked;
 
 static const I2CConfig i2ccfg = {
-  OPMODE_I2C,
-  400000,
-  FAST_DUTY_CYCLE_2,
+  .op_mode          = OPMODE_I2C,
+  .clock_speed      = 400000,
+  .duty_cycle       = FAST_DUTY_CYCLE_2
 };
 
 static const LPS22HBConfig lps22hbcfg = {
-  &I2CD1,
-  &i2ccfg,
-  LPS22HB_SAD_VCC,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  LPS22HB_ODR_10HZ,
+  .i2cp               = &I2CD1,
+  .i2ccfg             = &i2ccfg,
+  .slaveaddress       = LPS22HB_SAD_VCC,
+  .barosensitivity    = NULL,
+  .barobias           = NULL,
+  .thermosensitivity  = NULL,
+  .thermobias         = NULL,
+  .outputdatarate     = LPS22HB_ODR_10HZ,
 #if LPS22HB_USE_ADVANCED
-  LPS22HB_BDU_CONTINUOUS,
-  LPS22HB_LP_ODR_9
+  .blockdataupdate    = LPS22HB_BDU_CONTINUOUS,
+  .lowpass_filter     = LPS22HB_LP_ODR_9
 #endif
 };
 
@@ -127,7 +125,6 @@ int main(void) {
     chprintf(chp, "Temp: %.2f\r\n", thermocooked);
 
     chThdSleepMilliseconds(100);
-    cls(chp);
   }
   lps22hbStop(&LPS22HBD1);
 }

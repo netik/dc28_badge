@@ -99,7 +99,7 @@ include $(CHIBIOS)/os/hal/osal/rt-nil/osal.mk
 include $(CHIBIOS)/os/rt/rt.mk
 include $(CHIBIOS)/os/common/ports/e200/compilers/GCC/mk/port.mk
 # Other files (optional).
-include $(CHIBIOS)/test/lib/test.mk
+include $(CHIBIOS)/os/test/test.mk
 include $(CHIBIOS)/test/rt/rt_test.mk
 include $(CHIBIOS)/test/oslib/oslib_test.mk
 include $(CHIBIOS)/os/hal/lib/streams/streams.mk
@@ -134,8 +134,8 @@ INCDIR = $(ALLINC) $(TESTINC) $(CONFDIR)
 MCU  = e200z3 -meabi -msdata=none -mregnames # Free GCC
 
 #TRGT = ppc-vle-
-#TRGT = powerpc-eabivle-
-TRGT = ppc-freevle-eabi-
+TRGT = powerpc-eabivle-
+#TRGT = ppc-freevle-eabi-
 CC   = $(TRGT)gcc
 CPPC = $(TRGT)g++
 # Enable loading with g++ only if you need C++ runtime support.
@@ -167,7 +167,7 @@ CPPWARN = -Wall -Wextra -Wundef
 #
 
 # List all user C define here, like -D_DEBUG=1
-UDEFS =
+UDEFS = -DTEST_CFG_SIZE_REPORT=0
 
 # Define ASM defines here
 UADEFS =

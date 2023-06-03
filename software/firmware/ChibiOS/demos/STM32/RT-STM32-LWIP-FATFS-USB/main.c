@@ -24,10 +24,11 @@
 #include "chprintf.h"
 #include "shell.h"
 
+#include "ff.h"
+
 #include "lwipthread.h"
 #include "lwip/apps/httpd.h"
-
-#include "ff.h"
+#include "httpd_fatfs.h"
 
 #include "portab.h"
 #include "usbcfg.h"
@@ -61,8 +62,11 @@ static event_source_t inserted_event, removed_event;
  *
  * @notapi
  */
-static void tmrfunc(void *p) {
+static void tmrfunc(virtual_timer_t *vtp,
+                    void *p) {
   BaseBlockDevice *bbdp = p;
+
+  (void)vtp;
 
   chSysLockFromISR();
   if (cnt > 0) {
@@ -108,7 +112,7 @@ static void tmr_init(void *p) {
 /**
  * @brief FS object.
  */
-static FATFS SDC_FS;
+static FATFS __nocache_fs;
 
 /* FS mounted and ready.*/
 static bool fs_ready = FALSE;
@@ -184,7 +188,7 @@ static const ShellCommand commands[] = {
 };
 
 static const ShellConfig shell_cfg1 = {
-  (BaseSequentialStream *)&PORTAB_SDU1,
+  (BaseSequentialStream *)&SDU1,
   commands
 };
 
@@ -205,16 +209,16 @@ static void InsertHandler(eventid_t id) {
    * On insertion SDC initialization and FS mount.
    */
 #if HAL_USE_SDC
-  if (sdcConnect(&SDCD1))
+  if (sdcConnect(&PORTAB_SDC1))
 #else
   if (mmcConnect(&MMCD1))
 #endif
     return;
 
-  err = f_mount(&SDC_FS, "/", 1);
+  err = f_mount(&__nocache_fs, "/", 1);
   if (err != FR_OK) {
 #if HAL_USE_SDC
-    sdcDisconnect(&SDCD1);
+    sdcDisconnect(&PORTAB_SDC1);
 #else
     mmcDisconnect(&MMCD1);
 #endif
@@ -230,7 +234,7 @@ static void RemoveHandler(eventid_t id) {
 
   (void)id;
 #if HAL_USE_SDC
-    sdcDisconnect(&SDCD1);
+    sdcDisconnect(&PORTAB_SDC1);
 #else
     mmcDisconnect(&MMCD1);
 #endif
@@ -258,7 +262,7 @@ static THD_FUNCTION(Thread1, arg) {
   (void)arg;
   chRegSetThreadName("blinker");
   while (true) {
-    palToggleLine(PORTAB_BLINK_LED1);
+    palToggleLine(PORTAB_LINE_LED1);
     chThdSleepMilliseconds(fs_ready ? 250 : 500);
   }
 }
@@ -294,8 +298,8 @@ int main(void) {
   /*
    * Initializes a serial-over-USB CDC driver.
    */
-  sduObjectInit(&PORTAB_SDU1);
-  sduStart(&PORTAB_SDU1, &serusbcfg);
+  sduObjectInit(&SDU1);
+  sduStart(&SDU1, &serusbcfg);
 
   /*
    * Activates the USB driver and then the USB bus pull-up on D+.
@@ -317,18 +321,18 @@ int main(void) {
    * Activates the  SDC driver 1 using default configuration.
    */
 
-  sdcStart(&SDCD1, NULL);
+  sdcStart(&PORTAB_SDC1, NULL);
 
   /*
    * Activates the card insertion monitor.
    */
-  tmr_init(&SDCD1);
+  tmr_init(&PORTAB_SDC1);
 #else
   /*
    * Initializes the MMC driver to work with SPI3.
    */
   palSetPad(IOPORT3, GPIOC_SPI3_SD_CS);
-  mmcObjectInit(&MMCD1);
+  mmcObjectInit(&MMCD1, mmcbuf);
   mmcStart(&MMCD1, &portab_mmccfg);
 
   /*
@@ -345,6 +349,7 @@ int main(void) {
   /*
    * Starts the HTTP server.
    */
+  httpd_fatfs_init();
   httpd_init();
 
   /*
@@ -355,7 +360,7 @@ int main(void) {
   chEvtRegister(&removed_event, &el1, 1);
   chEvtRegister(&shell_terminated, &el2, 2);
   while (true) {
-    if (!shelltp && (PORTAB_SDU1.config->usbp->state == USB_ACTIVE)) {
+    if (!shelltp && (SDU1.config->usbp->state == USB_ACTIVE)) {
       shelltp = chThdCreateFromHeap(NULL, SHELL_WA_SIZE,
                                     "shell", NORMALPRIO + 1,
                                     shellThread, (void *)&shell_cfg1);

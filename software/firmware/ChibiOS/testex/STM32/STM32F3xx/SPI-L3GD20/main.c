@@ -20,8 +20,6 @@
 #include "chprintf.h"
 #include "l3gd20.h"
 
-#define cls(chp)  chprintf(chp, "\033[2J\033[1;1H")
-
 /*===========================================================================*/
 /* L3GD20 related.                                                           */
 /*===========================================================================*/
@@ -36,28 +34,30 @@ static char axisID[L3GD20_GYRO_NUMBER_OF_AXES] = {'X', 'Y', 'Z'};
 static uint32_t i;
 
 static const SPIConfig spicfg = {
-  FALSE,
-  NULL,
-  GPIOE,
-  GPIOE_L3GD20_CS,
-  SPI_CR1_BR | SPI_CR1_CPOL | SPI_CR1_CPHA,
-  0
+  .circular         = false,
+  .slave            = false,
+  .data_cb          = NULL,
+  .error_cb         = NULL,
+  .ssport           = GPIOE,
+  .sspad            = GPIOE_L3GD20_CS,
+  .cr1              = SPI_CR1_BR | SPI_CR1_CPOL | SPI_CR1_CPHA,
+  .cr2              = SPI_CR2_DS_2 | SPI_CR2_DS_1 | SPI_CR2_DS_0
 };
 
 static L3GD20Config l3gd20cfg = {
-  &SPID1,
-  &spicfg,
-  NULL,
-  NULL,
-  L3GD20_FS_250DPS,
-  L3GD20_ODR_760HZ,
+  .spip             = &SPID1,
+  .spicfg           = &spicfg,
+  .gyrosensitivity  = NULL,
+  .gyrobias         = NULL,
+  .gyrofullscale    = L3GD20_FS_250DPS,
+  .gyroodr          = L3GD20_ODR_760HZ,
 #if L3GD20_USE_ADVANCED
-  L3GD20_BDU_CONTINUOUS,
-  L3GD20_END_LITTLE,
-  L3GD20_BW3,
-  L3GD20_HPM_REFERENCE,
-  L3GD20_HPCF_8,
-  L3GD20_LP2M_ON,
+  .gyrobdu          = L3GD20_BDU_CONTINUOUS,
+  .gyroendianness   = L3GD20_END_LITTLE,
+  .gyrobandwidth    = L3GD20_BW3,
+  .gyrohpmode       = L3GD20_HPM_REFERENCE,
+  .gyrohpcfg        = L3GD20_HPCF_8,
+  .gyrolp2mode      = L3GD20_LP2M_ON
 #endif
 };
 
@@ -122,7 +122,6 @@ int main(void) {
     }
 
     chThdSleepMilliseconds(100);
-    cls(chp);
   }
   l3gd20Stop(&L3GD20D1);
 }

@@ -42,6 +42,11 @@
 /*===========================================================================*/
 
 /**
+ * @brief   Requires use of SPIv2 driver model.
+ */
+#define HAL_LLD_SELECT_SPI_V2           TRUE
+
+/**
  * @name    Platform identification macros
  * @{
  */
@@ -130,7 +135,7 @@
 /**
  * @brief   Minimum ADC clock frequency.
  */
-#define STM32_ADCCLK_MIN        6000000
+#define STM32_ADCCLK_MIN        600000
 
 /**
  * @brief   Maximum SDADC clock frequency in fast mode.

@@ -54,9 +54,30 @@
  * HAL driver system settings.
  */
 #define STM32_NO_INIT                       ${doc.STM32_NO_INIT!"FALSE"}
+#define STM32_CLOCK_DYNAMIC                 ${doc.STM32_CLOCK_DYNAMIC!"FALSE"}
 #define STM32_VOS                           ${doc.STM32_VOS!"STM32_VOS_RANGE1"}
-#define STM32_PVD_ENABLE                    ${doc.STM32_PVD_ENABLE!"FALSE"}
-#define STM32_PLS                           ${doc.STM32_PLS!"STM32_PLS_LEV0"}
+#define STM32_PWR_BOOST                     ${doc.STM32_PWR_BOOST!"TRUE"}
+#define STM32_PWR_CR2                       ${doc.STM32_PWR_CR2!"(PWR_CR2_PLS_LEV0 | PWR_CR2_IOSV | PWR_CR2_USV)"}
+#define STM32_PWR_CR3                       ${doc.STM32_PWR_CR3!"(PWR_CR3_EIWF)"}
+#define STM32_PWR_CR4                       ${doc.STM32_PWR_CR4!"(0U)"}
+#define STM32_PWR_PUCRA                     ${doc.STM32_PWR_PUCRA!"(0U)"}
+#define STM32_PWR_PDCRA                     ${doc.STM32_PWR_PDCRA!"(0U)"}
+#define STM32_PWR_PUCRB                     ${doc.STM32_PWR_PUCRB!"(0U)"}
+#define STM32_PWR_PDCRB                     ${doc.STM32_PWR_PDCRB!"(0U)"}
+#define STM32_PWR_PUCRC                     ${doc.STM32_PWR_PUCRC!"(0U)"}
+#define STM32_PWR_PDCRC                     ${doc.STM32_PWR_PDCRC!"(0U)"}
+#define STM32_PWR_PUCRD                     ${doc.STM32_PWR_PUCRD!"(0U)"}
+#define STM32_PWR_PDCRD                     ${doc.STM32_PWR_PDCRD!"(0U)"}
+#define STM32_PWR_PUCRE                     ${doc.STM32_PWR_PUCRE!"(0U)"}
+#define STM32_PWR_PDCRE                     ${doc.STM32_PWR_PDCRE!"(0U)"}
+#define STM32_PWR_PUCRF                     ${doc.STM32_PWR_PUCRF!"(0U)"}
+#define STM32_PWR_PDCRF                     ${doc.STM32_PWR_PDCRF!"(0U)"}
+#define STM32_PWR_PUCRG                     ${doc.STM32_PWR_PUCRG!"(0U)"}
+#define STM32_PWR_PDCRG                     ${doc.STM32_PWR_PDCRG!"(0U)"}
+#define STM32_PWR_PUCRH                     ${doc.STM32_PWR_PUCRH!"(0U)"}
+#define STM32_PWR_PDCRH                     ${doc.STM32_PWR_PDCRH!"(0U)"}
+#define STM32_PWR_PUCRI                     ${doc.STM32_PWR_PUCRI!"(0U)"}
+#define STM32_PWR_PDCRI                     ${doc.STM32_PWR_PDCRI!"(0U)"}
 #define STM32_HSI16_ENABLED                 ${doc.STM32_HSI16_ENABLED!"FALSE"}
 #define STM32_HSI48_ENABLED                 ${doc.STM32_HSI48_ENABLED!"FALSE"}
 #define STM32_LSI_ENABLED                   ${doc.STM32_LSI_ENABLED!"TRUE"}
@@ -81,13 +102,13 @@
 #define STM32_MCOPRE                        ${doc.STM32_MCOPRE!"STM32_MCOPRE_DIV1"}
 #define STM32_LSCOSEL                       ${doc.STM32_LSCOSEL!"STM32_LSCOSEL_NOCLOCK"}
 #define STM32_PLLSAI1M_VALUE                ${doc.STM32_PLLSAI1M_VALUE!"1"}
-#define STM32_PLLSAI1N_VALUE                ${doc.STM32_PLLSAI1N_VALUE!"72"}
+#define STM32_PLLSAI1N_VALUE                ${doc.STM32_PLLSAI1N_VALUE!"60"}
 #define STM32_PLLSAI1PDIV_VALUE             ${doc.STM32_PLLSAI1PDIV_VALUE!"6"}
 #define STM32_PLLSAI1P_VALUE                ${doc.STM32_PLLSAI1P_VALUE!"7"}
 #define STM32_PLLSAI1Q_VALUE                ${doc.STM32_PLLSAI1Q_VALUE!"6"}
 #define STM32_PLLSAI1R_VALUE                ${doc.STM32_PLLSAI1R_VALUE!"6"}
 #define STM32_PLLSAI2M_VALUE                ${doc.STM32_PLLSAI2M_VALUE!"1"}
-#define STM32_PLLSAI2N_VALUE                ${doc.STM32_PLLSAI2N_VALUE!"72"}
+#define STM32_PLLSAI2N_VALUE                ${doc.STM32_PLLSAI2N_VALUE!"60"}
 #define STM32_PLLSAI2PDIV_VALUE             ${doc.STM32_PLLSAI2PDIV_VALUE!"6"}
 #define STM32_PLLSAI2P_VALUE                ${doc.STM32_PLLSAI2P_VALUE!"7"}
 #define STM32_PLLSAI2Q_VALUE                ${doc.STM32_PLLSAI2Q_VALUE!"6"}
@@ -246,7 +267,6 @@
 /*
  * PWM driver system settings.
  */
-#define STM32_PWM_USE_ADVANCED              ${doc.STM32_PWM_USE_ADVANCED!"FALSE"}
 #define STM32_PWM_USE_TIM1                  ${doc.STM32_PWM_USE_TIM1!"FALSE"}
 #define STM32_PWM_USE_TIM2                  ${doc.STM32_PWM_USE_TIM2!"FALSE"}
 #define STM32_PWM_USE_TIM3                  ${doc.STM32_PWM_USE_TIM3!"FALSE"}
@@ -285,6 +305,16 @@
 #define STM32_SERIAL_USE_UART4              ${doc.STM32_SERIAL_USE_UART4!"FALSE"}
 #define STM32_SERIAL_USE_UART5              ${doc.STM32_SERIAL_USE_UART5!"FALSE"}
 #define STM32_SERIAL_USE_LPUART1            ${doc.STM32_SERIAL_USE_LPUART1!"FALSE"}
+
+/*
+ * SIO driver system settings.
+ */
+#define STM32_SIO_USE_USART1                ${doc.STM32_SIO_USE_USART1!"FALSE"}
+#define STM32_SIO_USE_USART2                ${doc.STM32_SIO_USE_USART2!"FALSE"}
+#define STM32_SIO_USE_USART3                ${doc.STM32_SIO_USE_USART3!"FALSE"}
+#define STM32_SIO_USE_UART4                 ${doc.STM32_SIO_USE_UART4!"FALSE"}
+#define STM32_SIO_USE_UART5                 ${doc.STM32_SIO_USE_UART5!"FALSE"}
+#define STM32_SIO_USE_LPUART1               ${doc.STM32_SIO_USE_LPUART1!"FALSE"}
 
 /*
  * SPI driver system settings.
@@ -369,6 +399,6 @@
 #define STM32_WSPI_OCTOSPI2_DMA_PRIORITY    ${doc.STM32_WSPI_OCTOSPI2_DMA_PRIORITY!"1"}
 #define STM32_WSPI_OCTOSPI1_DMA_IRQ_PRIORITY ${doc.STM32_WSPI_OCTOSPI1_DMA_IRQ_PRIORITY!"10"}
 #define STM32_WSPI_OCTOSPI2_DMA_IRQ_PRIORITY ${doc.STM32_WSPI_OCTOSPI2_DMA_IRQ_PRIORITY!"10"}
-#define STM32_WSPI_DMA_ERROR_HOOK(qspip)    ${doc.STM32_WSPI_DMA_ERROR_HOOK!"osalSysHalt(\"DMA failure\")"}
+#define STM32_WSPI_DMA_ERROR_HOOK(wspip)    ${doc.STM32_WSPI_DMA_ERROR_HOOK!"osalSysHalt(\"DMA failure\")"}
 
 #endif /* MCUCONF_H */

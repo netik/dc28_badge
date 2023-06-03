@@ -20,8 +20,6 @@
 #include "chprintf.h"
 #include "lsm6ds0.h"
 
-#define cls(chp)  chprintf(chp, "\033[2J\033[1;1H")
-
 /*===========================================================================*/
 /* LSM6DS0 related.                                                          */
 /*===========================================================================*/
@@ -39,35 +37,33 @@ static char axisID[LSM6DS0_ACC_NUMBER_OF_AXES] = {'X', 'Y', 'Z'};
 static uint32_t i;
 
 static const I2CConfig i2ccfg = {
-  OPMODE_I2C,
-  400000,
-  FAST_DUTY_CYCLE_2,
+  .op_mode          = OPMODE_I2C,
+  .clock_speed      = 400000,
+  .duty_cycle       = FAST_DUTY_CYCLE_2
 };
 
 static const LSM6DS0Config lsm6ds0cfg = {
-  &I2CD1,
-  &i2ccfg,
-  LSM6DS0_SAD_VCC,
-  NULL,
-  NULL,
-  LSM6DS0_ACC_FS_2G,
-  LSM6DS0_ACC_ODR_50Hz,
+  .i2cp             = &I2CD1,
+  .i2ccfg           = &i2ccfg,
+  .slaveaddress     = LSM6DS0_SAD_VCC,
+  .accsensitivity   = NULL,
+  .accbias          = NULL,
+  .accfullscale     = LSM6DS0_ACC_FS_2G,
+  .accodr           = LSM6DS0_ACC_ODR_50Hz,
 #if LSM6DS0_USE_ADVANCED
-  LSM6DS0_ACC_DEC_X4,
+  .accdecmode       = LSM6DS0_ACC_DEC_X4,
 #endif
-  NULL,
-  NULL,
-  LSM6DS0_GYRO_FS_245DPS,
-  LSM6DS0_GYRO_ODR_119HZ_FC_31,
+  .gyrosensitivity  = NULL,
+  .gyrobias         = NULL,
+  .gyrofullscale    = LSM6DS0_GYRO_FS_245DPS,
+  .gyroodr          = LSM6DS0_GYRO_ODR_119HZ_FC_31,
 #if LSM6DS0_USE_ADVANCED
-  LSM6DS0_GYRO_LP_DISABLED,
-  LSM6DS0_GYRO_OUT_SEL_0,
-  LSM6DS0_GYRO_HP_DISABLED,
-  LSM6DS0_GYRO_HPCF_0,
-#endif
-#if LSM6DS0_USE_ADVANCED
-  LSM6DS0_BDU_BLOCKED,
-  LSM6DS0_END_LITTLE
+  .gyrolowmodecfg   = LSM6DS0_GYRO_LP_DISABLED,
+  .gyrooutsel       = LSM6DS0_GYRO_OUT_SEL_0,
+  .gyrohpfenable    = LSM6DS0_GYRO_HP_DISABLED,
+  .gyrohpcfg        = LSM6DS0_GYRO_HPCF_0,
+  .bdu              = LSM6DS0_BDU_BLOCKED,
+  .endianness       = LSM6DS0_END_LITTLE
 #endif
 };
 
@@ -152,7 +148,6 @@ int main(void) {
       chprintf(chp, "%c-axis: %.3f\r\n", axisID[i], gyrocooked[i]);
     }
     chThdSleepMilliseconds(100);
-    cls(chp);
   }
   lsm6ds0Stop(&LSM6DS0D1);
 }

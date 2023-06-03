@@ -101,7 +101,7 @@ void gpt_lld_init(void) {
 #endif
 #if HT32_GPT_USE_BFTM1 == TRUE
     gptObjectInit(&GPTD_BFTM1);
-    GPTD_BFTM0.BFTM = BFTM1;
+    GPTD_BFTM1.BFTM = BFTM1;
 #endif
 }
 
@@ -205,7 +205,8 @@ void gpt_lld_polled_delay(GPTDriver *gptp, gptcnt_t interval) {
     gptp->BFTM->CNTR = 0;
     gptp->BFTM->CMP = (HT32_CK_AHB_FREQUENCY / gptp->config->frequency) * interval;
     gptp->BFTM->CR = BFTM_CR_CEN | BFTM_CR_OSM;
-    while(!(gptp->BFTM->SR & BFTM_SR_MIF));
+    while(!(gptp->BFTM->SR & BFTM_SR_MIF))
+        ;
 }
 
 #endif /* HAL_USE_GPT == TRUE */

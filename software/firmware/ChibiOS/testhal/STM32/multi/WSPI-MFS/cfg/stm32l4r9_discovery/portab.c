@@ -38,9 +38,9 @@ const WSPIConfig WSPIcfg1 = {
   .end_cb           = NULL,
   .error_cb         = NULL,
   .dcr1             = STM32_DCR1_MTYP(1U) |         /* Macronix mode.       */
-                      STM32_DCR1_DEVSIZE(26U) |     /* 64MB device.         */
+                      STM32_DCR1_DEVSIZE(25U) |     /* 64MB device.         */
                       STM32_DCR1_CSHT(1U),          /* NCS 2 cycles delay.  */
-  .dcr2             = STM32_DCR2_PRESCALER(1U),     /* Clock is AHB / 2.    */
+  .dcr2             = 0U,
   .dcr3             = 0U,
   .dcr4             = 0U
 };

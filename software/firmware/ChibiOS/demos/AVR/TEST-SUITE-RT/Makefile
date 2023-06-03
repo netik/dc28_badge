@@ -30,6 +30,11 @@ ifeq ($(USE_CPPOPT),)
   USE_CPPOPT =
 endif
 
+# Linker extra options here.
+ifeq ($(USE_LDOPT),)
+  USE_LDOPT = --defsym=__main_thread_stack_base__=0,--defsym=__main_thread_stack_end__=0
+endif
+
 # Enable this if you want to see the full log while compiling.
 ifeq ($(USE_VERBOSE_COMPILE),)
   USE_VERBOSE_COMPILE = no
@@ -82,8 +87,7 @@ endif
 # Define project name here.
 PROJECT = ch
 
-# Imported source files and paths
-CHIBIOS = ../../..
+# Imported source files and paths.
 CHIBIOS  := ../../..
 CONFDIR  := ./cfg
 BUILDDIR := ./build
@@ -103,7 +107,7 @@ include $(CHIBIOS)/os/rt/rt.mk
 include $(CHIBIOS)/os/common/ports/AVR/compilers/GCC/mk/port.mk
 
 # Other files (optional).
-include $(CHIBIOS)/test/lib/test.mk
+include $(CHIBIOS)/os/test/test.mk
 include $(CHIBIOS)/test/rt/rt_test.mk
 
 # List C source files here. (C dependencies are automatically generated.)
@@ -114,6 +118,7 @@ CSRC =  $(ALLCSRC) \
 # List C++ sources file here.
 CPPSRC = $(ALLCPPSRC)
 
+# Header files here.
 INCDIR = $(CONFDIR) $(ALLINC) $(TESTINC)
 
 #
@@ -171,7 +176,7 @@ CPPWARN =
 #
 
 # List all user C define here, like -D_DEBUG=1.
-UDEFS =
+UDEFS = -DTEST_CFG_SIZE_REPORT=0
 
 # Define ASM defines here.
 UADEFS =
@@ -232,7 +237,7 @@ endif
 
 # AVR programmer flags for AVRDUDE programmer.
 ifeq ($(AVR_PROGRAMMER),$(AVRDUDE_PROGRAMMER))
-AVRDUDE_FLAGS = -p $(MCU)
+AVRDUDE_FLAGS =  -p $(MCU)
 AVRDUDE_FLAGS += -P $(AVRDUDE_PORT)
 AVRDUDE_FLAGS += -b 115200
 AVRDUDE_FLAGS += -c $(AVRDUDE_PROGRAMMER_ID)
@@ -245,18 +250,18 @@ endif
 ifeq ($(AVR_PROGRAMMER),$(DFU_PROGRAMMER))
 DFU_WRITE_FLASH = flash --force
 DFU_ERASE_FLASH = erase
-DFU_RESET=reset
+DFU_RESET       = reset
 endif
 
 # AVR programmer flags for MICRONUCLEUS programmer.
 ifeq ($(AVR_PROGRAMMER),$(MICRONUCLEUS_PROGRAMMER))
 MICRONUCLEUS_TIMEOUT_ARG = --timeout 60
-MICRONUCLEUS_RUN_ARG = --run
+MICRONUCLEUS_RUN_ARG  = --run
 MICRONUCLEUS_TYPE_ARG = --type raw
 MICRONUCLEUS_DUMP_PROGRESS = --dump-progress
-MICRONUCLEUS_FLAGS=$(MICRONUCLEUS_TYPE_ARG)
-MICRONUCLEUS_FLAGS+=$(MICRONUCLEUS_TIMEOUT_ARG)
-MICRONUCLEUS_FLAGS+=$(MICRONUCLEUS_RUN_ARG)
+MICRONUCLEUS_FLAGS =  $(MICRONUCLEUS_TYPE_ARG)
+MICRONUCLEUS_FLAGS += $(MICRONUCLEUS_TIMEOUT_ARG)
+MICRONUCLEUS_FLAGS += $(MICRONUCLEUS_RUN_ARG)
 endif
 
 #

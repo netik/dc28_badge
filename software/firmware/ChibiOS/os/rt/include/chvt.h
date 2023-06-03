@@ -1,12 +1,12 @@
 /*
-    ChibiOS - Copyright (C) 2006..2018 Giovanni Di Sirio.
+    ChibiOS - Copyright (C) 2006,2007,2008,2009,2010,2011,2012,2013,2014,
+              2015,2016,2017,2018,2019,2020,2021 Giovanni Di Sirio.
 
     This file is part of ChibiOS.
 
     ChibiOS is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
+    the Free Software Foundation version 3 of the License.
 
     ChibiOS is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -71,11 +71,17 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-  void _vt_init(void);
   void chVTDoSetI(virtual_timer_t *vtp, sysinterval_t delay,
                   vtfunc_t vtfunc, void *par);
+  void chVTDoSetContinuousI(virtual_timer_t *vtp, sysinterval_t delay,
+                            vtfunc_t vtfunc, void *par);
   void chVTDoResetI(virtual_timer_t *vtp);
+  sysinterval_t chVTGetRemainingIntervalI(virtual_timer_t *vtp);
   void chVTDoTickI(void);
+#if CH_CFG_USE_TIMESTAMP == TRUE
+  systimestamp_t chVTGetTimeStampI(void);
+  void chVTResetTimeStampI(void);
+#endif
 #ifdef __cplusplus
 }
 #endif
@@ -97,7 +103,7 @@ extern "C" {
  */
 static inline void chVTObjectInit(virtual_timer_t *vtp) {
 
-  vtp->func = NULL;
+  vtp->dlist.next = NULL;
 }
 
 /**
@@ -116,7 +122,7 @@ static inline void chVTObjectInit(virtual_timer_t *vtp) {
 static inline systime_t chVTGetSystemTimeX(void) {
 
 #if CH_CFG_ST_TIMEDELTA == 0
-  return ch.vtlist.systime;
+  return currcore->vtlist.systime;
 #else /* CH_CFG_ST_TIMEDELTA > 0 */
   return port_timer_get_time();
 #endif /* CH_CFG_ST_TIMEDELTA > 0 */
@@ -208,8 +214,8 @@ static inline bool chVTIsSystemTimeWithin(systime_t start, systime_t end) {
  * @iclass
  */
 static inline bool chVTGetTimersStateI(sysinterval_t *timep) {
-  virtual_timers_list_t *vtlp = &ch.vtlist;
-  delta_list_t *dlp = &vtlp->dlist;
+  virtual_timers_list_t *vtlp = &currcore->vtlist;
+  ch_delta_list_t *dlp = &vtlp->dlist;
 
   chDbgCheckClassI();
 
@@ -243,7 +249,7 @@ static inline bool chVTIsArmedI(const virtual_timer_t *vtp) {
 
   chDbgCheckClassI();
 
-  return (bool)(vtp->func != NULL);
+  return (bool)(vtp->dlist.next != NULL);
 }
 
 /**
@@ -301,7 +307,7 @@ static inline void chVTReset(virtual_timer_t *vtp) {
 }
 
 /**
- * @brief   Enables a virtual timer.
+ * @brief   Enables a one-shot virtual timer.
  * @details If the virtual timer was already enabled then it is re-enabled
  *          using the new parameters.
  * @pre     The timer must have been initialized using @p chVTObjectInit()
@@ -330,7 +336,7 @@ static inline void chVTSetI(virtual_timer_t *vtp, sysinterval_t delay,
 }
 
 /**
- * @brief   Enables a virtual timer.
+ * @brief   Enables a one-shot virtual timer.
  * @details If the virtual timer was already enabled then it is re-enabled
  *          using the new parameters.
  * @pre     The timer must have been initialized using @p chVTObjectInit()
@@ -357,6 +363,160 @@ static inline void chVTSet(virtual_timer_t *vtp, sysinterval_t delay,
   chSysLock();
   chVTSetI(vtp, delay, vtfunc, par);
   chSysUnlock();
+}
+
+/**
+ * @brief   Enables a continuous virtual timer.
+ * @details If the virtual timer was already enabled then it is re-enabled
+ *          using the new parameters.
+ * @pre     The timer must have been initialized using @p chVTObjectInit()
+ *          or @p chVTDoSetI().
+ *
+ * @param[in] vtp       the @p virtual_timer_t structure pointer
+ * @param[in] delay     the number of ticks before the operation timeouts, the
+ *                      special values are handled as follow:
+ *                      - @a TIME_INFINITE is allowed but interpreted as a
+ *                        normal time specification.
+ *                      - @a TIME_IMMEDIATE this value is not allowed.
+ *                      .
+ * @param[in] vtfunc    the timer callback function. After invoking the
+ *                      callback the timer is disabled and the structure can
+ *                      be disposed or reused.
+ * @param[in] par       a parameter that will be passed to the callback
+ *                      function
+ *
+ * @iclass
+ */
+static inline void chVTSetContinuousI(virtual_timer_t *vtp, sysinterval_t delay,
+                                      vtfunc_t vtfunc, void *par) {
+
+  chVTResetI(vtp);
+  chVTDoSetContinuousI(vtp, delay, vtfunc, par);
+}
+
+/**
+ * @brief   Enables a continuous virtual timer.
+ * @details If the virtual timer was already enabled then it is re-enabled
+ *          using the new parameters.
+ * @pre     The timer must have been initialized using @p chVTObjectInit()
+ *          or @p chVTDoSetI().
+ *
+ * @param[in] vtp       the @p virtual_timer_t structure pointer
+ * @param[in] delay     the number of ticks before the operation timeouts, the
+ *                      special values are handled as follow:
+ *                      - @a TIME_INFINITE is allowed but interpreted as a
+ *                        normal time specification.
+ *                      - @a TIME_IMMEDIATE this value is not allowed.
+ *                      .
+ * @param[in] vtfunc    the timer callback function. After invoking the
+ *                      callback the timer is disabled and the structure can
+ *                      be disposed or reused.
+ * @param[in] par       a parameter that will be passed to the callback
+ *                      function
+ *
+ * @api
+ */
+static inline void chVTSetContinuous(virtual_timer_t *vtp, sysinterval_t delay,
+                                     vtfunc_t vtfunc, void *par) {
+
+  chSysLock();
+  chVTSetContinuousI(vtp, delay, vtfunc, par);
+  chSysUnlock();
+}
+
+/**
+ * @brief   Returns the current reload value.
+ *
+ * @param[in] vtp       the @p virtual_timer_t structure pointer
+ * @return              The reload value.
+ *
+ * @xclass
+ */
+static inline sysinterval_t chVTGetReloadIntervalX(virtual_timer_t *vtp) {
+
+  return vtp->reload;
+}
+
+/**
+ * @brief   Changes a timer reload time interval.
+ * @note    This function is meant to be called from a timer callback, it
+ *          does nothing in any other context.
+ * @note    Calling this function from a one-shot timer callback turns it
+ *          into a continuous timer.
+ *
+ * @param[in] vtp       the @p virtual_timer_t structure pointer
+ * @param[in] reload    the new reload value, zero means no reload
+ *
+ * @xclass
+ */
+static inline void chVTSetReloadIntervalX(virtual_timer_t *vtp,
+                                          sysinterval_t reload) {
+
+  vtp->reload = reload;
+}
+
+#if (CH_CFG_USE_TIMESTAMP == TRUE) || defined(__DOXYGEN__)
+/**
+ * @brief   Generates a monotonic time stamp.
+ * @details This function generates a monotonic time stamp synchronized with
+ *          the system time. The time stamp has the same resolution of
+ *          system time.
+ * @note    There is an assumption, this function must be called at
+ *          least once before the system time wraps back to zero or
+ *          synchronization is lost. You may use a periodic virtual timer with
+ *          a very large interval in order to keep time stamps synchronized
+ *          by calling this function.
+ *
+ * @return              The time stamp.
+ *
+ * @api
+ */
+static inline systimestamp_t chVTGetTimeStamp(void) {
+  systimestamp_t stamp;
+
+  chSysLock();
+
+  stamp = chVTGetTimeStampI();
+
+  chSysUnlock();
+
+  return stamp;
+}
+
+/**
+ * @brief   Resets and re-synchronizes the time stamps monotonic counter.
+ *
+ * @api
+ */
+static inline void chVTResetTimeStamp(void) {
+
+  chSysLock();
+
+  chVTResetTimeStampI();
+
+  chSysUnlock();
+}
+#endif /* CH_CFG_USE_TIMESTAMP == TRUE */
+
+/**
+ * @brief   Virtual Timers instance initialization.
+ * @note    Internal use only.
+ *
+ * @param[out] vtlp     pointer to the @p virtual_timers_list_t structure
+ *
+ * @notapi
+ */
+static inline void __vt_object_init(virtual_timers_list_t *vtlp) {
+
+  ch_dlist_init(&vtlp->dlist);
+#if CH_CFG_ST_TIMEDELTA == 0
+  vtlp->systime = (systime_t)0;
+#else /* CH_CFG_ST_TIMEDELTA > 0 */
+  vtlp->lasttime = (systime_t)0;
+#endif /* CH_CFG_ST_TIMEDELTA > 0 */
+#if CH_CFG_USE_TIMESTAMP == TRUE
+  vtlp->laststamp = (systimestamp_t)chVTGetSystemTimeX();
+#endif
 }
 
 #endif /* CHVT_H */

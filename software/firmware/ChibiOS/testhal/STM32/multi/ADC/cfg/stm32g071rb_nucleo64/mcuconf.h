@@ -1,5 +1,5 @@
 /*
-    ChibiOS - Copyright (C) 2006..2018 Giovanni Di Sirio
+    ChibiOS - Copyright (C) 2006..2020 Giovanni Di Sirio
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -39,8 +39,21 @@
  * HAL driver system settings.
  */
 #define STM32_NO_INIT                       FALSE
+#define STM32_CLOCK_DYNAMIC                 FALSE
 #define STM32_VOS                           STM32_VOS_RANGE1
 #define STM32_PWR_CR2                       (STM32_PVDRT_LEV0 | STM32_PVDFT_LEV0 | STM32_PVDE_DISABLED)
+#define STM32_PWR_CR3                       (PWR_CR3_EIWUL)
+#define STM32_PWR_CR4                       (0U)
+#define STM32_PWR_PUCRA                     (0U)
+#define STM32_PWR_PDCRA                     (0U)
+#define STM32_PWR_PUCRB                     (0U)
+#define STM32_PWR_PDCRB                     (0U)
+#define STM32_PWR_PUCRC                     (0U)
+#define STM32_PWR_PDCRC                     (0U)
+#define STM32_PWR_PUCRD                     (0U)
+#define STM32_PWR_PDCRD                     (0U)
+#define STM32_PWR_PUCRF                     (0U)
+#define STM32_PWR_PDCRF                     (0U)
 #define STM32_HSIDIV_VALUE                  1
 #define STM32_HSI16_ENABLED                 TRUE
 #define STM32_HSE_ENABLED                   FALSE
@@ -104,7 +117,7 @@
  * ADC driver system settings.
  */
 #define STM32_ADC_USE_ADC1                  TRUE
-#define STM32_ADC_ADC1_CKMODE               STM32_ADC_CKMODE_ADCCLK
+#define STM32_ADC_ADC1_CFGR2                ADC_CFGR2_CKMODE_ADCCLK
 #define STM32_ADC_ADC1_DMA_PRIORITY         2
 #define STM32_ADC_ADC1_DMA_IRQ_PRIORITY     2
 #define STM32_ADC_ADC1_DMA_STREAM           STM32_DMA_STREAM_ID_ANY
@@ -131,6 +144,10 @@
 #define STM32_GPT_USE_TIM3                  FALSE
 #define STM32_GPT_USE_TIM6                  TRUE
 #define STM32_GPT_USE_TIM7                  FALSE
+#define STM32_GPT_USE_TIM14                 FALSE
+#define STM32_GPT_USE_TIM15                 FALSE
+#define STM32_GPT_USE_TIM16                 FALSE
+#define STM32_GPT_USE_TIM17                 FALSE
 
 /*
  * I2C driver system settings.
@@ -154,14 +171,18 @@
 #define STM32_ICU_USE_TIM1                  FALSE
 #define STM32_ICU_USE_TIM2                  FALSE
 #define STM32_ICU_USE_TIM3                  FALSE
+#define STM32_ICU_USE_TIM15                 FALSE
 
 /*
  * PWM driver system settings.
  */
-#define STM32_PWM_USE_ADVANCED              FALSE
 #define STM32_PWM_USE_TIM1                  FALSE
 #define STM32_PWM_USE_TIM2                  FALSE
 #define STM32_PWM_USE_TIM3                  FALSE
+#define STM32_PWM_USE_TIM14                 FALSE
+#define STM32_PWM_USE_TIM15                 FALSE
+#define STM32_PWM_USE_TIM16                 FALSE
+#define STM32_PWM_USE_TIM17                 FALSE
 
 /*
  * RTC driver system settings.
@@ -179,6 +200,15 @@
 #define STM32_SERIAL_USE_USART3             FALSE
 #define STM32_SERIAL_USE_UART4              FALSE
 #define STM32_SERIAL_USE_LPUART1            FALSE
+
+/*
+ * SIO driver system settings.
+ */
+#define STM32_SIO_USE_USART1                FALSE
+#define STM32_SIO_USE_USART2                FALSE
+#define STM32_SIO_USE_USART3                FALSE
+#define STM32_SIO_USE_UART4                 FALSE
+#define STM32_SIO_USE_LPUART1               FALSE
 
 /*
  * SPI driver system settings.

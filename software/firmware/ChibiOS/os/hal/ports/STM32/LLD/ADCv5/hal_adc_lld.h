@@ -32,6 +32,17 @@
 /*===========================================================================*/
 
 /**
+ * @name    Possible ADC errors mask bits.
+ * @{
+ */
+#define ADC_ERR_DMAFAILURE      1U  /**< DMA operations failure.            */
+#define ADC_ERR_OVERFLOW        2U  /**< ADC overflow condition.            */
+#define ADC_ERR_AWD1            4U  /**< Watchdog 1 triggered.              */
+#define ADC_ERR_AWD2            8U  /**< Watchdog 2 triggered.              */
+#define ADC_ERR_AWD3            16U /**< Watchdog 3 triggered.              */
+/** @} */
+
+/**
  * @name    Sampling rates
  * @{
  */
@@ -68,11 +79,11 @@
  * @name    CFGR2 register configuration helpers
  * @{
  */
-#define STM32_ADC_CKMODE_MASK           (3U << 30U)
-#define STM32_ADC_CKMODE_ADCCLK         (0U << 30U)
-#define STM32_ADC_CKMODE_PCLK_DIV2      (1U << 30U)
-#define STM32_ADC_CKMODE_PCLK_DIV4      (2U << 30U)
-#define STM32_ADC_CKMODE_PCLK           (3U << 30U)
+#define ADC_CFGR2_CKMODE_MASK           (3U << 30U)
+#define ADC_CFGR2_CKMODE_ADCCLK         (0U << 30U)
+#define ADC_CFGR2_CKMODE_PCLK_DIV2      (1U << 30U)
+#define ADC_CFGR2_CKMODE_PCLK_DIV4      (2U << 30U)
+#define ADC_CFGR2_CKMODE_PCLK           (3U << 30U)
 
 #define ADC_CFGR2_OVSR_MASK             (7U << 2U)
 #define ADC_CFGR2_OVSR_2X               (0U << 2U)
@@ -146,10 +157,10 @@
 #endif
 
 /**
- * @brief   ADC1 clock source selection.
+ * @brief   ADC1 CRFG2 initialization.
  */
-#if !defined(STM32_ADC_ADC1_CKMODE) || defined(__DOXYGEN__)
-#define STM32_ADC_ADC1_CKMODE               STM32_ADC_CKMODE_ADCCLK
+#if !defined(STM32_ADC_ADC1_CFGR2) || defined(__DOXYGEN__)
+#define STM32_ADC_ADC1_CFGR2               ADC_CFGR2_CKMODE_ADCCLK
 #endif
 
 /**
@@ -189,8 +200,8 @@
 /*===========================================================================*/
 
 /* Supported devices checks.*/
-#if !defined(STM32G0XX)
-#error "ADCv5 only supports G0 STM32 devices"
+#if !defined(STM32G0XX) && !defined(STM32WLXX)
+#error "ADCv5 only supports G0 and WL STM32 devices"
 #endif
 
 /* Registry checks.*/
@@ -243,9 +254,10 @@
 #error "ADC DMA stream not defined"
 #endif
 
-
 /* ADC clock source checks.*/
-#if STM32_ADC_PRESCALER_VALUE == 2
+#if STM32_ADC_PRESCALER_VALUE == 1
+#define STM32_ADC_PRESC                     0U
+#elif STM32_ADC_PRESCALER_VALUE == 2
 #define STM32_ADC_PRESC                     1U
 #elif STM32_ADC_PRESCALER_VALUE == 4
 #define STM32_ADC_PRESC                     2U
@@ -290,17 +302,9 @@ typedef uint16_t adcsample_t;
 typedef uint16_t adc_channels_num_t;
 
 /**
- * @brief   Possible ADC failure causes.
- * @note    Error codes are architecture dependent and should not relied
- *          upon.
+ * @brief   Type of an ADC error mask.
  */
-typedef enum {
-  ADC_ERR_DMAFAILURE = 0,                   /**< DMA operations failure.    */
-  ADC_ERR_OVERFLOW = 1,                     /**< ADC overflow condition.    */
-  ADC_ERR_AWD1 = 2,                         /**< Analog watchdog 1.         */
-  ADC_ERR_AWD2 = 3,                         /**< Analog watchdog 2.         */
-  ADC_ERR_AWD3 = 4                          /**< Analog watchdog 3.         */
-} adcerror_t;
+typedef uint32_t adcerror_t;
 
 /*===========================================================================*/
 /* Driver macros.                                                            */
@@ -335,10 +339,6 @@ typedef enum {
            specified in continuous more or if the buffer depth is           \
            greater than one.*/                                              \
   uint32_t                  cfgr1;                                          \
-  /* ADC CFGR2 register initialization data.                                \
-     NOTE: CKMODE bits must not be specified in this field and left to      \
-           zero.*/                                                          \
-  uint32_t                  cfgr2;                                          \
   /* ADC TR1 register initialization data.*/                                \
   uint32_t                  tr1;                                            \
   /* ADC TR2 register initialization data.*/                                \
@@ -363,7 +363,7 @@ typedef enum {
  *          Manual.
  * @note    PRESC bits must not be specified and left to zero.
  */
-#define adcSTM32SetCCR(ccr) (ADC->CCR = (ccr))
+#define adcSTM32SetCCR(ccr) (ADC1_COMMON->CCR = (ccr))
 
 /*===========================================================================*/
 /* External declarations.                                                    */

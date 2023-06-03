@@ -35,6 +35,7 @@
 #include "rt_test_sequence_009.h"
 #include "rt_test_sequence_010.h"
 #include "rt_test_sequence_011.h"
+#include "rt_test_sequence_012.h"
 
 #if !defined(__DOXYGEN__)
 
@@ -58,24 +59,30 @@ extern "C" {
 /*
  * Allowed delay in timeout checks.
  */
-#define ALLOWED_DELAY TIME_MS2I(2)
+#if CH_CFG_ST_TIMEDELTA == 0
+  #define ALLOWED_DELAY             2
+#else
+  #define ALLOWED_DELAY             TIME_MS2I(2)
+#endif
 
 /*
  * Maximum number of test threads.
  */
-#define MAX_THREADS             5
+#define MAX_THREADS                 5
 
 /*
  * Stack size of test threads.
  */
-#if defined(PORT_ARCHITECTURE_AVR) || defined(PORT__ARCHITECTURE_MSP430)
-#define THREADS_STACK_SIZE      48
-#elif defined(PORT__ARCHITECTURE_STM8)
-#define THREADS_STACK_SIZE      64
-#elif defined(PORT__ARCHITECTURE_SIMIA32)
-#define THREADS_STACK_SIZE      512
-#else
-#define THREADS_STACK_SIZE      128
+#if !defined(THREADS_STACK_SIZE)
+  #if defined(PORT_ARCHITECTURE_AVR) || defined(PORT__ARCHITECTURE_MSP430)
+    #define THREADS_STACK_SIZE      48
+  #elif defined(PORT__ARCHITECTURE_STM8)
+    #define THREADS_STACK_SIZE      64
+  #elif defined(PORT__ARCHITECTURE_SIMIA32)
+    #define THREADS_STACK_SIZE      512
+  #else
+    #define THREADS_STACK_SIZE      192
+  #endif
 #endif
 
 /*

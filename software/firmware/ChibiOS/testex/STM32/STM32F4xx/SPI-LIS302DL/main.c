@@ -21,8 +21,6 @@
 #include "chprintf.h"
 #include "lis302dl.h"
 
-#define cls(chp)  chprintf(chp, "\033[2J\033[1;1H")
-
 /*===========================================================================*/
 /* LIS302DL related.                                                          */
 /*===========================================================================*/
@@ -38,23 +36,25 @@ static char axisID[LIS302DL_ACC_NUMBER_OF_AXES] = {'X', 'Y', 'Z'};
 static uint32_t i;
 
 static const SPIConfig spicfg = {
-  FALSE,
-  NULL,
-  GPIOE,
-  GPIOE_CS_SPI,
-  SPI_CR1_BR_0 | SPI_CR1_CPOL | SPI_CR1_CPHA,
-  0
+  .circular         = false,
+  .slave            = false,
+  .data_cb          = NULL,
+  .error_cb         = NULL,
+  .ssport           = GPIOE,
+  .sspad            = GPIOE_CS_SPI,
+  .cr1              = SPI_CR1_BR_0 | SPI_CR1_CPOL | SPI_CR1_CPHA,
+  .cr2              = 0U
 };
 
 static LIS302DLConfig lis302dlcfg = {
-  &SPID1,
-  &spicfg,
-  NULL,
-  NULL,
-  LIS302DL_ACC_FS_2G,
-  LIS302DL_ACC_ODR_100HZ,
+  .spip             = &SPID1,
+  .spicfg           = &spicfg,
+  .accsensitivity   = NULL,
+  .accbias          = NULL,
+  .accfullscale     = LIS302DL_ACC_FS_2G,
+  .accodr           = LIS302DL_ACC_ODR_100HZ,
 #if LIS302DL_USE_ADVANCED
-  LIS302DL_ACC_HP_1,
+  .acchighpass      = LIS302DL_ACC_HP_1,
 #endif
 };
 
@@ -132,7 +132,6 @@ int main(void) {
       chprintf(chp, "%c-axis: %.3f\r\n", axisID[i], acccooked[i]);
     }
     chThdSleepMilliseconds(100);
-    cls(chp);
   }
   lis302dlStop(&LIS302DLD1);
 }

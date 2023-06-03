@@ -1,5 +1,5 @@
 /*
-    ChibiOS - Copyright (C) 2006..2018 Giovanni Di Sirio
+    ChibiOS - Copyright (C) 2006..2022 Giovanni Di Sirio
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 */
 
 /**
- * @file    ADCv1/hal_adc_lld.c
+ * @file    ADCv5/hal_adc_lld.c
  * @brief   STM32 ADC subsystem low level driver source.
  *
  * @addtogroup ADC
@@ -61,12 +61,25 @@ NOINLINE static void adc_lld_vreg_on(ADC_TypeDef *adc) {
 
 #if defined(ADC_CR_ADVREGEN)
   adc->CR = ADC_CR_ADVREGEN;
-  volatile uint32_t loop = (STM32_HCLK >> 20) << 4;
+  volatile uint32_t loop = STM32_HCLK >> 16;
   do {
     loop--;
   } while (loop > 0);
 #else
 #endif
+}
+
+/**
+ * @brief   Calibrates an ADC unit.
+ *
+ * @param[in] adc       pointer to the ADC registers block
+ */
+static void adc_lld_calibrate(ADC_TypeDef *adc) {
+
+  adc->CR |= ADC_CR_ADCAL;
+  while (adc->CR & ADC_CR_ADCAL) {
+    /* Waiting for calibration end.*/
+  }
 }
 
 /**
@@ -81,6 +94,12 @@ static void adc_lld_stop_adc(ADC_TypeDef *adc) {
     while (adc->CR & ADC_CR_ADSTP)
       ;
     adc->IER = 0;
+  }
+
+  /* Disabling the ADC.*/
+  adc->CR |= ADC_CR_ADDIS;
+  while ((adc->CR & ADC_CR_ADEN) != 0U) {
+    /* Waiting for ADC to be disabled.*/
   }
 }
 
@@ -166,23 +185,8 @@ void adc_lld_init(void) {
 
   /* The vector is initialized on driver initialization and never
      disabled.*/
-  nvicEnableVector(12, STM32_ADC_ADC1_IRQ_PRIORITY);
+  nvicEnableVector(STM32_ADC1_NUMBER, STM32_ADC_ADC1_IRQ_PRIORITY);
 #endif
-
-  /* Calibration procedure.*/
-  rccEnableADC1(true);
-
-  /* CCR setup.*/
-  ADC->CCR = STM32_ADC_PRESC << 18;
-
-  /* Regulator enabled and stabilized before calibration.*/
-  adc_lld_vreg_on(ADC1);
-
-  ADC1->CR |= ADC_CR_ADCAL;
-  while (ADC1->CR & ADC_CR_ADCAL)
-    ;
-  ADC1->CR = 0;
-  rccDisableADC1();
 }
 
 /**
@@ -196,6 +200,7 @@ void adc_lld_start(ADCDriver *adcp) {
 
   /* If in stopped state then enables the ADC and DMA clocks.*/
   if (adcp->state == ADC_STOP) {
+
 #if STM32_ADC_USE_ADC1
     if (&ADCD1 == adcp) {
       adcp->dmastp = dmaStreamAllocI(STM32_ADC_ADC1_DMA_STREAM,
@@ -203,6 +208,7 @@ void adc_lld_start(ADCDriver *adcp) {
                                      (stm32_dmaisr_t)adc_lld_serve_rx_interrupt,
                                      (void *)adcp);
       osalDbgAssert(adcp->dmastp != NULL, "unable to allocate stream");
+      rccResetADC1();
       rccEnableADC1(true);
 
       /* DMA setup.*/
@@ -210,18 +216,16 @@ void adc_lld_start(ADCDriver *adcp) {
       dmaSetRequestSource(adcp->dmastp, STM32_DMAMUX1_ADC1);
 
       /* Clock settings.*/
-      adcp->adc->CFGR2 = STM32_ADC_ADC1_CKMODE;
+      ADC1_COMMON->CCR = STM32_ADC_PRESC << ADC_CCR_PRESC_Pos;
+      adcp->adc->CFGR2 = STM32_ADC_ADC1_CFGR2;
     }
 #endif /* STM32_ADC_USE_ADC1 */
 
-    /* Regulator enabled and stabilized before calibration.*/
-    adc_lld_vreg_on(ADC1);
+    /* Regulator enabled and stabilized.*/
+    adc_lld_vreg_on(adcp->adc);
 
-    /* ADC initial setup, starting the analog part here in order to reduce
-       the latency when starting a conversion.*/
-    adcp->adc->CR = ADC_CR_ADEN;
-    while (!(adcp->adc->ISR & ADC_ISR_ADRDY))
-      ;
+    /* Calibrating ADC.*/
+    adc_lld_calibrate(adcp->adc);
   }
 }
 
@@ -234,29 +238,27 @@ void adc_lld_start(ADCDriver *adcp) {
  */
 void adc_lld_stop(ADCDriver *adcp) {
 
-  /* If in ready state then disables the ADC clock and analog part.*/
+  /* If in ready state then disables the ADC peripheral and clock.*/
   if (adcp->state == ADC_READY) {
 
     dmaStreamFreeI(adcp->dmastp);
     adcp->dmastp = NULL;
 
-    /* Restoring CCR default.*/
-    ADC->CCR = STM32_ADC_PRESC << 18;
-
-    /* Disabling ADC.*/
-    if (adcp->adc->CR & ADC_CR_ADEN) {
-      adc_lld_stop_adc(adcp->adc);
-      adcp->adc->CR |= ADC_CR_ADDIS;
-      while (adcp->adc->CR & ADC_CR_ADDIS)
-        ;
+    /* Disabling the ADC.*/
+    adcp->adc->CR |= ADC_CR_ADDIS;
+    while ((adcp->adc->CR & ADC_CR_ADEN) != 0U) {
+      /* Waiting for ADC to be disabled.*/
     }
 
-    /* Regulator and anything else off.*/
-    adcp->adc->CR = 0;
+    /* Regulator off.*/
+#if defined(ADC_CR_ADVREGEN)
+    adcp->adc->CR &= ~ADC_CR_ADVREGEN;
+#endif
 
 #if STM32_ADC_USE_ADC1
-    if (&ADCD1 == adcp)
+    if (&ADCD1 == adcp) {
       rccDisableADC1();
+    }
 #endif
   }
 }
@@ -269,13 +271,18 @@ void adc_lld_stop(ADCDriver *adcp) {
  * @notapi
  */
 void adc_lld_start_conversion(ADCDriver *adcp) {
-  uint32_t mode, cfgr1, cfgr2;
+
+  uint32_t mode, cfgr1;
   const ADCConversionGroup *grpp = adcp->grpp;
+
+  /* Write back ISR bits to clear register.*/
+  adcp->adc->ISR = adcp->adc->ISR;
+
+  /* Get group1 configuration. Transfer the clock mode for group2.*/
+  cfgr1  = grpp->cfgr1 | ADC_CFGR1_DMAEN;
 
   /* DMA setup.*/
   mode  = adcp->dmamode;
-  cfgr1 = grpp->cfgr1 | ADC_CFGR1_DMAEN;
-  cfgr2 = adcp->adc->CFGR2 & STM32_ADC_CKMODE_MASK;
   if (grpp->circular) {
     mode  |= STM32_DMA_CR_CIRC;
     cfgr1 |= ADC_CFGR1_DMACFG;
@@ -286,15 +293,24 @@ void adc_lld_start_conversion(ADCDriver *adcp) {
     }
   }
   dmaStreamSetMemory0(adcp->dmastp, adcp->samples);
-  dmaStreamSetTransactionSize(adcp->dmastp, (uint32_t)grpp->num_channels *
-                                            (uint32_t)adcp->depth);
+  dmaStreamSetTransactionSize(adcp->dmastp, ((uint32_t)grpp->num_channels *
+                                            (uint32_t)adcp->depth));
   dmaStreamSetMode(adcp->dmastp, mode);
-  dmaStreamEnable(adcp->dmastp);
 
-  /* ADC setup, if it is defined a callback for the analog watch dog then it
-     is enabled.*/
-  adcp->adc->ISR      = adcp->adc->ISR;
-  if (grpp->error_cb != NULL) {
+  /* Apply ADC configuration.*/
+  adcp->adc->CFGR1  = cfgr1;
+  adcp->adc->CHSELR = grpp->chselr;
+
+  while ((adcp->adc->ISR & ADC_ISR_CCRDY) == 0U) {
+    /* Wait for the channel bits (or sequence), CHSEL mode and scan direction
+       to be applied.*/
+  }
+
+  /* Set the sample rate(s).*/
+  adcp->adc->SMPR = grpp->smpr;
+
+  /* Enable ADC interrupts if callback specified.*/
+   if (grpp->error_cb != NULL) {
     adcp->adc->IER    = ADC_IER_OVRIE | ADC_IER_AWD1IE
                                       | ADC_IER_AWD2IE
                                       | ADC_IER_AWD3IE;
@@ -304,12 +320,17 @@ void adc_lld_start_conversion(ADCDriver *adcp) {
     adcp->adc->AWD2CR = grpp->awd2cr;
     adcp->adc->AWD3CR = grpp->awd3cr;
   }
-  adcp->adc->SMPR   = grpp->smpr;
-  adcp->adc->CHSELR = grpp->chselr;
 
-  /* ADC configuration and start.*/
-  adcp->adc->CFGR1  = cfgr1;
-  adcp->adc->CFGR2  = cfgr2 | grpp->cfgr2;
+  /* Enable the ADC. Note: Setting ADEN must be deferred as a STM32G071 will
+     reset RES[1:0] resolution bits if CFGR1 is modified with ADEN set
+     (see STM32G071xx errata ES0418 Rev 3 2.6.2). Same applies to STM32WL.*/
+  adcp->adc->CR  |= ADC_CR_ADEN;
+  while ((adcp->adc->ISR & ADC_ISR_ADRDY) == 0U) {
+    /* Wait for the ADC to become ready.*/
+  }
+
+  /* Enable DMA controller stream.*/
+  dmaStreamEnable(adcp->dmastp);
 
   /* ADC conversion start.*/
   adcp->adc->CR |= ADC_CR_ADSTART;
@@ -344,25 +365,29 @@ void adc_lld_serve_interrupt(ADCDriver *adcp) {
   /* It could be a spurious interrupt caused by overflows after DMA disabling,
      just ignore it in this case.*/
   if (adcp->grpp != NULL) {
+    adcerror_t emask = 0U;
+
     /* Note, an overflow may occur after the conversion ended before the driver
-       is able to stop the ADC, this is why the DMA channel is checked too.*/
-    if ((isr & ADC_ISR_OVR) &&
-        (dmaStreamGetTransactionSize(adcp->dmastp) > 0)) {
+       is able to stop the ADC, this is why the state is checked too.*/
+    if ((isr & ADC_ISR_OVR) && (adcp->state == ADC_ACTIVE)) {
       /* ADC overflow condition, this could happen only if the DMA is unable
          to read data fast enough.*/
-      _adc_isr_error_code(adcp, ADC_ERR_OVERFLOW);
+      emask |= ADC_ERR_OVERFLOW;
     }
     if (isr & ADC_ISR_AWD1) {
       /* Analog watchdog 1 error.*/
-      _adc_isr_error_code(adcp, ADC_ERR_AWD1);
+      emask |= ADC_ERR_AWD1;
     }
     if (isr & ADC_ISR_AWD2) {
       /* Analog watchdog 2 error.*/
-      _adc_isr_error_code(adcp, ADC_ERR_AWD2);
+      emask |= ADC_ERR_AWD2;
     }
     if (isr & ADC_ISR_AWD3) {
       /* Analog watchdog 3 error.*/
-      _adc_isr_error_code(adcp, ADC_ERR_AWD3);
+      emask |= ADC_ERR_AWD3;
+    }
+    if (emask != 0U) {
+      _adc_isr_error_code(adcp, emask);
     }
   }
 }
@@ -381,7 +406,7 @@ void adcSTM32EnableVREF(ADCDriver *adcp) {
 
   (void)adcp;
 
-  ADC->CCR |= ADC_CCR_VREFEN;
+  ADC1_COMMON->CCR |= ADC_CCR_VREFEN;
 }
 
 /**
@@ -398,7 +423,7 @@ void adcSTM32DisableVREF(ADCDriver *adcp) {
 
   (void)adcp;
 
-  ADC->CCR &= ~ADC_CCR_VREFEN;
+  ADC1_COMMON->CCR &= ~ADC_CCR_VREFEN;
 }
 
 /**
@@ -415,7 +440,7 @@ void adcSTM32EnableTS(ADCDriver *adcp) {
 
   (void)adcp;
 
-  ADC->CCR |= ADC_CCR_TSEN;
+  ADC1_COMMON->CCR |= ADC_CCR_TSEN;
 }
 
 /**
@@ -432,7 +457,7 @@ void adcSTM32DisableTS(ADCDriver *adcp) {
 
   (void)adcp;
 
-  ADC->CCR &= ~ADC_CCR_TSEN;
+  ADC1_COMMON->CCR &= ~ADC_CCR_TSEN;
 }
 
 #if defined(ADC_CCR_VBATEN) || defined(__DOXYGEN__)
@@ -450,7 +475,7 @@ void adcSTM32EnableVBAT(ADCDriver *adcp) {
 
   (void)adcp;
 
-  ADC->CCR |= ADC_CCR_VBATEN;
+  ADC1_COMMON->CCR |= ADC_CCR_VBATEN;
 }
 
 /**
@@ -467,7 +492,7 @@ void adcSTM32DisableVBAT(ADCDriver *adcp) {
 
   (void)adcp;
 
-  ADC->CCR &= ~ADC_CCR_VBATEN;
+  ADC1_COMMON->CCR &= ~ADC_CCR_VBATEN;
 }
 #endif /* defined(ADC_CCR_VBATEN) */
 

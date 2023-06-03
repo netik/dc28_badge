@@ -108,7 +108,7 @@ include $(CHIBIOS)/os/hal/osal/rt-nil/osal.mk
 # RTOS files (optional).
 include $(CHIBIOS)/os/rt/rt.mk
 #include $(CHIBIOS)/os/common/ports/ARMv6-M/compilers/GCC/mk/port.mk
-include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/port_v6m.mk
+include $(CHIBIOS)/os/common/ports/ARMv6-M/compilers/GCC/mk/port.mk
 # Auto-build files in ./source recursively.
 include $(CHIBIOS)/tools/mk/autobuild.mk
 # Other files (optional).
@@ -186,8 +186,7 @@ include $(RULESPATH)/rules.mk
 # Custom rules
 #
 
-READLINK:=greadlink
-OPENOCD:=$(shell $(READLINK) -f `which openocd`)
+OPENOCD:=$(shell readlink -f `which openocd`)
 OPENOCDPATH:=$(shell dirname $(OPENOCD))/../share/openocd
 
 install-openocd-config:
@@ -197,7 +196,7 @@ connect:
 	openocd -f ../scripts/interface/nulink.cfg -f ../scripts/target/numicroM0.cfg
 
 flash: $(BUILDDIR)/$(PROJECT).elf
-	openocd -f ../scripts/interface/nulink.cfg -f ../scripts/target/numicroM0.cfg -c "program $< verify reset exit"
+	openocd -f ../scripts/interface/nulink.cfg -f ../scripts/target/numicroM0.cfg -c "program $< reset exit"
 
 
 #

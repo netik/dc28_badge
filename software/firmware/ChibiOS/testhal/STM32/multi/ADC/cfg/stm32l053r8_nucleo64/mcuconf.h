@@ -1,5 +1,5 @@
 /*
-    ChibiOS - Copyright (C) 2006..2018 Giovanni Di Sirio
+    ChibiOS - Copyright (C) 2006..2020 Giovanni Di Sirio
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -98,7 +98,7 @@
  * Note, IRQ is shared with EXT channels 21 and 22.
  */
 #define STM32_ADC_USE_ADC1                  TRUE
-#define STM32_ADC_ADC1_CKMODE               STM32_ADC_CKMODE_ADCCLK
+#define STM32_ADC_ADC1_CFGR2                ADC_CFGR2_CKMODE_ADCCLK
 #define STM32_ADC_ADC1_DMA_PRIORITY         2
 #define STM32_ADC_ADC1_DMA_IRQ_PRIORITY     2
 #define STM32_ADC_ADC1_DMA_STREAM           STM32_DMA_STREAM_ID(1, 1)
@@ -125,16 +125,21 @@
  */
 #define STM32_I2C_USE_I2C1                  FALSE
 #define STM32_I2C_USE_I2C2                  FALSE
+#define STM32_I2C_USE_I2C3                  FALSE
 #define STM32_I2C_BUSY_TIMEOUT              50
 #define STM32_I2C_I2C1_IRQ_PRIORITY         3
 #define STM32_I2C_I2C2_IRQ_PRIORITY         3
+#define STM32_I2C_I2C3_IRQ_PRIORITY         3
 #define STM32_I2C_USE_DMA                   TRUE
 #define STM32_I2C_I2C1_DMA_PRIORITY         1
 #define STM32_I2C_I2C2_DMA_PRIORITY         1
+#define STM32_I2C_I2C3_DMA_PRIORITY         1
 #define STM32_I2C_I2C1_RX_DMA_STREAM        STM32_DMA_STREAM_ID(1, 3)
 #define STM32_I2C_I2C1_TX_DMA_STREAM        STM32_DMA_STREAM_ID(1, 2)
 #define STM32_I2C_I2C2_RX_DMA_STREAM        STM32_DMA_STREAM_ID(1, 5)
 #define STM32_I2C_I2C2_TX_DMA_STREAM        STM32_DMA_STREAM_ID(1, 4)
+#define STM32_I2C_I2C3_RX_DMA_STREAM        STM32_DMA_STREAM_ID(1, 3)
+#define STM32_I2C_I2C3_TX_DMA_STREAM        STM32_DMA_STREAM_ID(1, 2)
 #define STM32_I2C_DMA_ERROR_HOOK(i2cp)      osalSysHalt("DMA failure")
 
 /*
@@ -157,6 +162,13 @@
 #define STM32_SERIAL_USE_USART1             FALSE
 #define STM32_SERIAL_USE_USART2             FALSE
 #define STM32_SERIAL_USE_LPUART1            FALSE
+
+/*
+ * SIO driver system settings.
+ */
+#define STM32_SIO_USE_USART1                FALSE
+#define STM32_SIO_USE_USART2                FALSE
+#define STM32_SIO_USE_LPUART1               FALSE
 
 /*
  * SPI driver system settings.
@@ -191,8 +203,6 @@
 #define STM32_UART_USE_USART2               FALSE
 #define STM32_UART_USART1_DMA_PRIORITY      0
 #define STM32_UART_USART2_DMA_PRIORITY      0
-#define STM32_UART_USART1_IRQ_PRIORITY      3
-#define STM32_UART_USART2_IRQ_PRIORITY      3
 #define STM32_UART_USART1_RX_DMA_STREAM     STM32_DMA_STREAM_ID(1, 5)
 #define STM32_UART_USART1_TX_DMA_STREAM     STM32_DMA_STREAM_ID(1, 4)
 #define STM32_UART_USART2_RX_DMA_STREAM     STM32_DMA_STREAM_ID(1, 6)

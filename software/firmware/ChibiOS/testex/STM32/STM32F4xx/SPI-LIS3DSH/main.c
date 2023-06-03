@@ -21,8 +21,6 @@
 #include "chprintf.h"
 #include "lis3dsh.h"
 
-#define cls(chp)  chprintf(chp, "\033[2J\033[1;1H")
-
 /*===========================================================================*/
 /* LIS3DSH related.                                                          */
 /*===========================================================================*/
@@ -38,24 +36,26 @@ static char axisID[LIS3DSH_ACC_NUMBER_OF_AXES] = {'X', 'Y', 'Z'};
 static uint32_t i;
 
 static const SPIConfig spicfg = {
-  FALSE,
-  NULL,
-  GPIOE,
-  GPIOE_CS_SPI,
-  SPI_CR1_BR_0 | SPI_CR1_CPOL | SPI_CR1_CPHA,
-  0
+  .circular         = false,
+  .slave            = false,
+  .data_cb          = NULL,
+  .error_cb         = NULL,
+  .ssport           = GPIOE,
+  .sspad            = GPIOE_CS_SPI,
+  .cr1              = SPI_CR1_BR_0 | SPI_CR1_CPOL | SPI_CR1_CPHA,
+  .cr2              = 0U
 };
 
 static LIS3DSHConfig lis3dshcfg = {
-  &SPID1,
-  &spicfg,
-  NULL,
-  NULL,
-  LIS3DSH_ACC_FS_2G,
-  LIS3DSH_ACC_ODR_100HZ,
+  .spip             = &SPID1,
+  .spicfg           = &spicfg,
+  .accsensitivity   = NULL,
+  .accbias          = NULL,
+  .accfullscale     = LIS3DSH_ACC_FS_2G,
+  .accodr           = LIS3DSH_ACC_ODR_100HZ,
 #if LIS3DSH_USE_ADVANCED
-  LIS3DSH_ACC_BW_400HZ,
-  LIS3DSH_ACC_BDU_CONTINUOUS,
+  .accantialiasing  = LIS3DSH_ACC_BW_400HZ,
+  .accbdu           = LIS3DSH_ACC_BDU_CONTINUOUS
 #endif
 };
 
@@ -133,7 +133,6 @@ int main(void) {
       chprintf(chp, "%c-axis: %.3f\r\n", axisID[i], acccooked[i]);
     }
     chThdSleepMilliseconds(100);
-    cls(chp);
   }
   lis3dshStop(&LIS3DSHD1);
 }

@@ -85,21 +85,21 @@ static const USBEndpointConfig ep0config = {
  * Buffer Descriptor (BD)
  * */
 typedef struct {
-	uint32_t desc;
-	uint8_t* addr;
+  uint32_t desc;
+  uint8_t* addr;
 } bd_t;
 
 /*
  * Buffer Descriptor fields - p.889
  */
-#define BDT_OWN		0x80
+#define BDT_OWN   0x80
 #define BDT_DATA  0x40
 #define BDT_KEEP  0x20
 #define BDT_NINC  0x10
-#define BDT_DTS		0x08
-#define BDT_STALL	0x04
+#define BDT_DTS   0x08
+#define BDT_STALL 0x04
 
-#define BDT_DESC(bc, data)	(BDT_OWN | BDT_DTS | ((data&0x1)<<6) | ((bc) << 16))
+#define BDT_DESC(bc, data)  (BDT_OWN | BDT_DTS | ((data&0x1)<<6) | ((bc) << 16))
 
 /*
  * BDT PID - p.891
@@ -107,7 +107,7 @@ typedef struct {
 #define BDT_PID_OUT   0x01
 #define BDT_PID_IN    0x09
 #define BDT_PID_SETUP 0x0D
-#define BDT_TOK_PID(n)	(((n)>>2)&0xF)
+#define BDT_TOK_PID(n)  (((n)>>2)&0xF)
 
 /*
  * BDT index fields
@@ -278,8 +278,7 @@ OSAL_IRQ_HANDLER(KINETIS_USB_IRQ_VECTOR) {
         }
         else
         {
-          if(epc->in_cb != NULL)
-            _usb_isr_invoke_in_cb(usbp,ep);
+          _usb_isr_invoke_in_cb(usbp,ep);
         }
       } break;
       case BDT_PID_OUT:                                                // OUT
@@ -304,8 +303,7 @@ OSAL_IRQ_HANDLER(KINETIS_USB_IRQ_VECTOR) {
              has been received or the current packet is a short packet.*/
           if ((rxed < epc->out_maxsize) || (epc->out_state->rxpkts == 0))
           {
-            if(epc->out_cb != NULL)
-              _usb_isr_invoke_out_cb(usbp, ep);
+            _usb_isr_invoke_out_cb(usbp, ep);
           }
         }
       } break;
@@ -398,7 +396,7 @@ void usb_lld_init(void) {
   /* Set USB clock source to MCGPLLCLK, MCGFLLCLK, USB1 PFD, or IRC48M */
   SIM->SOPT2 |= SIM_SOPT2_USBSRC;
 
-#if defined(K20x5) || defined(K20x7) || defined(MK66F18)
+#if defined(K20x5) || defined(K20x7) || defined(K64F) || defined(MK66F18)
 
 #if KINETIS_MCG_MODE == KINETIS_MCG_MODE_FEI
 
@@ -407,7 +405,7 @@ void usb_lld_init(void) {
 
 #elif KINETIS_MCG_MODE == KINETIS_MCG_MODE_PEE
 
-#if !defined(MK66F18)
+#if !defined(MK66F18) && !defined(K64F)
   /* Note:  We don't need this for MK66F18, we can use IRC48M clock for USB */
   #define KINETIS_USBCLK_FREQUENCY 48000000UL
   uint32_t i,j;
@@ -426,6 +424,12 @@ void usb_lld_init(void) {
 #else /* KINETIS_MCG_MODE == KINETIS_MCG_MODE_PEE */
 #error USB clock setting not implemented for this KINETIS_MCG_MODE
 #endif /* KINETIS_MCG_MODE == ... */
+
+#if defined(K64F)
+  /* Switch from default MCGPLLCLK to IRC48M for USB */
+  //SIM->CLKDIV2 = SIM_CLKDIV2_USBDIV(0);
+  //SIM->SOPT2 |= SIM_SOPT2_PLLFLLSEL_IRC48M;
+#endif
 
 #if defined(MK66F18)
   /* Switch from default MCGPLLCLK to IRC48M for USB */

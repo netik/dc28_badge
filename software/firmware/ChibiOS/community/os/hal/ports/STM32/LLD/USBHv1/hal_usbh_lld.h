@@ -69,8 +69,6 @@ typedef struct stm32_hc_management {
 	thread_reference_t thread_ref;											\
 	/* interrupt occured */												\
 	uint8_t intService;												\
-	/* interrupt fully serviced, no need to wake task */								\
-	uint32_t intSkip;												\
 	/* channels */													\
 	uint8_t channels_number;											\
 	stm32_hc_management_t channels[STM32_OTG_HS_CHANNELS_NUMBER];							\
@@ -159,12 +157,11 @@ uint8_t usbh_lld_roothub_get_statuschange_bitmap(USBHDriver *usbh);
 #define USBH_LLD_DECLARE_STRUCT_MEMBER(member) member __attribute__((aligned(4)))
 #endif
 
-
-#if STM32_USBH_USE_OTG_FS
+#if STM32_USBH_USE_OTG1
 extern USBHDriver USBHD1;
 #endif
 
-#if STM32_USBH_USE_OTG_HS
+#if STM32_USBH_USE_OTG2
 extern USBHDriver USBHD2;
 #endif
 

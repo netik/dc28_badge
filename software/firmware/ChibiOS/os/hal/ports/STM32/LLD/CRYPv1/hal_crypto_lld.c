@@ -191,7 +191,7 @@ static cryerror_t cryp_do_transfer(CRYDriver *cryp,
       }
 
       if ((nr < szw) && ((CRYP->SR & CRYP_SR_IFNF) != 0U)) {
-        CRYP->DR = __UNALIGNED_UINT32_READ(in);
+        CRYP->DIN = __UNALIGNED_UINT32_READ(in);
         in += 4;
         nr++;
       }
@@ -411,7 +411,7 @@ void cry_lld_start(CRYDriver *cryp) {
                        STM32_DMA_CR_MSIZE_WORD | STM32_DMA_CR_PSIZE_WORD |
                        STM32_DMA_CR_DMEIE | STM32_DMA_CR_TEIE |
                        STM32_DMA_CR_TCIE);
-      dmaStreamSetPeripheral(cryp->cryp_dma_in,  &CRYP->DR);
+      dmaStreamSetPeripheral(cryp->cryp_dma_in,  &CRYP->DIN);
       dmaStreamSetPeripheral(cryp->cryp_dma_out, &CRYP->DOUT);
       dmaStreamSetFIFO(cryp->cryp_dma_in,  STM32_DMA_FCR_DMDIS);
       dmaStreamSetFIFO(cryp->cryp_dma_out, STM32_DMA_FCR_DMDIS);
@@ -615,10 +615,10 @@ cryerror_t cry_lld_encrypt_AES(CRYDriver *cryp,
   }
 
   /* Pushing the AES block in the FIFO, it is assumed to be empty.*/
-  CRYP->DR = __UNALIGNED_UINT32_READ(&in[0]);
-  CRYP->DR = __UNALIGNED_UINT32_READ(&in[4]);
-  CRYP->DR = __UNALIGNED_UINT32_READ(&in[8]);
-  CRYP->DR = __UNALIGNED_UINT32_READ(&in[12]);
+  CRYP->DIN = __UNALIGNED_UINT32_READ(&in[0]);
+  CRYP->DIN = __UNALIGNED_UINT32_READ(&in[4]);
+  CRYP->DIN = __UNALIGNED_UINT32_READ(&in[8]);
+  CRYP->DIN = __UNALIGNED_UINT32_READ(&in[12]);
 
   /* Reading the result.*/
   for (i = 0U; i < 4; i++, out += 4) {
@@ -673,10 +673,10 @@ cryerror_t cry_lld_decrypt_AES(CRYDriver *cryp,
   }
 
   /* Pushing the AES block in the FIFO, it is assumed to be empty.*/
-  CRYP->DR = __UNALIGNED_UINT32_READ(&in[0]);
-  CRYP->DR = __UNALIGNED_UINT32_READ(&in[4]);
-  CRYP->DR = __UNALIGNED_UINT32_READ(&in[8]);
-  CRYP->DR = __UNALIGNED_UINT32_READ(&in[12]);
+  CRYP->DIN = __UNALIGNED_UINT32_READ(&in[0]);
+  CRYP->DIN = __UNALIGNED_UINT32_READ(&in[4]);
+  CRYP->DIN = __UNALIGNED_UINT32_READ(&in[8]);
+  CRYP->DIN = __UNALIGNED_UINT32_READ(&in[12]);
 
   /* Reading the result.*/
   for (i = 0U; i < 4; i++, out += 4) {
@@ -1540,7 +1540,7 @@ cryerror_t cry_lld_SHA256_init(CRYDriver *cryp, SHA256Context *sha256ctxp) {
   sha256ctxp->last_size = 0U;
 
   /* Initializing operation.*/
-  HASH->CR = /*HASH_CR_MDMAT |*/ HASH_CR_ALGO_1 | HASH_CR_ALGO_0 |
+  HASH->CR = /* HASH_CR_MDMAT |*/ HASH_CR_ALGO_1 | HASH_CR_ALGO_0 |
              HASH_CR_DATATYPE_1 | HASH_CR_INIT;
 
   return CRY_NOERROR;

@@ -20,8 +20,6 @@
 #include "chprintf.h"
 #include "lsm6dsl.h"
 
-#define cls(chp)  chprintf(chp, "\033[2J\033[1;1H")
-
 /*===========================================================================*/
 /* LSM6DSL related.                                                          */
 /*===========================================================================*/
@@ -39,33 +37,31 @@ static char axisID[LSM6DSL_ACC_NUMBER_OF_AXES] = {'X', 'Y', 'Z'};
 static uint32_t i;
 
 static const I2CConfig i2ccfg = {
-  OPMODE_I2C,
-  400000,
-  FAST_DUTY_CYCLE_2,
+  .op_mode          = OPMODE_I2C,
+  .clock_speed      = 400000,
+  .duty_cycle       = FAST_DUTY_CYCLE_2
 };
 
 static const LSM6DSLConfig lsm6dslcfg = {
-  &I2CD1,
-  &i2ccfg,
-  LSM6DSL_SAD_VCC,
-  NULL,
-  NULL,
-  LSM6DSL_ACC_FS_2G,
-  LSM6DSL_GYRO_ODR_52Hz,
+  .i2cp             = &I2CD1,
+  .i2ccfg           = &i2ccfg,
+  .slaveaddress     = LSM6DSL_SAD_VCC,
+  .accsensitivity   = NULL,
+  .accbias          = NULL,
+  .accfullscale     = LSM6DSL_ACC_FS_2G,
+  .accodr           = LSM6DSL_ACC_ODR_52HZ,
 #if LSM6DSL_USE_ADVANCED
-  LSM6DSL_ACC_LP_ENABLED,
+  .acclpmode        = LSM6DSL_ACC_LP_ENABLED,
 #endif
-  NULL,
-  NULL,
-  LSM6DSL_GYRO_FS_250DPS,
-  LSM6DSL_GYRO_ODR_104Hz,
+  .gyrosensitivity  = NULL,
+  .gyrobias         = NULL,
+  .gyrofullscale    = LSM6DSL_GYRO_FS_250DPS,
+  .gyroodr          = LSM6DSL_GYRO_ODR_104HZ,
 #if LSM6DSL_USE_ADVANCED
-  LSM6DSL_GYRO_LP_ENABLED,
-  LSM6DSL_GYRO_LPF_FTYPE1,
-#endif
-#if LSM6DSL_USE_ADVANCED
-  LSM6DSL_BDU_BLOCKED,
-  LSM6DSL_END_LITTLE
+  .gyrolpmode       = LSM6DSL_GYRO_LP_ENABLED,
+  .gyrolpfilter     = LSM6DSL_GYRO_LPF_FTYPE1,
+  .bdu              = LSM6DSL_BDU_BLOCKED,
+  .endianness       = LSM6DSL_END_LITTLE
 #endif
 };
 
@@ -150,7 +146,6 @@ int main(void) {
       chprintf(chp, "%c-axis: %.3f\r\n", axisID[i], gyrocooked[i]);
     }
     chThdSleepMilliseconds(100);
-    cls(chp);
   }
   lsm6dslStop(&LSM6DSLD1);
 }

@@ -21,33 +21,49 @@
 #include "usbh/internal.h"
 #include <string.h>
 
-#if STM32_USBH_USE_OTG_FS
+#if STM32_USBH_USE_OTG1
 #if !defined(STM32_OTG_FS_CHANNELS_NUMBER)
 #error "STM32_OTG_FS_CHANNELS_NUMBER must be defined"
 #endif
+#if !defined(STM32_OTG1_USE_HS)
+#define STM32_OTG1_USE_HS FALSE
+#endif
+#if !defined(STM32_OTG1_USE_ULPI)
+#define STM32_OTG1_USE_ULPI FALSE
+#endif
+#if !defined(STM32_OTG1_USE_ULPI_VBUS)
+#define STM32_OTG1_USE_ULPI_VBUS FALSE
+#endif
 #if !defined(STM32_OTG_FS_RXFIFO_SIZE)
-#define STM32_OTG_FS_RXFIFO_SIZE		1024
+#define STM32_OTG_FS_RXFIFO_SIZE 1024
 #endif
 #if !defined(STM32_OTG_FS_PTXFIFO_SIZE)
-#define STM32_OTG_FS_PTXFIFO_SIZE		128
+#define STM32_OTG_FS_PTXFIFO_SIZE 128
 #endif
 #if !defined(STM32_OTG_FS_NPTXFIFO_SIZE)
-#define STM32_OTG_FS_NPTXFIFO_SIZE	128
+#define STM32_OTG_FS_NPTXFIFO_SIZE 128
 #endif
 #if !defined(STM32_OTG_FS_FIFO_MEM_SIZE)
 #define STM32_OTG_FS_FIFO_MEM_SIZE 320
 #endif
 #if defined(STM32H7XX)
-#define STM32_OTG_FS_NUMBER STM32_OTG2_NUMBER
-#define STM32_USB_OTG_FS_IRQ_PRIORITY STM32_USB_OTG2_IRQ_PRIORITY
-#define rccEnableOTG_FS(x) rccEnableUSB2_OTG_FS(lp)
-#define rccDisableOTG_FS() rccDisableUSB2_OTG_FS()
-#define rccResetOTG_FS() rccResetUSB2_OTG_FS()
-#elif defined(STM32F7XX)
-#define STM32_OTG_FS_NUMBER STM32_OTG1_NUMBER
-#define STM32_OTG_FS_HANDLER STM32_OTG1_HANDLER
-#define STM32_USB_OTG_FS_IRQ_PRIORITY STM32_USB_OTG1_IRQ_PRIORITY
-#define rccResetOTG_FS() rccResetAHB2(RCC_AHB2ENR_OTGFSEN)
+#define rccEnableOTG1(lp) rccEnableUSB1_OTG_HS(lp)
+#define rccDisableOTG1() rccDisableUSB1_OTG_HS()
+#define rccResetOTG1() rccResetUSB1_OTG_HS()
+#define rccEnableOTG1_HSULPI(lp) rccEnableUSB1_HSULPI(lp)
+#define rccDisableOTG1_HSULPI() rccDisableUSB1_HSULPI()
+#define rccResetOTG1_HSULPI() rccResetUSB1_HSULPI()
+#define OTG1 OTG_HS
+#define OTG1_CHANNELS_NUMBER STM32_OTG_HS_CHANNELS_NUMBER
+#else
+#define rccEnableOTG1(lp) rccEnableOTG_FS(lp)
+#define rccDisableOTG1() rccDisableOTG_FS()
+#define rccResetOTG1() rccResetOTG_FS()
+#define OTG1 OTG_FS
+#define OTG1_CHANNELS_NUMBER STM32_OTG_FS_CHANNELS_NUMBER
+#if STM32_OTG1_USE_ULPI
+#error "OTG1 has no ULPI on this platform"
+#endif
 #endif
 #if (STM32_OTG_FS_RXFIFO_SIZE + STM32_OTG_FS_PTXFIFO_SIZE + STM32_OTG_FS_NPTXFIFO_SIZE) > (STM32_OTG_FS_FIFO_MEM_SIZE * 4)
 #error "Not enough memory in OTG_FS implementation"
@@ -59,9 +75,18 @@
 #endif
 #endif
 
-#if STM32_USBH_USE_OTG_HS
+#if STM32_USBH_USE_OTG2
 #if !defined(STM32_OTG_HS_CHANNELS_NUMBER)
 #error "STM32_OTG_HS_CHANNELS_NUMBER must be defined"
+#endif
+#if !defined(STM32_OTG2_USE_HS)
+#define STM32_OTG2_USE_HS FALSE
+#endif
+#if !defined(STM32_OTG2_USE_ULPI)
+#define STM32_OTG2_USE_ULPI FALSE
+#endif
+#if !defined(STM32_OTG2_USE_ULPI_VBUS)
+#define STM32_OTG2_USE_ULPI_VBUS FALSE
 #endif
 #if !defined(STM32_OTG_HS_RXFIFO_SIZE)
 #define STM32_OTG_HS_RXFIFO_SIZE		2048
@@ -75,29 +100,38 @@
 #if !defined(STM32_OTG_HS_FIFO_MEM_SIZE)
 #define STM32_OTG_HS_FIFO_MEM_SIZE 1024
 #endif
-#if !defined(STM32_USBH_USE_OTG_HS_ULPI)
-#define STM32_USBH_USE_OTG_HS_ULPI FALSE
+#if !defined(STM32_OTG2_USE_ULPI)
+#define STM32_OTG2_USE_ULPI FALSE
 #endif
 #if defined(STM32H7XX)
-#define STM32_OTG_HS_NUMBER STM32_OTG1_NUMBER
-#define STM32_USB_OTG_HS_IRQ_PRIORITY STM32_USB_OTG1_IRQ_PRIORITY
-#define rccEnableOTG_HS(x) rccEnableUSB1_OTG_HS(x)
-#define rccDisableOTG_HS() rccDisableUSB1_OTG_HS()
-#define rccResetOTG_HS() rccResetUSB1_OTG_HS()
-#define rccEnableOTG_HSULPI(x) rccEnableUSB1_HSULPI(x)
-#define rccDisableOTG_HSULPI() rccDisableUSB1_HSULPI()
-#define rccResetOTG_HSULPI() rccResetUSB1_HSULPI()
+#define rccEnableOTG2(lp) rccEnableUSB2_OTG_FS(lp)
+#define rccDisableOTG2() rccDisableUSB2_OTG_FS()
+#define rccResetOTG2() rccResetUSB2_OTG_FS()
+#define OTG2 OTG_FS
+#define OTG2_CHANNELS_NUMBER STM32_OTG_FS_CHANNELS_NUMBER
+#if STM32_OTG2_USE_ULPI
+#error "OTG2 has no ULPI on this platform"
+#endif
 #elif defined(STM32F7XX)
+#define rccEnableOTG2(lp) rccEnableOTG_HS(lp)
+#define rccDisableOTG2() rccDisableOTG_HS()
+#define rccResetOTG2() rccResetOTG_HS()
+#define rccEnableOTG2_HSULPI(x) rccEnableOTG_HSULPI(x)
+#define rccDisableOTG2_HSULPI() rccDisableOTG_HSULPI()
+#define rccResetOTG2_HSULPI() rccResetUSB2_HSULPI()
+#define OTG2 OTG_HS
+#define OTG2_CHANNELS_NUMBER STM32_OTG_HS_CHANNELS_NUMBER
 #define STM32_OTG_HS_NUMBER STM32_OTG2_NUMBER
 #define STM32_OTG_HS_HANDLER STM32_OTG2_HANDLER
-#define STM32_USB_OTG_HS_IRQ_PRIORITY STM32_USB_OTG2_IRQ_PRIORITY
-#define rccResetOTG_HSULPI() rccResetAHB1(RCC_AHB1ENR_OTGHSULPIEN)
-#else
-#define STM32_OTG_HS_NUMBER STM32_OTG2_NUMBER
-#define STM32_USB_OTG_HS_IRQ_PRIORITY STM32_USB_OTG2_IRQ_PRIORITY
-#define rccEnableOTG_HSULPI(x) rccEnableUSB2_HSULPI(x)
-#define rccDisableOTG_HSULPI() rccDisableUSB2_HSULPI()
-#define rccResetOTG_HSULPI() rccResetUSB2_HSULPI()
+#else          
+#define rccEnableOTG2(lp) rccEnableOTG_HS(lp)
+#define rccDisableOTG2() rccDisableOTG_HS()
+#define rccResetOTG2() rccResetOTG_HS()                                                                                                                                                         
+#define rccEnableOTG2_HSULPI(x) rccEnableUSB2_HSULPI(x)
+#define rccDisableOTG2_HSULPI() rccDisableUSB2_HSULPI()
+#define rccResetOTG2_HSULPI() rccResetUSB2_HSULPI()
+#define OTG2 OTG_HS
+#define OTG2_CHANNELS_NUMBER STM32_OTG_HS_CHANNELS_NUMBER
 #endif
 #if (STM32_OTG_HS_RXFIFO_SIZE + STM32_OTG_HS_PTXFIFO_SIZE + STM32_OTG_HS_NPTXFIFO_SIZE) > (STM32_OTG_HS_FIFO_MEM_SIZE * 4)
 #error "Not enough memory in OTG_HS implementation"
@@ -108,6 +142,9 @@
 #error "FIFO sizes must be a multiple of 32-bit words"
 #endif
 #endif
+
+#define TRDT_VALUE_FS 5
+#define TRDT_VALUE_HS 9
 
 #define _USBH_DEBUG_HELPER_ENABLE_TRACE		USBH_LLD_DEBUG_ENABLE_TRACE
 #define _USBH_DEBUG_HELPER_ENABLE_INFO		USBH_LLD_DEBUG_ENABLE_INFO
@@ -120,10 +157,10 @@ static void _try_commit_np(USBHDriver *host);
 static void otg_rxfifo_flush(USBHDriver *usbp);
 static void otg_txfifo_flush(USBHDriver *usbp, uint32_t fifo);
 
-#if STM32_USBH_USE_OTG_FS
+#if STM32_USBH_USE_OTG1
 USBHDriver USBHD1;
 #endif
-#if STM32_USBH_USE_OTG_HS
+#if STM32_USBH_USE_OTG2
 USBHDriver USBHD2;
 #endif
 
@@ -722,7 +759,6 @@ static inline void _dterr_int(USBHDriver *host, stm32_hc_management_t *hcm, stm3
 	ep->xfer.error_count = 0;
 	hc->HCINTMSK &= ~HCINTMSK_ACKM;
 	hc->HCCHAR |= HCCHAR_CHENA;
-	host->intSkip = 1;
 #endif
 	ueperrf("DTERR");
 }
@@ -773,7 +809,6 @@ static inline void _nak_int(USBHDriver *host, stm32_hc_management_t *hcm, stm32_
 		ep->xfer.error_count = 0;
 		hc->HCINTMSK &= ~HCINTMSK_ACKM;
 		hc->HCCHAR |= HCCHAR_CHENA;
-		host->intSkip = 1;
 	}
 	uepdbgf("NAK");
 }
@@ -1060,7 +1095,7 @@ static inline void _sof_int(USBHDriver *host) {
 	if (host->check_ls_activity) {
 		stm32_otg_t *const otg = host->otg;
 		uint16_t remaining = otg->HFNUM >> 16;
-#if STM32_USBH_USE_OTG_HS_ULPI
+#if STM32_OTG1_USE_ULPI || STM32_OTG2_USE_ULPI
 		if (remaining < 47800) {
 			uwarnf("LS: ISR called too late (time=%d)", 48000 - remaining);
 			return;
@@ -1086,7 +1121,7 @@ static inline void _sof_int(USBHDriver *host) {
 			}
 			if (line_status != HPRT_PLSTS_DM) {
 				/* success; report that the port is enabled */
-#if STM32_USBH_USE_OTG_HS_ULPI
+#if STM32_OTG1_USE_ULPI || STM32_OTG2_USE_ULPI
 				uinfof("LS: activity detected, line=%d, time=%d", line_status >> 10,  48000 - remaining);
 				host->check_ls_activity = FALSE;
 #else
@@ -1098,7 +1133,7 @@ static inline void _sof_int(USBHDriver *host) {
 				host->rootport.lld_c_status |= USBH_PORTSTATUS_C_ENABLE;
 				return;
 			}
-#if STM32_USBH_USE_OTG_HS_ULPI
+#if STM32_OTG1_USE_ULPI || STM32_OTG2_USE_ULPI
 			if (remaining < 47280) {
 #else
 			if (remaining < 5910) {
@@ -1272,8 +1307,8 @@ static inline void _hprtint_int(USBHDriver *host) {
 
 			/* configure FIFOs */
 #define HNPTXFSIZ						DIEPTXF0
-#if STM32_USBH_USE_OTG_FS
-#if STM32_USBH_USE_OTG_HS
+#if STM32_USBH_USE_OTG1
+#if STM32_USBH_USE_OTG2
 			if (&USBHD1 == host)
 #endif
 			{
@@ -1282,8 +1317,8 @@ static inline void _hprtint_int(USBHDriver *host) {
 				otg->HPTXFSIZ = HPTXFSIZ_PTXSA((STM32_OTG_FS_RXFIFO_SIZE / 4) + (STM32_OTG_FS_NPTXFIFO_SIZE / 4)) | HPTXFSIZ_PTXFD(STM32_OTG_FS_PTXFIFO_SIZE / 4);
 			}
 #endif
-#if STM32_USBH_USE_OTG_HS
-#if STM32_USBH_USE_OTG_FS
+#if STM32_USBH_USE_OTG2
+#if STM32_USBH_USE_OTG1
 			if (&USBHD2 == host)
 #endif
 			{
@@ -1309,7 +1344,7 @@ static inline void _hprtint_int(USBHDriver *host) {
 			if ((hprt & HPRT_PSPD_MASK) == HPRT_PSPD_LS) {
 				host->rootport.lld_status |= USBH_PORTSTATUS_LOW_SPEED;
 
-#if STM32_USBH_USE_OTG_HS_ULPI
+#if STM32_OTG1_USE_ULPI || STM32_OTG2_USE_ULPI
 				otg->HFIR = 48000;
 #else
 				otg->HFIR = 6000;
@@ -1410,11 +1445,8 @@ static void usb_lld_serve_interrupt(USBHDriver *host) {
 	}
 
 	osalSysLockFromISR ();
-	if (host->intSkip == 0) {
-		host->intService = ~host->intService;
-		osalThreadResumeI (&host->thread_ref, MSG_OK);
-	}
-	host->intSkip = 0;
+	host->intService = ~host->intService;
+	osalThreadResumeI (&host->thread_ref, MSG_OK);
 	osalSysUnlockFromISR ();
 }
 
@@ -1423,7 +1455,7 @@ static void usb_lld_serve_interrupt(USBHDriver *host) {
 /* Interrupt handlers.                                                       */
 /*===========================================================================*/
 
-#if STM32_USBH_USE_OTG_FS
+#if STM32_USBH_USE_OTG1
 OSAL_IRQ_HANDLER(STM32_OTG_FS_HANDLER) {
 	OSAL_IRQ_PROLOGUE();
 	osalSysLockFromISR();
@@ -1433,7 +1465,7 @@ OSAL_IRQ_HANDLER(STM32_OTG_FS_HANDLER) {
 }
 #endif
 
-#if STM32_USBH_USE_OTG_HS
+#if STM32_USBH_USE_OTG2
 OSAL_IRQ_HANDLER(STM32_OTG_HS_HANDLER) {
 	OSAL_IRQ_PROLOGUE();
 	osalSysLockFromISR();
@@ -1447,33 +1479,27 @@ OSAL_IRQ_HANDLER(STM32_OTG_HS_HANDLER) {
 /*===========================================================================*/
 /* Initialization functions.                                                 */
 /*===========================================================================*/
-static void otg_core_reset(USBHDriver *usbp) {
-  stm32_otg_t *const otgp = usbp->otg;
+static void otg_core_reset(stm32_otg_t *const otgp) {
 
   /* Wait AHB idle condition.*/
-  while ((otgp->GRSTCTL & GRSTCTL_AHBIDL) == 0)
-	;
-
-  osalSysPolledDelayX(64);
+  while ((otgp->GRSTCTL & GRSTCTL_AHBIDL) == 0) osalSysPolledDelayX(1);
 
   /* Core reset and delay of at least 3 PHY cycles.*/
   otgp->GRSTCTL = GRSTCTL_CSRST;
-  while ((otgp->GRSTCTL & GRSTCTL_CSRST) != 0)
-	;
+  osalSysPolledDelayX(12);
+  while ((otgp->GRSTCTL & GRSTCTL_CSRST) != 0) osalSysPolledDelayX(1);
 
-  osalSysPolledDelayX(24);
+  osalSysPolledDelayX(18);
 
-  /* Wait AHB idle condition.*/
-  while ((otgp->GRSTCTL & GRSTCTL_AHBIDL) == 0)
-	;
+  /* Wait AHB idle condition again.*/
+  while ((otgp->GRSTCTL & GRSTCTL_AHBIDL) == 0) osalSysPolledDelayX(1);
 }
 
 static void otg_rxfifo_flush(USBHDriver *usbp) {
   stm32_otg_t *const otgp = usbp->otg;
 
   otgp->GRSTCTL = GRSTCTL_RXFFLSH;
-  while ((otgp->GRSTCTL & GRSTCTL_RXFFLSH) != 0)
-	;
+  while ((otgp->GRSTCTL & GRSTCTL_RXFFLSH) != 0) osalSysPolledDelayX(1);
   /* Wait for 3 PHY Clocks.*/
   osalSysPolledDelayX(24);
 }
@@ -1482,8 +1508,7 @@ static void otg_txfifo_flush(USBHDriver *usbp, uint32_t fifo) {
   stm32_otg_t *const otgp = usbp->otg;
 
   otgp->GRSTCTL = GRSTCTL_TXFNUM(fifo) | GRSTCTL_TXFFLSH;
-  while ((otgp->GRSTCTL & GRSTCTL_TXFFLSH) != 0)
-	;
+  while ((otgp->GRSTCTL & GRSTCTL_TXFFLSH) != 0) osalSysPolledDelayX(1);
   /* Wait for 3 PHY Clocks.*/
   osalSysPolledDelayX(24);
 }
@@ -1495,23 +1520,23 @@ static void _init(USBHDriver *host) {
 
 	host->intService = 0;
 
-#if STM32_USBH_USE_OTG_FS
-#if STM32_USBH_USE_OTG_HS
+#if STM32_USBH_USE_OTG1
+#if STM32_USBH_USE_OTG2
 	if (&USBHD1 == host)
 #endif
 	{
-		host->otg = OTG_FS;
-		host->channels_number = STM32_OTG_FS_CHANNELS_NUMBER;
+		host->otg = OTG1;
+		host->channels_number = OTG1_CHANNELS_NUMBER;
 	}
 #endif
 
-#if STM32_USBH_USE_OTG_HS
-#if STM32_USBH_USE_OTG_FS
+#if STM32_USBH_USE_OTG2
+#if STM32_USBH_USE_OTG1
 	if (&USBHD2 == host)
 #endif
 	{
-		host->otg = OTG_HS;
-		host->channels_number = STM32_OTG_HS_CHANNELS_NUMBER;
+		host->otg = OTG2;
+		host->channels_number = OTG2_CHANNELS_NUMBER;
 	}
 #endif
 	INIT_LIST_HEAD(&host->ch_free[0]);
@@ -1533,10 +1558,10 @@ static void _init(USBHDriver *host) {
 }
 
 void usbh_lld_init(void) {
-#if STM32_USBH_USE_OTG_FS
+#if STM32_USBH_USE_OTG1
 	_init(&USBHD1);
 #endif
-#if STM32_USBH_USE_OTG_HS
+#if STM32_USBH_USE_OTG2
 	_init(&USBHD2);
 #endif
 }
@@ -1545,53 +1570,53 @@ void usbh_lld_start(USBHDriver *host) {
 	stm32_otg_t *const otgp = host->otg;
 
 	/* Clock activation.*/
-#if STM32_USBH_USE_OTG_FS
-#if STM32_USBH_USE_OTG_HS
+#if STM32_USBH_USE_OTG1
 	if (&USBHD1 == host)
-#endif
 	{
+#if STM32_OTG1_USE_ULPI
+		rccEnableOTG1_HSULPI(FALSE);
+#endif
 		/* OTG FS clock enable and reset.*/
-		rccEnableOTG_FS(TRUE);
-		rccResetOTG_FS();
+		rccEnableOTG1(TRUE);
+		rccResetOTG1();
 
 		otgp->GINTMSK = 0;
 
 		/* Enables IRQ vector.*/
-		nvicEnableVector(STM32_OTG_FS_NUMBER, STM32_USB_OTG_FS_IRQ_PRIORITY);
+		nvicEnableVector(STM32_OTG1_NUMBER, STM32_USB_OTG1_IRQ_PRIORITY);
 	}
 #endif
 
-#if STM32_USBH_USE_OTG_HS
-#if STM32_USBH_USE_OTG_FS
+#if STM32_USBH_USE_OTG2
 	if (&USBHD2 == host)
-#endif
 	{
-		/* OTG HS clock enable and reset.*/
-		rccEnableOTG_HS(TRUE); // Enable HS clock when cpu is in sleep mode
-#if STM32_USBH_USE_OTG_HS_ULPI
-		rccEnableOTG_HSULPI(TRUE);
+#if STM32_OTG2_USE_ULPI
+		rccEnableOTG2_HSULPI(TRUE);
 #endif
-		rccResetOTG_HS();
+
+		/* OTG HS clock enable and reset.*/
+		rccEnableOTG2(TRUE); // Disable HS clock when cpu is in sleep mode
+		rccResetOTG2();
 
 		otgp->GINTMSK = 0;
 
 		/* Enables IRQ vector.*/
-		nvicEnableVector(STM32_OTG_HS_NUMBER, STM32_USB_OTG_HS_IRQ_PRIORITY);
+		nvicEnableVector(STM32_OTG2_NUMBER, STM32_USB_OTG2_IRQ_PRIORITY);
 	}
 #endif
 
-#if STM32_USBH_USE_OTG_HS_ULPI
-	/* Select vbus source */
-	otgp->GUSBCFG = GUSBCFG_FHMOD | GUSBCFG_TRDT(9) |
-	     USB_OTG_GUSBCFG_ULPIAR | USB_OTG_GUSBCFG_ULPIEVBUSD;
+#if STM32_OTG2_USE_ULPI
+	otgp->GUSBCFG |= GUSBCFG_SRPCAP | GUSBCFG_HNPCAP | GUSBCFG_TRDT(9);
+#if STM32_OTG2_USE_ULPI_VBUS
+	otgp->GUSBCFG |= USB_OTG_GUSBCFG_ULPIEVBUSD | USB_OTG_GUSBCFG_ULPIEVBUSI;
+#endif
 #else
 	otgp->GCCFG = GCCFG_PWRDWN;
 
-	/* Forced host mode. */
-	otgp->GUSBCFG = GUSBCFG_PHYSEL | GUSBCFG_FHMOD | GUSBCFG_TRDT(5);
+	otgp->GUSBCFG |= GUSBCFG_PHYSEL | GUSBCFG_FHMOD | GUSBCFG_TRDT(5);
 #endif
 
-#if !STM32_USBH_USE_OTG_HS_ULPI
+#if !STM32_OTG1_USE_ULPI && !STM32_OTG2_USE_ULPI
 	/* PHY enabled.*/
 	otgp->PCGCCTL = 0;
 
@@ -1614,16 +1639,7 @@ void usbh_lld_start(USBHDriver *host) {
 #endif
 
 	/* Reset after a PHY change */
-	otg_core_reset(host);
-
-#if STM32_USBH_USE_OTG_HS_ULPI
-	/* Select vbus source */
-	otgp->GUSBCFG = GUSBCFG_FHMOD | GUSBCFG_TRDT(9) |
-	     USB_OTG_GUSBCFG_ULPIAR | USB_OTG_GUSBCFG_ULPIEVBUSD;
-#else
-	/* Forced host mode. */
-	otgp->GUSBCFG = GUSBCFG_PHYSEL | GUSBCFG_FHMOD | GUSBCFG_TRDT(5);
-#endif
+	otg_core_reset(otgp);
 
 	/* Interrupts on FIFOs half empty.*/
 	otgp->GAHBCFG = 0;
@@ -1656,31 +1672,30 @@ void usbh_lld_stop(USBHDriver *host) {
 	otgp->GCCFG = GCCFG_PWRDWN;
 
 	/* Clock activation.*/
-#if STM32_USBH_USE_OTG_FS
-#if STM32_USBH_USE_OTG_HS
+#if STM32_USBH_USE_OTG1
 	if (&USBHD1 == host)
-#endif
 	{
 		/* Disable IRQ vector.*/
-		nvicDisableVector(STM32_OTG_FS_NUMBER);
+		nvicDisableVector(STM32_OTG1_NUMBER);
 
 		/* OTG FS clock disable.*/
-		rccDisableOTG_FS();
+		rccDisableOTG1();
+#if defined(STM32H7XX) && STM32_OTG1_USE_ULPI
+		rccDisableOTG1_HSULPI();
+#endif
 	}
 #endif
 
-#if STM32_USBH_USE_OTG_HS
-#if STM32_USBH_USE_OTG_FS
+#if STM32_USBH_USE_OTG2
 	if (&USBHD2 == host)
-#endif
 	{
 		/* Enables IRQ vector.*/
-		nvicDisableVector(STM32_OTG_HS_NUMBER);
+		nvicDisableVector(STM32_OTG2_NUMBER);
 
 		/* OTG HS clock disable.*/
-		rccDisableOTG_HS(); // Disable HS clock when cpu is in sleep mode
-#if STM32_USBH_USE_OTG_HS_ULPI
-		rccDisableOTG_HSULPI();
+		rccDisableOTG2(); // Disable HS clock when cpu is in sleep mode
+#if ! defined(STM32H7XX) && STM32_OTG2_USE_ULPI
+		rccDisableOTG2_HSULPI();
 #endif
 	}
 #endif

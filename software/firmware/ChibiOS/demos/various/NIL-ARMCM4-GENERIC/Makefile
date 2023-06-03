@@ -105,11 +105,11 @@ include $(CHIBIOS)/os/common/startup/ARMCMx/compilers/GCC/mk/startup_stm32f4xx.m
 #include $(CHIBIOS)/os/hal/osal/rt-nil/osal.mk
 # RTOS files (optional).
 include $(CHIBIOS)/os/nil/nil.mk
-include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/port_v7m.mk
+include $(CHIBIOS)/os/common/ports/ARMv7-M/compilers/GCC/mk/port.mk
 # Auto-build files in ./source recursively.
 include $(CHIBIOS)/tools/mk/autobuild.mk
 # Other files (optional).
-#include $(CHIBIOS)/test/lib/test.mk
+#include $(CHIBIOS)/os/test/test.mk
 #include $(CHIBIOS)/test/nil/nil_test.mk
 #include $(CHIBIOS)/test/oslib/oslib_test.mk
 

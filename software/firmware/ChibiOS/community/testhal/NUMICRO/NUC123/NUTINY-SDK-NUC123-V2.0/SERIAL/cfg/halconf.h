@@ -29,14 +29,12 @@
 #define HALCONF_H
 
 #define _CHIBIOS_HAL_CONF_
-#define _CHIBIOS_HAL_CONF_VER_7_1_
+#define _CHIBIOS_HAL_CONF_VER_8_0_
 
 #include "mcuconf.h"
 
 #define PAL_USE_CALLBACKS TRUE
 #define PAL_USE_WAIT      TRUE
-
-#define NUC123_SERIAL_CLKSRC NUC123_SERIAL_CLKSRC_HSI
 
 /**
  * @brief   Enables the PAL subsystem.
