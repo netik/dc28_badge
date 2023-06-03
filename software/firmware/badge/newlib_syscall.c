@@ -596,3 +596,21 @@ _mallinfo_r (struct _reent * unused)
 	(void)unused;
 	return (dlmallinfo ());
 }
+
+/* These are stubs just avoid warnings from libnosys.a */
+
+pid_t
+_getpid_r (struct _reent * unused)
+{
+	(void)unused;
+	return (0);
+}
+
+int
+_kill_r (struct _reent * unused, pid_t pid, int sig)
+{
+	(void)unused;
+	(void)pid;
+	(void)sig;
+	return (0);
+}
