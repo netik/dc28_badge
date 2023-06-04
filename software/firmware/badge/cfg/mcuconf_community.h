@@ -50,13 +50,15 @@
 #define STM32_OTG_FS_CHANNELS_NUMBER          12
 #define STM32_OTG_HS_CHANNELS_NUMBER          16
 
-#define STM32_USBH_USE_OTG_FS               FALSE
+#define STM32_USBH_USE_OTG1                 FALSE
+#define STM32_OTG1_USE_ULPI                 FALSE
 #define STM32_OTG1_RXFIFO_SIZE              1024
 #define STM32_OTG1_PTXFIFO_SIZE             128
 #define STM32_OTG1_NPTXFIFO_SIZE            128
 
-#define STM32_USBH_USE_OTG_HS               TRUE
-#define STM32_USBH_USE_OTG_HS_ULPI          TRUE
+#define STM32_USBH_USE_OTG2                 TRUE
+#define STM32_OTG2_USE_HS                   TRUE
+#define STM32_OTG2_USE_ULPI                 TRUE
 #define STM32_OTG2_RXFIFO_SIZE              2048
 #define STM32_OTG2_PTXFIFO_SIZE             1024
 #define STM32_OTG2_NPTXFIFO_SIZE            1024
