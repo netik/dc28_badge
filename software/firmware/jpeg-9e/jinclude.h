@@ -32,6 +32,10 @@
  * You can remove those references if you want to compile without <stdio.h>.
  */
 
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+
 #ifdef HAVE_STDDEF_H
 #include <stddef.h>
 #endif

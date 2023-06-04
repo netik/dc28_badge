@@ -73,6 +73,10 @@
  */
 #undef CHAR_IS_UNSIGNED
 
+/* Define this if your system has an ANSI-conforming <stdint.h> file.
+ */
+#define HAVE_STDINT_H
+
 /* Define this if your system has an ANSI-conforming <stddef.h> file.
  */
 #define HAVE_STDDEF_H
