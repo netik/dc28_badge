@@ -203,6 +203,8 @@ static const SDRAMConfig sdram_cfg =
 static const SPIConfig hs_spicfg =
 {
 	false,
+	false,
+	NULL,
 	NULL,
 	GPIOI,
 	GPIOI_ARD_D7,
