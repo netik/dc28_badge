@@ -99,7 +99,7 @@ static void sx1262Calibrate (SX1262_Driver *);
 static void sx1262CalImg (SX1262_Driver *);
 static bool sx1262IsBusy (SX1262_Driver *);
 static void sx1262Int (void *);
-static void sx1262Timeout (void *);
+static void sx1262Timeout (virtual_timer_t *, void *);
 static void sx1262Send (SX1262_Driver *, uint8_t *, uint8_t);
 static void sx1262ReceiveSet (SX1262_Driver *);
 static void sx1262TransmitSet (SX1262_Driver *);
@@ -134,9 +134,11 @@ sx1262Int (void * arg)
 }
 
 static void
-sx1262Timeout (void * arg)
+sx1262Timeout (virtual_timer_t * vt, void * arg)
 {
 	SX1262_Driver * p;
+
+	(void)vt;
 
 	p = arg;
 

@@ -291,8 +291,8 @@ static void timer_event(eventid_t id) {
     orchardAppTimer(instance.context, instance.timer_usecs, true);
 }
 
-static void timer_do_send_message(void *arg) {
-
+static void timer_do_send_message(virtual_timer_t * timer, void *arg) {
+  (void)timer;
   (void)arg;
   chSysLockFromISR();
   chEvtBroadcastI(&timer_expired);

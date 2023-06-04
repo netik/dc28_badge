@@ -53,6 +53,9 @@ static flash_error_t stm32_start_erase_sector(void *instance,
                                              flash_sector_t sector);
 static flash_error_t stm32_query_erase(void *instance, uint32_t *msec);
 static flash_error_t stm32_verify_erase(void *instance, flash_sector_t sector);
+static flash_error_t stm32_acquire_exclusive(void *instance);
+static flash_error_t stm32_release_exclusive(void *instance);
+
 
 static const struct STM32FLASHDriverVMT stm32_vmt = {
 	(size_t)0,		/* instance offset */
@@ -62,7 +65,9 @@ static const struct STM32FLASHDriverVMT stm32_vmt = {
 	stm32_start_erase_all,
 	stm32_start_erase_sector,
 	stm32_query_erase,
-	stm32_verify_erase
+	stm32_verify_erase,
+	stm32_acquire_exclusive,
+	stm32_release_exclusive,
 };
 
 static const flash_sector_descriptor_t stm32_sectors[STM32_SECT_CNT] = {
@@ -292,6 +297,26 @@ stm32_program (void *instance, flash_offset_t offset,
 	osalMutexUnlock (&devp->mutex);
 
 	return (r);
+}
+
+static flash_error_t
+stm32_acquire_exclusive (void *instance)
+{
+	STM32FLASHDriver *devp = (STM32FLASHDriver *)instance;
+
+	osalMutexLock (&devp->mutex);
+
+	return (FLASH_NO_ERROR);
+}
+
+static flash_error_t
+stm32_release_exclusive (void *instance)
+{
+	STM32FLASHDriver *devp = (STM32FLASHDriver *)instance;
+
+	osalMutexUnlock (&devp->mutex);
+
+	return (FLASH_NO_ERROR);
 }
 
 void
