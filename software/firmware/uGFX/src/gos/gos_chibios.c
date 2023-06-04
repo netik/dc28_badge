@@ -11,7 +11,7 @@
 
 #include <string.h>
 
-#if CH_KERNEL_MAJOR < 2 || CH_KERNEL_MAJOR > 6
+#if CH_KERNEL_MAJOR < 2 || CH_KERNEL_MAJOR > 7
 	#error "GOS: Unsupported version of ChibiOS"
 #endif
 
