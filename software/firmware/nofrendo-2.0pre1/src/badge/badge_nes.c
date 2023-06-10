@@ -28,7 +28,20 @@
 
 #define  DEFAULT_SAMPLERATE   22050
 #define  DEFAULT_BPS          16
-#define  DEFAULT_FRAGSIZE     ((DEFAULT_SAMPLERATE/NES_REFRESH_RATE) + 2)
+/*
+ * The rule is that the time it takes to play all the audio samples
+ * for a single frame of video should be slightly longer than the
+ * time it takes to draw the frame. The emulator runs at a frame rate
+ * of NES_REFRESH_RATE, which is 50 or 60 depending on whether it's
+ * set for PAL or NTSC. (We select NTSC.) The amount of audio samples
+ * we need to play is therefore roughly equal to the audio sample
+ * rate (22050) divided by the frame rate (60). However we need to
+ * throw in some extra samples to make the audio play time slighly
+ * longer, perhaps by about 500 microseconds (half a millisecond).
+ * With a sample rate of 22050, that works out to about 11 extra
+ * samples.
+ */
+#define  DEFAULT_FRAGSIZE     ((DEFAULT_SAMPLERATE/NES_REFRESH_RATE) + 11)
 
 #define  DEFAULT_WIDTH        256
 #define  DEFAULT_HEIGHT       NES_VISIBLE_HEIGHT
@@ -49,7 +62,7 @@ timer_cb (GPTDriver * gpt)
 
 static const GPTConfig gptcfg =
 {
-	GPT_FREQ,	/* 4MHz timer clock.*/
+	GPT_FREQ,	/* 2MHz timer clock.*/
 	timer_cb,	/* Timer callback function. */
 	0,
 	0
@@ -83,6 +96,10 @@ void vid_blit(nes_bitmap_t *bitmap, int src_x, int src_y,
 
 	src = (uint8_t *)bitmap->line[src_y] + src_x;
 	dst = (uint8_t *)primary_buffer->line[dest_y] + dest_x;
+
+	/* Make sure to flush the cache here */
+
+	cacheBufferFlush (src, bitmap->pitch * height);
 
 	dma2dAcquireBusS (&DMA2DD1);
 
