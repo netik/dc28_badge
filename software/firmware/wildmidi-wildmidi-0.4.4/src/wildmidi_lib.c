@@ -1604,6 +1604,9 @@ static int _WM_Init(const struct _WM_VIO *callbacks,
         return (-1);
     }
 
+    _WM_Global_ErrorS = NULL;
+    _WM_Global_ErrorI = 0;
+
     _WM_BufferFile = callbacks->allocate_file;
     _WM_FreeBufferFile = callbacks->free_file;
 
