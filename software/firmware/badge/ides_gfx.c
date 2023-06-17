@@ -527,12 +527,33 @@ idesDoubleBufferStop (void)
 void
 idesDoubleBufferBlit (gCoord x, gCoord y, gCoord cx, gCoord cy, void * buf)
 {
+	idesDoubleBufferNoReloadBlit (x, y, cx, cy, buf);
+	idesDoubleBufferReload ();
+
+	return;
+}
+
+void
+idesDoubleBufferNoReloadBlit (gCoord x, gCoord y, gCoord cx,
+			      gCoord cy, void * buf)
+{
 	GDisplay * g;
 
 	/* Make sure we've been initialized */
 
 	if (d0 == NULL || d1 == NULL)
 		return;
+
+	/*
+	 * Sync up with the display controller: we want to draw into
+	 * the frame buffer that's not currently visible. But we might
+	 * get ahead of the controller and try to write into the buffer
+	 * before the switch-over to the other buffer is complete, so
+	 * we wait for that to finish first.
+	 */
+
+	while (ltdcIsReloadingI (&LTDCD1))
+		chSchDoYieldS ();
 
 	/*
 	 * Select the correct display frame based on the 'layer'
@@ -566,6 +587,12 @@ idesDoubleBufferBlit (gCoord x, gCoord y, gCoord cx, gCoord cy, void * buf)
 		/* Bitmap buffer */
 		(gPixel *)buf);
 
+	return;
+}
+
+void
+idesDoubleBufferReload (void)
+{
 	/* Trigger frame swap on next vertical refresh. */
 
 	ltdcStartReloadI (&LTDCD1, FALSE);
@@ -575,4 +602,16 @@ idesDoubleBufferBlit (gCoord x, gCoord y, gCoord cx, gCoord cy, void * buf)
 	layer ^= 1;
 
 	return;
+}
+
+void * idesDoubleBufferAddr (void)
+{
+	void * pBuf;
+
+	if (layer == 0)
+		pBuf = (void *)FB_BASE1;
+	else
+		pBuf = (void *)FB_BASE0;
+
+	return (pBuf);
 }

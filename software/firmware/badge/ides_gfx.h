@@ -69,6 +69,10 @@ extern void idesDoubleBufferInit (uint8_t);
 extern void idesDoubleBufferPaletteLoad (palette_color_t *);
 extern void idesDoubleBufferBlit (gCoord x, gCoord y, gCoord cx,
     gCoord cy, void * buf);
+extern void idesDoubleBufferNoReloadBlit (gCoord x, gCoord y, gCoord cx,
+    gCoord cy, void * buf);
+extern void idesDoubleBufferReload (void);
+extern void * idesDoubleBufferAddr (void);
 extern void idesDoubleBufferStop (void);
 
 #endif /* __IDES_GFX_H__ */
