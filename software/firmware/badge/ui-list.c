@@ -122,7 +122,7 @@ static void list_event(OrchardAppContext *context,
 				selected++;
 			gwinListSetSelected (p->ghList, selected ,TRUE);
 			gwinListViewItem (p->ghList, selected);
-			i2sPlay ("sound/click.snd");
+			i2sPlay ("sound/dspstop.snd");
 		}
 		if (event->key.code == keyAUp ||
 		    event->key.code == keyBUp) {
@@ -131,12 +131,13 @@ static void list_event(OrchardAppContext *context,
 				selected--;
 			gwinListSetSelected (p->ghList, selected ,TRUE);
 			gwinListViewItem (p->ghList, selected);
-			i2sPlay ("sound/click.snd");
+			i2sPlay ("sound/dspstop.snd");
 		}
 		if (event->key.code == keyASelect ||
 		    event->key.code == keyBSelect) {
 			ctx->selected = gwinListGetSelected (p->ghList);
-			i2sPlay ("sound/click.snd");
+			i2sPlay ("sound/dspistol.snd");
+			i2sWait ();
 			chEvtBroadcast (&ui_completed);
 		}
 	}
@@ -148,7 +149,11 @@ static void list_event(OrchardAppContext *context,
 
 	if (pe->type == GEVENT_GWIN_LIST) {
 		ple = (GEventGWinList *)pe;
-		i2sPlay ("sound/click.snd");
+		if (ple->item == 0) {
+			i2sPlay ("sound/dsswtchx.snd");
+		} else
+			i2sPlay ("sound/dspistol.snd");
+		i2sWait ();
 		ctx->selected = ple->item;
 		chEvtBroadcast (&ui_completed);
 	}

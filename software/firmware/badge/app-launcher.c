@@ -253,6 +253,7 @@ draw_launcher_buttons(struct launcher_list * list)
 			wi.g.x = (j * 90) + 2;
 			wi.g.y = 110 * (i+1);
 			wi.g.height = 20;
+			wi.g.width = 85;
 			wi.text = "";
 			wi.customDraw = gwinLabelDrawJustifiedCenter;
 			list->ghLabels[(i * LAUNCHER_COLS) + j] =
@@ -546,9 +547,9 @@ launcher_event (OrchardAppContext *context, const OrchardAppEvent *event)
 		if (event->key.flags == keyPress) {
 			if (event->key.code == keyASelect ||
 			    event->key.code == keyBSelect) {
-				i2sPlay ("sound/ping.snd");
+				i2sPlay ("sound/dspistol.snd");
 			} else {
-				i2sPlay ("sound/click.snd");
+				i2sPlay ("sound/dspstop.snd");
 			}
 		}
 
@@ -623,13 +624,11 @@ launcher_event (OrchardAppContext *context, const OrchardAppEvent *event)
 			currapp = (page * LAUNCHER_PERPAGE) + i;
 			if (w == list->ghButtons[i] &&
 			    currapp < list->total) {
-				i2sPlay ("sound/ping.snd");
+				i2sPlay ("sound/dspistol.snd");
 				orchardAppRun (list->items[currapp].entry);
 				return;
 			}
 		}
-
-		i2sPlay ("sound/click.snd");
 
 		/*
 		 * only update the location if we're still
@@ -637,6 +636,7 @@ launcher_event (OrchardAppContext *context, const OrchardAppEvent *event)
 		 */
 
 		if (w == list->ghButtonDn) {
+			i2sPlay ("sound/dspstop.snd");
 			if (((page + 1) * LAUNCHER_PERPAGE) <
 			    list->total) {
 				/* remove the box before update  */
@@ -650,6 +650,7 @@ launcher_event (OrchardAppContext *context, const OrchardAppEvent *event)
 		}
 
 		if (w == list->ghButtonUp) {
+			i2sPlay ("sound/dspstop.snd");
 			if (page > 0) {
 				/* remove the box before update  */
 				page--;
