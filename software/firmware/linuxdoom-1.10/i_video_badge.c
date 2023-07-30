@@ -57,7 +57,7 @@ rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
  * The DMA2D accelerated rescaler actually uses color blending to
  * rescale the rendered output image (with RGB565 pixels), and it's
  * much faster than an equivalent software-only implementation, but
- * it's not as fast as the hack software hack rescaler.
+ * it's not as fast as the software hack rescaler.
  *
  * We prefer to have the cleanest looking result, so we default to
  * the DMA2D accelerated rescaler.
@@ -448,13 +448,14 @@ I_Rescale (void)
 	 *   at the same offset in the output line.
 	 *
 	 * In other words, for every output line, you average together
-	 * the pixels from the two closes input lines.
+	 * the pixels from the two closest input lines.
 	 *
 	 * We accomplish this using the following steps:
 	 *
  	 * - First, we perform the usual DMA2D render step to draw
 	 *   a frame of 320x200 RGB565 pixels in the display frame buffer
-	 *   that is not currently visible. We use a special blit function		 *   for this that moves the data, but which does not swap frame
+	 *   that is not currently visible. We use a special blit function
+	 *   for this that moves the data, but which does not swap frame
 	 *   buffers just yet.
 	 *
 	 * - The frame is rendered at the bottom of the frame buffer. This
