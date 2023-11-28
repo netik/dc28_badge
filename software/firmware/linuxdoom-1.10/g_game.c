@@ -527,8 +527,8 @@ void G_DoLoadLevel (void)
     // DOOM determines the sky texture to be used
     // depending on the current episode, and the game version.
     if ( (gamemode == commercial)
-/*FIXME	 || ( gamemode == pack_tnt )
-	 || ( gamemode == pack_plut )*/ )
+	 || ( gamemission == pack_tnt )
+	 || ( gamemission == pack_plut ) )
     {
 	skytexture = R_TextureNumForName ("SKY3");
 	if (gamemap < 12)
