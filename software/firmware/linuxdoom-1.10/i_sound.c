@@ -923,19 +923,6 @@ I_InitSound()
   fprintf(stderr, "I_InitSound: sound module ready\n");
     
 #endif
-
-#ifdef testing
-{
-int sndinfo;
-char * sinfo;
-
-      sndinfo = W_GetNumForName("SNDINFO");
-printf ("SNDINFO lump: %d\n", sndinfo);
-
-    sinfo = (char *)W_CacheLumpNum( sndinfo, PU_STATIC );
-printf ("SINFO: %s\n", sinfo);
-}
-#endif
 }
 
 
