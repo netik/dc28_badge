@@ -1,3 +1,4 @@
+#ifndef MAXCHAR
 #define MAXCHAR         ((char)0x7f)
 #define MAXSHORT        ((short)0x7fff)
 
@@ -10,3 +11,4 @@
 // Max negative 32-bit integer.
 #define MININT          ((int)0x80000000)
 #define MINLONG         ((long)0x80000000)
+#endif

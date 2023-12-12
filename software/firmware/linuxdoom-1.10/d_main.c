@@ -934,7 +934,11 @@ void D_DoomMain (void)
     if (M_CheckParm("-cdrom"))
     {
 	printf(D_CDROM);
+#ifdef WINNT
+	mkdir("c:\\doomdata");
+#else
 	mkdir("c:\\doomdata",0);
+#endif
 	strcpy (basedefault,"c:/doomdata/default.cfg");
     }	
     
