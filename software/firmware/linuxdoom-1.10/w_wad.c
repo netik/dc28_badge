@@ -77,6 +77,13 @@ void**			lumpcache;
 
 #define strcmpi	strcasecmp
 
+#ifdef WINNT
+#define boolean blah
+#include <shlwapi.h>
+#undef boolean
+#define strcasestr StrStrI
+#else
+
 #ifndef BADGEDOOM
 void strupr (char* s)
 {
@@ -93,6 +100,8 @@ int filelength (int handle)
 
     return fileinfo.st_size;
 }
+
+#endif
 
 
 void
