@@ -262,9 +262,11 @@ default_t	defaults[] =
     
 #endif
 
+#ifndef WINNT
 #ifdef LINUX
     {"mousedev", (int*)&mousedev, (long)"/dev/ttyS0", 0, 0 },
     {"mousetype", (int*)&mousetype, (long)"microsoft", 0, 0 },
+#endif
 #endif
 
     {"use_mouse",&usemouse, 1, 0, 0 },
@@ -287,6 +289,7 @@ default_t	defaults[] =
 
     {"usegamma",&usegamma, 0, 0, 0 },
 
+#ifndef WINNT
     {"chatmacro0", (int *) &chat_macros[0], (long) HUSTR_CHATMACRO0, 0, 0 },
     {"chatmacro1", (int *) &chat_macros[1], (long) HUSTR_CHATMACRO1, 0, 0 },
     {"chatmacro2", (int *) &chat_macros[2], (long) HUSTR_CHATMACRO2, 0, 0 },
@@ -297,6 +300,7 @@ default_t	defaults[] =
     {"chatmacro7", (int *) &chat_macros[7], (long) HUSTR_CHATMACRO7, 0, 0 },
     {"chatmacro8", (int *) &chat_macros[8], (long) HUSTR_CHATMACRO8, 0, 0 },
     {"chatmacro9", (int *) &chat_macros[9], (long) HUSTR_CHATMACRO9, 0, 0 }
+#endif
 
 };
 
