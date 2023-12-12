@@ -103,9 +103,9 @@ signed short	mixbuffer[MIXBUFFERSIZE];
 
 
 // The channel step amount...
-unsigned int	channelstep[NUM_CHANNELS];
+int	channelstep[NUM_CHANNELS];
 // ... and a 0.16 bit remainder of last step.
-unsigned int	channelstepremainder[NUM_CHANNELS];
+int	channelstepremainder[NUM_CHANNELS];
 
 
 // The channel data pointers, start and end.
@@ -205,7 +205,7 @@ getsfx
     //  which does not kick in in the soundserver.
 
     // Now copy and pad.
-    memcpy(  paddedsfx, sfx, size );
+    memcpy(  paddedsfx, sfx, (size_t)size );
     for (i=size ; i<paddedsize+8 ; i++)
         paddedsfx[i] = 128;
 
@@ -415,7 +415,7 @@ void I_SetSfxVolume(int volume)
 void I_SetMusicVolume(int volume)
 {
 #ifdef ENABLE_DOOM_MUSIC
-  int v;
+  uint8_t v;
 #endif
 
   // Internal state variable.
@@ -424,7 +424,7 @@ void I_SetMusicVolume(int volume)
   // Whatever( snd_MusciVolume );
 
 #ifdef ENABLE_DOOM_MUSIC
-  v = volume * 10;
+  v = (uint8_t)volume * 10;
   if (v > 127)
     v = 127;
                 
@@ -539,7 +539,7 @@ void I_UpdateSound( void )
   int				chan;
     
 #ifdef ENABLE_DOOM_MUSIC
-  int                           samplecnt = 0;
+    int                           samplecnt = 0;
 
     if (songhandle != NULL && song_paused == FALSE && snd_MusicVolume)
         samplecnt = WildMidi_GetOutput (songhandle, (int8_t *)mixbuffer,
@@ -552,7 +552,7 @@ void I_UpdateSound( void )
 
     if (samplecnt && samplecnt < (SAMPLECOUNT * BUFMUL * 2)) {
         memset ((int8_t *)mixbuffer + samplecnt, 0,
-         (SAMPLECOUNT * BUFMUL * 2) - samplecnt);
+         (size_t)((SAMPLECOUNT * BUFMUL * 2) - samplecnt));
 
         songhandle = NULL;
     }
@@ -627,7 +627,7 @@ void I_UpdateSound( void )
 	else if (dl < -0x8000)
 	    *leftout = -0x8000;
 	else
-	    *leftout = dl;
+	    *leftout = (signed short)dl;
 
 	// Same for right hardware channel.
 	if (dr > 0x7fff)
@@ -635,7 +635,7 @@ void I_UpdateSound( void )
 	else if (dr < -0x8000)
 	    *rightout = -0x8000;
 	else
-	    *rightout = dr;
+	    *rightout = (signed short)dr;
 
 	// Increment current pointers in mixbuffer.
 	leftout += step;
@@ -762,7 +762,7 @@ I_InitSound()
   want.channels = 2;
   want.samples = SAMPLECOUNT;
 
-  audio_dev = SDL_OpenAudio (&want, NULL);
+  audio_dev = (SDL_AudioDeviceID)SDL_OpenAudio (&want, NULL);
 
   if (audio_dev < 0)
     I_Error ("Failed to obtain desired SDL sound configuration\n");
@@ -791,7 +791,7 @@ I_InitSound()
     {
       // Previously loaded already?
       S_sfx[i].data = S_sfx[i].link->data;
-      lengths[i] = lengths[(S_sfx[i].link - S_sfx)/sizeof(sfxinfo_t)];
+      lengths[i] = lengths[(S_sfx[i].link - S_sfx)/(int)sizeof(sfxinfo_t)];
     }
   }
 
@@ -822,7 +822,7 @@ static int	musicdies=-1;
 void I_PlaySong(int handle, int loop)
 {
 #ifdef ENABLE_DOOM_MUSIC
-  int i;
+  uint8_t i;
   musicinfo_t * p;
 #endif
 
@@ -844,9 +844,10 @@ void I_PlaySong(int handle, int loop)
   WildMidi_Init (WILDMIDI_CONFIG_PATH, SAMPLERATE,
     WM_MO_ENHANCED_RESAMPLING | (looping ? WM_MO_LOOP : 0));
 
-  songhandle = WildMidi_OpenBuffer (p->data, W_LumpLength (p->lumpnum));
+  songhandle = WildMidi_OpenBuffer (p->data,
+    (uint32_t)W_LumpLength (p->lumpnum));
 
-  i = snd_MusicVolume * 10;
+  i = (uint8_t)snd_MusicVolume * 10;
   if (i > 127)
     i = 127;
   WildMidi_MasterVolume (i);

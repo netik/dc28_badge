@@ -30,6 +30,7 @@ rcsid[] = "$Id: r_data.c,v 1.4 1997/02/03 16:47:55 b1 Exp $";
 #include <stdio.h>
 #include <string.h>
 #include <strings.h>
+#include <stdlib.h>
 
 #include "i_system.h"
 #include "z_zone.h"
@@ -456,7 +457,6 @@ void R_InitTextures (void)
     
     int*		patchlookup;
     
-    int			totalwidth;
     int			nummappatches;
     int			offset;
     int			maxoff;
@@ -516,8 +516,6 @@ void R_InitTextures (void)
     texturewidthmask = Z_Malloc (numtextures*sizeof(void *), PU_STATIC, 0);
     textureheight = Z_Malloc (numtextures*sizeof(void *), PU_STATIC, 0);
 
-    totalwidth = 0;
-    
     //	Really complex printing shit...
     temp1 = W_GetNumForName ("S_START");  // P_???????
     temp2 = W_GetNumForName ("S_END") - 1;
@@ -559,7 +557,7 @@ void R_InitTextures (void)
 	texture->height = SHORT(mtexture->height);
 	texture->patchcount = SHORT(mtexture->patchcount);
 
-	bcopy (mtexture->name, texture->name, sizeof(texture->name));
+	memcpy (texture->name, mtexture->name, sizeof(texture->name));
 	mpatch = &mtexture->patches[0];
 	patch = &texture->patches[0];
 	for (j=0 ; j<texture->patchcount ; j++, mpatch++, patch++)
@@ -584,7 +582,6 @@ void R_InitTextures (void)
 	texturewidthmask[i] = j-1;
 	textureheight[i] = texture->height<<FRACBITS;
 		
-	totalwidth += texture->width;
     }
 
     Z_Free (maptex1);

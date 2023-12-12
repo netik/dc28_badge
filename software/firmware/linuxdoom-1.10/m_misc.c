@@ -330,7 +330,7 @@ void M_SaveDefaults (void)
 	} else {
 	    s = (char *) (defaults[i].location);
 	    fprintf (f,"%s\t\t\"%s\"\n",defaults[i].name, s);
-	    if ((long)s != defaults[i].defaultvalue)
+	    if ((long)(uintptr_t)s != defaults[i].defaultvalue)
 		free (s);
 	}
     }
@@ -363,7 +363,7 @@ void M_LoadDefaults (void)
 	    && defaults[i].defaultvalue < 0xfff)
 	    *defaults[i].location = defaults[i].defaultvalue;
 	else
-	    defaults[i].location = (int *)defaults[i].defaultvalue;
+	    defaults[i].location = (int *)(uintptr_t)defaults[i].defaultvalue;
     }
 
     // check for a custom default file

@@ -105,7 +105,7 @@ HUlib_drawTextLine
     int			i;
     int			w;
     int			x;
-    unsigned char	c;
+    int			c;
 
     // draw the new stuff
     x = l->x;
@@ -160,11 +160,11 @@ void HUlib_eraseTextLine(hu_textline_t* l)
 	for (y=l->y,yoffset=y*SCREENWIDTH ; y<l->y+lh ; y++,yoffset+=SCREENWIDTH)
 	{
 	    if (y < viewwindowy || y >= viewwindowy + viewheight)
-		R_VideoErase(yoffset, SCREENWIDTH); // erase entire line
+		R_VideoErase((unsigned)yoffset, SCREENWIDTH); // erase entire line
 	    else
 	    {
-		R_VideoErase(yoffset, viewwindowx); // erase left border
-		R_VideoErase(yoffset + viewwindowx + viewwidth, viewwindowx);
+		R_VideoErase((unsigned)yoffset, viewwindowx); // erase left border
+		R_VideoErase((unsigned)(yoffset + viewwindowx + viewwidth), viewwindowx);
 		// erase right border
 	    }
 	}

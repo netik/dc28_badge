@@ -15,13 +15,19 @@
 # % gmake -f Makefile.sdl ENABLE_MUSIC=1
 #
 # Note that you will likely need to customize WILDMIDI_PATH to point
-# to where you have your wildmidi.cfg file installed. You also need
+# to where you have your wildmidi.ofg file installed. You also need
 # the Gravis Ultrasound patch files.
 
 CC=  cc  # gcc or clang
 
 
-CFLAGS= -g -O2 -I. -I/usr/local/include -DLINUX -Wall -DNORMALUNIX
+CFLAGS= -g -O2 -I. -DLINUX -Wall -DNORMALUNIX
+CFLAGS += -DWILDMIDI_STATIC
+CFLAGS += -I../wildmidi-wildmidi-0.4.4/include
+CFLAGS += -I../wildmidi-wildmidi-0.4.4/mingw
+CFLAGS += -I/usr/local/include
+
+VPATH = ../wildmidi-wildmidi-0.4.4/src
 
 LDFLAGS= -L/usr/local/lib
 LIBS= -lSDL2 -lm
@@ -29,14 +35,29 @@ LIBS= -lSDL2 -lm
 ifeq ($(ENABLE_MUSIC),1)
 WILDMIDI_PATH := \"/home/wpaul/doom/patches/wildmidi.cfg\"
 CFLAGS+= -DENABLE_DOOM_MUSIC -DWILDMIDI_CONFIG_PATH=$(WILDMIDI_PATH)
-LIBS+= -lWildMidi
 endif
 
 # subdirectory for objects
 O=sdl
 
 # not too sophisticated dependency
-OBJS=				\
+OBJS=					\
+		$(O)/wm_error.o		\
+		$(O)/file_io.o		\
+		$(O)/lock.o		\
+		$(O)/wildmidi_lib.o	\
+		$(O)/reverb.o		\
+		$(O)/gus_pat.o		\
+		$(O)/internal_midi.o	\
+		$(O)/patches.o		\
+		$(O)/f_xmidi.o		\
+		$(O)/f_mus.o		\
+		$(O)/f_hmp.o		\
+		$(O)/f_midi.o		\
+		$(O)/f_hmi.o		\
+		$(O)/sample.o		\
+		$(O)/mus2mid.o		\
+		$(O)/xmi2mid.o		\
 		$(O)/doomdef.o		\
 		$(O)/doomstat.o		\
 		$(O)/dstrings.o		\
