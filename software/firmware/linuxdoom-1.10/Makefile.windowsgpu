@@ -25,11 +25,13 @@ CFLAGS= -O2 -I. -DLINUX -Wall -DNORMALUNIX
 CFLAGS += -DWILDMIDI_STATIC
 CFLAGS += -I../wildmidi-wildmidi-0.4.4/include
 CFLAGS += -I../wildmidi-wildmidi-0.4.4/mingw
+CFLAGS += -I/home/wpaul/m7/dc28_badge/software/firmware/sdl-gpu/build/SDL_gpu
+CFLAGS += -I/mingw64/include/SDL2
 
 VPATH = ../wildmidi-wildmidi-0.4.4/src
 
-LDFLAGS= -L/usr/local/lib
-LIBS= -static -lmingw32 -lSDL2 -lkernel32 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lversion -luuid -ladvapi32 -lsetupapi -lm -lwsock32 -liberty
+LDFLAGS= -L/home/wpaul/m7/dc28_badge/software/firmware/sdl-gpu/build/SDL_gpu/lib
+LIBS= -static -lmingw32 -lSDL2_gpu_s -lSDL2 -lkernel32 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lversion -luuid -ladvapi32 -lsetupapi -lm -lwsock32 -liberty -lopengl32 
 
 ifeq ($(ENABLE_MUSIC),1)
 #WILDMIDI_PATH := \"C:/msys64/home/wpaul/m7/dc28_badge/software/sd_card/midi/wildmidi.cfg\"
@@ -38,7 +40,7 @@ CFLAGS+= -DENABLE_DOOM_MUSIC -DWILDMIDI_CONFIG_PATH=$(WILDMIDI_PATH)
 endif
 
 # subdirectory for objects
-O=sdl
+O=sdlgpu
 
 # not too sophisticated dependency
 OBJS=					\
@@ -63,7 +65,7 @@ OBJS=					\
 		$(O)/dstrings.o		\
 		$(O)/i_system.o		\
 		$(O)/i_sound_sdl.o	\
-		$(O)/i_video_sdl.o	\
+		$(O)/i_video_sdl_gpu.o	\
 		$(O)/i_net_winsock.o	\
 		$(O)/tables.o		\
 		$(O)/f_finale.o		\
@@ -120,15 +122,15 @@ OBJS=					\
 		$(O)/info.o		\
 		$(O)/sounds.o
 
-all:	 $(O)/sdldoom
+all:	 $(O)/sdlgpudoom
 
 clean:
 	rm -f *.o *~ *.flc
-	rm -f sdl/*
+	rm -f sdlgpu/*
 
-$(O)/sdldoom:		$(OBJS) $(O)/i_main.o
+$(O)/sdlgpudoom:	$(OBJS) $(O)/i_main.o
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) $(O)/i_main.o \
-	-o $(O)/sdldoom $(LIBS)
+	-o $(O)/sdlgpudoom $(LIBS)
 
 $(O)/%.o:	%.c
 	$(CC) $(CFLAGS) -c $< -o $@
