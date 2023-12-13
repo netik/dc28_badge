@@ -228,7 +228,7 @@ typedef struct
 {
     char*	name;
     int*	location;
-    long	defaultvalue;
+    long long	defaultvalue;
     int		scantranslate;		// PC scan code hack
     int		untranslated;		// lousy hack
 } default_t;
@@ -256,17 +256,15 @@ default_t	defaults[] =
 
 // UNIX hack, to be removed. 
 #ifdef SNDSERV
-    {"sndserver", (int *) &sndserver_filename, (long) "sndserver", 0, 0 },
+    {"sndserver", (int *) &sndserver_filename, (long long) "sndserver", 0, 0 },
 #endif
     {"mb_used", &mb_used, 4, 0, 0 },
     
 #endif
 
-#ifndef WINNT
 #ifdef LINUX
-    {"mousedev", (int*)&mousedev, (long)"/dev/ttyS0", 0, 0 },
-    {"mousetype", (int*)&mousetype, (long)"microsoft", 0, 0 },
-#endif
+    {"mousedev", (int*)&mousedev, (long long)"/dev/ttyS0", 0, 0 },
+    {"mousetype", (int*)&mousetype, (long long)"microsoft", 0, 0 },
 #endif
 
     {"use_mouse",&usemouse, 1, 0, 0 },
@@ -289,18 +287,16 @@ default_t	defaults[] =
 
     {"usegamma",&usegamma, 0, 0, 0 },
 
-#ifndef WINNT
-    {"chatmacro0", (int *) &chat_macros[0], (long) HUSTR_CHATMACRO0, 0, 0 },
-    {"chatmacro1", (int *) &chat_macros[1], (long) HUSTR_CHATMACRO1, 0, 0 },
-    {"chatmacro2", (int *) &chat_macros[2], (long) HUSTR_CHATMACRO2, 0, 0 },
-    {"chatmacro3", (int *) &chat_macros[3], (long) HUSTR_CHATMACRO3, 0, 0 },
-    {"chatmacro4", (int *) &chat_macros[4], (long) HUSTR_CHATMACRO4, 0, 0 },
-    {"chatmacro5", (int *) &chat_macros[5], (long) HUSTR_CHATMACRO5, 0, 0 },
-    {"chatmacro6", (int *) &chat_macros[6], (long) HUSTR_CHATMACRO6, 0, 0 },
-    {"chatmacro7", (int *) &chat_macros[7], (long) HUSTR_CHATMACRO7, 0, 0 },
-    {"chatmacro8", (int *) &chat_macros[8], (long) HUSTR_CHATMACRO8, 0, 0 },
-    {"chatmacro9", (int *) &chat_macros[9], (long) HUSTR_CHATMACRO9, 0, 0 }
-#endif
+    {"chatmacro0", (int *) &chat_macros[0], (long long) HUSTR_CHATMACRO0, 0, 0 },
+    {"chatmacro1", (int *) &chat_macros[1], (long long) HUSTR_CHATMACRO1, 0, 0 },
+    {"chatmacro2", (int *) &chat_macros[2], (long long) HUSTR_CHATMACRO2, 0, 0 },
+    {"chatmacro3", (int *) &chat_macros[3], (long long) HUSTR_CHATMACRO3, 0, 0 },
+    {"chatmacro4", (int *) &chat_macros[4], (long long) HUSTR_CHATMACRO4, 0, 0 },
+    {"chatmacro5", (int *) &chat_macros[5], (long long) HUSTR_CHATMACRO5, 0, 0 },
+    {"chatmacro6", (int *) &chat_macros[6], (long long) HUSTR_CHATMACRO6, 0, 0 },
+    {"chatmacro7", (int *) &chat_macros[7], (long long) HUSTR_CHATMACRO7, 0, 0 },
+    {"chatmacro8", (int *) &chat_macros[8], (long long) HUSTR_CHATMACRO8, 0, 0 },
+    {"chatmacro9", (int *) &chat_macros[9], (long long) HUSTR_CHATMACRO9, 0, 0 }
 
 };
 
@@ -334,7 +330,7 @@ void M_SaveDefaults (void)
 	} else {
 	    s = (char *) (defaults[i].location);
 	    fprintf (f,"%s\t\t\"%s\"\n",defaults[i].name, s);
-	    if ((long)(uintptr_t)s != defaults[i].defaultvalue)
+	    if ((long long)s != defaults[i].defaultvalue)
 		free (s);
 	}
     }
