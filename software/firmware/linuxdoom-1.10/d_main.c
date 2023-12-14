@@ -631,9 +631,15 @@ void IdentifyVersion (void)
     doom2fwad = malloc(strlen(doomwaddir)+1+10+1);
     sprintf(doom2fwad, "%s/doom2f.wad", doomwaddir);
 
+#ifdef WINNT
+    home = getenv("USERPROFILE");
+    if (!home)
+      I_Error("Please set $USERPROFILE to your home directory");
+#else
     home = getenv("HOME");
     if (!home)
       I_Error("Please set $HOME to your home directory");
+#endif
     sprintf(basedefault, "%s/.doomrc", home);
 #endif
 
