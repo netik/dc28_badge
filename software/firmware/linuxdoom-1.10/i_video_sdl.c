@@ -48,15 +48,14 @@ rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
 
 static int		X_width;
 static int		X_height;
-static int		X_depth;
 static boolean		grabMouse;
 static SDL_Window *	win;
 static SDL_Surface *	surface;
 static SDL_Surface *	screen;
-static SDL_Surface *	screen_intermediate;
+static SDL_Surface *	screen_rendered;
 static SDL_Color	colors[256];
-
-static uint8_t * frame;
+static SDL_Renderer *	renderer;
+static SDL_Texture *	texture;
 
 // Blocky mode,
 // replace each 320x200 pixel with multiply*multiply pixels.
@@ -135,18 +134,18 @@ int xlatekey(SDL_Keysym *key)
 void I_ShutdownGraphics(void)
 {
 
-    if (frame == NULL)
+    if (win == NULL)
 	return;
 
     printf ("I_ShutdownGraphics: Destroying SDL context\n");
 
     SDL_FreeSurface (screen);
-    if (X_depth != 8)
-	SDL_FreeSurface (screen_intermediate);
+    SDL_FreeSurface (screen_rendered);
+    SDL_DestroyTexture (texture);
+    SDL_DestroyRenderer (renderer);
     SDL_DestroyWindow (win);
     SDL_Quit ();
-
-    free (frame);
+    win = NULL;
 
     return;
 }
@@ -269,16 +268,28 @@ void I_FinishUpdate (void)
     
     }
 
-    if (SDL_BlitSurface (screen, NULL, screen_intermediate, NULL) < 0) {
-	I_Error ("Failed to blit pixels to screen surface\n");
-    }
+    /*
+     * This blit applies the color palette for this frame, to
+     * transform the indexed surface into an RGB888 surface.
+     * SDL seems to only allow texture updates by updating
+     * pixels; there's no way to also provide a colormap. So
+     * need to generate a surface of RGB888 pixels as an
+     * intermediate step and then let the renderer have them.
+     */
 
-    if (X_depth != 8 && SDL_BlitScaled (screen_intermediate, NULL, surface, NULL) < 0) {
+    if (SDL_BlitSurface (screen, NULL, screen_rendered, NULL) < 0)
 	I_Error ("Failed to blit pixels to screen surface\n");
-    }
 
-    if (SDL_UpdateWindowSurface (win) < 0)
-	I_Error ("SDL window update failed\n");
+    /* Update the texture with the new pixels */
+
+    SDL_UpdateTexture (texture, NULL, screen_rendered->pixels,
+	SCREENWIDTH * screen_rendered->format->BytesPerPixel);
+
+    /* Now render the frame. */
+
+    SDL_RenderClear (renderer);
+    SDL_RenderCopy (renderer, texture, NULL, NULL);
+    SDL_RenderPresent (renderer);
 
     return;
 }
@@ -394,31 +405,58 @@ void I_InitGraphics(void)
     if (win == NULL)
 	I_Error ("Creating SDL window failed\n");
 
+    /* Create SDL renderer */
+
+    renderer = SDL_CreateRenderer (win, -1, SDL_RENDERER_ACCELERATED);
+
+    if (renderer == NULL)
+	I_Error ("Creating SDL renderer failed\n");
+
     printf ("I_InitGraphics: Initialized SDL context\n");
 
-    /* Get the surface handle */
+    /* Get the surface handle so we can check the display depth */
 
     surface = SDL_GetWindowSurface (win);
 
-    X_depth = surface->format->BitsPerPixel;
+    /*
+     * Create a texture. This should be the same size as Doom's
+     * native resolution (320x200). When we do the rendering step,
+     * SDL will automatically re-scale the texture to the actual
+     * window size. This will implicitly perform the aspect ratio
+     * fixup for us.
+     */
+
+    texture = SDL_CreateTexture (renderer, surface->format->format,
+	SDL_TEXTUREACCESS_STREAMING, SCREENWIDTH, SCREENHEIGHT);
 
     /*
-     * SDL does not allow scaled blitting directly from an 8-bit surface
-     * to a 32-bit one, so we need to perform an intermediate surface
-     * blit from the 8-bit initial screen buffer to a 32-bit one first,
-     * then do scaled blit ot the window surface.
+     * Aim for the best possible re-scale mode. Ideally this
+     * should be the linear mode, which should get us some
+     * anti-aliasing.
+     */
+
+    SDL_SetTextureScaleMode (texture, SDL_ScaleModeBest);
+
+    /*
+     * SDL does not provide a way to update a texture using an
+     * indexed surface. That is, we can only update a texture with
+     * pixel data; there's no way to provide a colormap too. So
+     * we need to perform an intermediate blit from the 8-bit
+     * initial screen surface to a 32-bit one, and then we can
+     * render the updated texture.
      */
 
     screen = SDL_CreateRGBSurface (SDL_SWSURFACE, SCREENWIDTH,
 	SCREENHEIGHT, 8, 0, 0, 0, 0);
 
-    if (X_depth != 8)
-	screen_intermediate = SDL_CreateRGBSurface (SDL_SWSURFACE,
-	    SCREENWIDTH, SCREENHEIGHT, X_depth, 0, 0, 0, 0);
-    else
-	screen_intermediate = surface;
+    screen_rendered = SDL_CreateRGBSurface (SDL_SWSURFACE,
+	SCREENWIDTH, SCREENHEIGHT, surface->format->BitsPerPixel,
+	0, 0, 0, 0);
 
-    frame = malloc (X_width * X_height * sizeof(uint32_t));
+    /*
+     * We can have Doom draw to the 8-bit indexed surface
+     * directly.
+     */
 
     screens[0] = (unsigned char *) screen->pixels;
 
