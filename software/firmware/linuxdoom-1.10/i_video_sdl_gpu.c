@@ -165,12 +165,16 @@ void I_GetEvent (SDL_Event * evt)
 
     switch (evt->type) {
 	case SDL_KEYDOWN:
+	    if (evt->key.repeat)
+		break;
 	    event.type = ev_keydown;
 	    event.data1 = xlatekey (&evt->key.keysym);
 	    D_PostEvent (&event);
 	    break;
 
 	case SDL_KEYUP:
+	    if (evt->key.repeat)
+		break;
 	    event.type = ev_keyup;
 	    event.data1 = xlatekey (&evt->key.keysym);
 	    D_PostEvent (&event);
