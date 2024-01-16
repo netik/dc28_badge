@@ -26,14 +26,18 @@ CFLAGS += -DWILDMIDI_STATIC
 CFLAGS += -I../wildmidi-wildmidi-0.4.4/include
 CFLAGS += -I../wildmidi-wildmidi-0.4.4/mingw
 CFLAGS += -I/usr/local/include
+CFLAGS += -I/opt/homebrew/include
 
 VPATH = ../wildmidi-wildmidi-0.4.4/src
 
 LDFLAGS= -L/usr/local/lib
+LDFLAGS += -L/opt/homebrew/lib
+
 LIBS= -lSDL2 -lm
 
 ifeq ($(ENABLE_MUSIC),1)
-WILDMIDI_PATH := \"/home/wpaul/doom/patches/wildmidi.cfg\"
+#WILDMIDI_PATH := \"/home/wpaul/doom/patches/wildmidi.cfg\"
+WILDMIDI_PATH := \"./wildmidi.cfg\"
 CFLAGS+= -DENABLE_DOOM_MUSIC -DWILDMIDI_CONFIG_PATH=$(WILDMIDI_PATH)
 endif
 
