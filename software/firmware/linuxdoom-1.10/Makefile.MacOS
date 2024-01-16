@@ -23,13 +23,17 @@ CC=  cc  # gcc or clang
 
 CFLAGS= -g -O2 -I. -DLINUX -Wall -DNORMALUNIX
 CFLAGS += -DWILDMIDI_STATIC
+CFLAGS += -D"section(x)"="none" -Wno-unknown-attributes
 CFLAGS += -I../wildmidi-wildmidi-0.4.4/include
 CFLAGS += -I../wildmidi-wildmidi-0.4.4/mingw
 CFLAGS += -I/usr/local/include
+CFLAGS += -I/opt/homebrew/include
 
 VPATH = ../wildmidi-wildmidi-0.4.4/src
 
 LDFLAGS= -L/usr/local/lib
+LDFLAGS += -L/opt/homebrew/lib
+
 LIBS= -lSDL2 -lm
 
 ifeq ($(ENABLE_MUSIC),1)
