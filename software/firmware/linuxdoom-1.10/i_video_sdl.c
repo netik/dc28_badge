@@ -423,6 +423,24 @@ void I_InitGraphics(void)
     surface = SDL_GetWindowSurface (win);
 
     /*
+     * On some platforms (notably MacOS), creating an accelerated
+     * renderer instance might not work. If it fails, fall back
+     * to trying a software renderer instance.
+     */
+
+    if (surface == NULL)
+	{
+    	SDL_DestroyRenderer (renderer);
+	renderer = SDL_CreateRenderer (win, -1, SDL_RENDERER_SOFTWARE);
+	surface = SDL_GetWindowSurface (win);
+	}
+
+    /* If we still can't the base window surface, bail. */
+
+    if (surface == NULL)
+	I_Error ("Creating SDL window surface failed.\n");
+
+    /*
      * Create a texture. This should be the same size as Doom's
      * native resolution (320x200). When we do the rendering step,
      * SDL will automatically re-scale the texture to the actual
